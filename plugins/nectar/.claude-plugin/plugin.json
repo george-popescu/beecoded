@@ -1,0 +1,22 @@
+{
+  "name": "nectar",
+  "version": "2.2.0",
+  "description": "The essence of spec-driven development distilled into 10 skills and 4 agents — including compact, freshness-aware project context for Claude Code and Codex.",
+  "author": {
+    "name": "Beecoded",
+    "email": "george.popescu@beecoded.ro",
+    "url": "https://github.com/beecoded"
+  },
+  "repository": "https://github.com/beecoded/bee",
+  "license": "MIT",
+  "keywords": [
+    "spec-driven",
+    "tdd",
+    "skills",
+    "workflow",
+    "code-review",
+    "debugging",
+    "planning",
+    "lightweight"
+  ]
+}

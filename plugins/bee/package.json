@@ -1,0 +1,56 @@
+{
+  "name": "@beecoded/bee",
+  "version": "5.0.0",
+  "description": "Spec-driven development workflow plugin for Claude Code and Codex",
+  "keywords": [
+    "claude-code",
+    "codex",
+    "agent-skills",
+    "spec-driven-development",
+    "tdd",
+    "code-review"
+  ],
+  "author": {
+    "name": "Beecoded",
+    "email": "george.popescu@beecoded.ro",
+    "url": "https://github.com/beecoded"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beecoded/bee-gpt.git",
+    "directory": "plugins/bee"
+  },
+  "homepage": "https://github.com/beecoded/bee-gpt/tree/main/plugins/bee",
+  "bugs": {
+    "url": "https://github.com/beecoded/bee-gpt/issues"
+  },
+  "bin": {
+    "bee": "bin/install.mjs"
+  },
+  "files": [
+    ".claude-plugin/",
+    ".codex-plugin/",
+    "agents/",
+    "bin/",
+    "workflows/",
+    "claude-skills/",
+    "codex/",
+    "hooks/",
+    "internal-skills/",
+    "scripts/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node scripts/run-meta-tests.js --root ../..",
+    "validate": "node ../../tools/validate-package.mjs bee",
+    "prepack": "npm test && npm run validate"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

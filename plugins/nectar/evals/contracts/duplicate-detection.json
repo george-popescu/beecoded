@@ -1,0 +1,30 @@
+{
+  "id": "duplicate-detection",
+  "skill": "nectar-shape",
+  "tags": ["duplicates", "safety"],
+  "fixture": {
+    "files": {
+      "docs/work/2026-07-15-checkout-rebuild/design.md": "# Checkout Rebuild — Design\n\n## Problem\nThe checkout needs a safer rebuild.\n\n## Approach\nReplace it incrementally.\n\n## Acceptance criteria\n- [ ] Checkout remains available.\n\n## Out of scope\n- Payments replacement.\n"
+    }
+  },
+  "prompt": "Let's build a checkout rebuild.",
+  "checks": [
+    {
+      "type": "responseIncludes",
+      "value": "docs/work/2026-07-15-checkout-rebuild"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "Continue existing work"
+    },
+    {
+      "type": "pathAbsent",
+      "path": "docs/work/2026-07-16-checkout-rebuild"
+    }
+  ],
+  "graderCriteria": [
+    "Surfaces the exact existing topic path and its artifact set.",
+    "Offers Continue existing work, Create a distinct feature, and Cancel.",
+    "Does not create a second checkout-rebuild root before the user chooses."
+  ]
+}

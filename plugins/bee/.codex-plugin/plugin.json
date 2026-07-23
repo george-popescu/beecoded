@@ -1,0 +1,35 @@
+{
+  "name": "bee",
+  "version": "5.0.0",
+  "description": "Spec-driven development workflow for Codex with planning, TDD, reviews, and autonomous execution.",
+  "author": {
+    "name": "Beecoded",
+    "email": "george.popescu@beecoded.ro",
+    "url": "https://github.com/beecoded"
+  },
+  "homepage": "https://github.com/beecoded/bee-gpt/tree/main/plugins/bee",
+  "repository": "https://github.com/beecoded/bee-gpt",
+  "license": "MIT",
+  "keywords": [
+    "spec-driven-development",
+    "tdd",
+    "code-review",
+    "workflow"
+  ],
+  "interface": {
+    "displayName": "Bee",
+    "shortDescription": "Spec-driven delivery for Codex",
+    "longDescription": "Plan, build, review, test, and deliver software through Bee's durable, spec-driven workflow.",
+    "developerName": "Beecoded",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/beecoded/bee-gpt",
+    "defaultPrompt": [
+      "Use $bee-init to initialize Bee in this repository.",
+      "Use $bee-progress to inspect the current workflow state."
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "nectar",
+  "version": "2.2.0",
+  "description": "Lightweight spec-driven development skills for Codex with minimal ceremony.",
+  "author": {
+    "name": "Beecoded",
+    "email": "george.popescu@beecoded.ro",
+    "url": "https://github.com/beecoded"
+  },
+  "homepage": "https://github.com/beecoded/bee-gpt/tree/main/plugins/nectar",
+  "repository": "https://github.com/beecoded/bee-gpt",
+  "license": "MIT",
+  "keywords": [
+    "spec-driven-development",
+    "tdd",
+    "skills",
+    "workflow"
+  ],
+  "interface": {
+    "displayName": "Nectar",
+    "shortDescription": "Lightweight delivery discipline",
+    "longDescription": "Shape, plan, build, review, debug, audit, and maintain compact freshness-aware project context with ten focused skills.",
+    "developerName": "Beecoded",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/beecoded/bee-gpt",
+    "defaultPrompt": [
+      "Use $nectar-shape to shape a new piece of work.",
+      "Use $nectar-orient to tell me what comes next."
+    ]
+  }
+}

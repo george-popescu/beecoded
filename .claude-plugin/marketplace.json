@@ -1,0 +1,34 @@
+{
+  "name": "beecoded",
+  "owner": {
+    "name": "Beecoded",
+    "email": "george.popescu@beecoded.ro"
+  },
+  "description": "Beecoded development workflow plugins",
+  "plugins": [
+    {
+      "name": "bee",
+      "displayName": "Bee",
+      "description": "Spec-driven development workflow with planning, TDD, reviews, and autonomous execution.",
+      "version": "5.0.0",
+      "source": {
+        "source": "npm",
+        "package": "@beecoded/bee",
+        "version": "5.0.0"
+      },
+      "category": "development"
+    },
+    {
+      "name": "nectar",
+      "displayName": "Nectar",
+      "description": "Ten lightweight spec-driven development skills with compact project context.",
+      "version": "2.2.0",
+      "source": {
+        "source": "npm",
+        "package": "@beecoded/nectar",
+        "version": "2.2.0"
+      },
+      "category": "development"
+    }
+  ]
+}

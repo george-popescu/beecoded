@@ -1,0 +1,27 @@
+{
+  "id": "artifact-recovery",
+  "skill": "nectar-orient",
+  "tags": ["recovery", "compaction"],
+  "fixture": {
+    "files": {
+      "docs/work/2026-07-16-search/design.md": "# Search — Design\n\n## Problem\nSearch results need ranking.\n\n## Approach\nAdd deterministic scoring.\n\n## Acceptance criteria\n- [ ] Relevant results rank first.\n\n## Out of scope\n- Semantic embeddings.\n",
+      "docs/work/2026-07-16-search/plan.md": "## Wave 1\n- [x] T1: Add scoring tests — done when: tests pass.\n  - files: `src/search.js`, `test/search.test.js`\n## Wave 2 (depends on Wave 1)\n- [ ] T2: Implement ranking — done when: tests pass.\n  - files: `src/search.js`, `test/search.test.js`\n"
+    }
+  },
+  "prompt": "The context was compacted. Recover from the project artifacts and tell me exactly what comes next.",
+  "checks": [
+    {
+      "type": "responseIncludes",
+      "value": "Wave 2"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "T2"
+    }
+  ],
+  "graderCriteria": [
+    "Uses design.md and plan.md as the source of truth instead of relying on conversation memory.",
+    "Reports the topic as building in wave 2 of 2.",
+    "Proposes executing T2 through the build skill as the single next action."
+  ]
+}

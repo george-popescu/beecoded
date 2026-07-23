@@ -1,0 +1,36 @@
+{
+  "name": "beecoded",
+  "interface": {
+    "displayName": "Beecoded"
+  },
+  "plugins": [
+    {
+      "name": "bee",
+      "source": {
+        "source": "npm",
+        "package": "@beecoded/bee",
+        "version": "5.0.0",
+        "registry": "https://registry.npmjs.org"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "nectar",
+      "source": {
+        "source": "npm",
+        "package": "@beecoded/nectar",
+        "version": "2.2.0",
+        "registry": "https://registry.npmjs.org"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

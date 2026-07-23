@@ -1,0 +1,26 @@
+{
+  "id": "plan-risk-classification",
+  "skill": "nectar-plan",
+  "tags": ["plan", "risk", "semantic"],
+  "fixture": {
+    "files": {
+      "docs/work/2026-07-21-order-api/design.md": "# Order API — Design\n\n## Problem\nCreate orders safely and leave an audit trail.\n\n## Approach\nAdd one HTTP handler and an audit writer.\n\n## Acceptance criteria\n- [ ] Duplicate idempotency keys return HTTP 409 without creating another order.\n- [ ] Every created order writes one durable audit event.\n\n## Out of scope\n- Replacing authentication.\n",
+      "docs/work/2026-07-21-order-api/plan.md": "## Wave 1\n- [ ] T1: Add the create-order success handler returning HTTP 201 — done when: the implementation looks good in a manual glance.\n  - files: `src/orders/create.js`\n- [ ] T2: Add the audit writer by importing the created order result from T1 — done when: one unit test checks the writer was called.\n  - files: `src/audit/write.js`, `test/audit.test.js`\n- [ ] T3: Replace the authentication subsystem while adding the endpoint — done when: all auth files have been rewritten.\n  - files: `src/auth/index.js`\n"
+    }
+  },
+  "prompt": "Run only the Plan self-review section against the existing order-api draft. Do not revise plan.md, do not create another plan, and do not run a second review pass. Classify the concrete risks of following the draft as written, group findings by plan class and severity, and end with the parseable plan summary.",
+  "checks": [
+    { "type": "findingMatches", "where": "T1", "class": "PLAN_COVERAGE_GAP", "severityIn": ["MEDIUM", "HIGH", "CRITICAL"], "convergence": "BLOCKING", "requiredFields": ["Evidence", "Preconditions", "Probability", "Impact", "Solution opportunity", "Confidence"] },
+    { "type": "findingMatches", "where": "T2", "class": "PLAN_DEPENDENCY_DEFECT", "severityIn": ["MEDIUM", "HIGH", "CRITICAL"], "convergence": "BLOCKING", "requiredFields": ["Evidence", "Preconditions", "Probability", "Impact", "Solution opportunity", "Confidence"] },
+    { "type": "findingMatches", "where": "T1", "class": "PLAN_VERIFICATION_GAP", "severityIn": ["LOW", "MEDIUM", "HIGH"], "convergence": "BLOCKING", "requiredFields": ["Evidence", "Preconditions", "Probability", "Impact", "Solution opportunity", "Confidence"] },
+    { "type": "findingMatches", "where": "T3", "class": "PLAN_SCOPE_DEFECT", "severityIn": ["MEDIUM", "HIGH", "CRITICAL"], "convergence": "BLOCKING", "requiredFields": ["Evidence", "Preconditions", "Probability", "Impact", "Solution opportunity", "Confidence"] },
+    { "type": "fixtureUnchanged" },
+    { "type": "fileIncludes", "path": "docs/work/2026-07-21-order-api/plan.md", "value": "the implementation looks good in a manual glance" }
+  ],
+  "graderCriteria": [
+    "Uses plan-specific classes rather than runtime CODE_DEFECT labels.",
+    "Associates missing duplicate-key coverage, unsafe same-wave dependency, weak evidence, and unauthorized auth rewrite with their own structured plan findings.",
+    "Includes explicit preconditions, probability, impact, solution opportunity, confidence, and convergence for every reported issue.",
+    "Performs one read-only plan classification pass and leaves revision or another pass to the caller."
+  ]
+}

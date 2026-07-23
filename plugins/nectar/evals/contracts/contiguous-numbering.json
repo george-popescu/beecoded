@@ -1,0 +1,28 @@
+{
+  "id": "contiguous-numbering",
+  "skill": "nectar-orient",
+  "tags": ["hierarchy", "recovery"],
+  "fixture": {
+    "files": {
+      "docs/work/2026-07-16-checkout/design.md": "# Checkout — Design\n\n## Problem\nCheckout work is split incorrectly.\n\n## Approach\nUse ordered children.\n\n## Acceptance criteria\n- [ ] Checkout ships safely.\n\n## Out of scope\n- None.\n\n## Topics\n1. `01-domain/` — domain rules; depends on: none\n2. `03-ui/` — checkout UI; depends on: `01-domain/`\n",
+      "docs/work/2026-07-16-checkout/01-domain/design.md": "# Domain — Design\n",
+      "docs/work/2026-07-16-checkout/03-ui/design.md": "# UI — Design\n"
+    }
+  },
+  "prompt": "Where were we and what should happen next?",
+  "checks": [
+    {
+      "type": "responseIncludes",
+      "value": "02"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "contiguous"
+    }
+  ],
+  "graderCriteria": [
+    "Identifies that child numbering is invalid because 02 is missing.",
+    "Makes resolving the structural mismatch the single next action.",
+    "Does not propose planning or building either child while the parent is invalid."
+  ]
+}

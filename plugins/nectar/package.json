@@ -1,0 +1,55 @@
+{
+  "name": "@beecoded/nectar",
+  "version": "2.2.0",
+  "description": "Lightweight spec-driven development skills for Claude Code and Codex",
+  "keywords": [
+    "claude-code",
+    "codex",
+    "agent-skills",
+    "spec-driven-development",
+    "tdd",
+    "code-review"
+  ],
+  "author": {
+    "name": "Beecoded",
+    "email": "george.popescu@beecoded.ro",
+    "url": "https://github.com/beecoded"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beecoded/bee-gpt.git",
+    "directory": "plugins/nectar"
+  },
+  "homepage": "https://github.com/beecoded/bee-gpt/tree/main/plugins/nectar",
+  "bugs": {
+    "url": "https://github.com/beecoded/bee-gpt/issues"
+  },
+  "bin": {
+    "nectar": "bin/install.mjs"
+  },
+  "files": [
+    ".claude-plugin/",
+    ".codex-plugin/",
+    "agents/",
+    "bin/",
+    "evals/",
+    "scripts/",
+    "internal-skills/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node scripts/check-consistency.js && node --test bin/*.test.mjs scripts/*.test.mjs scripts/evals/*.test.mjs scripts/doctor/*.test.mjs",
+    "doctor": "node scripts/run-doctor.mjs",
+    "evals": "node scripts/run-behavioral-evals.mjs",
+    "validate": "node ../../tools/validate-package.mjs nectar",
+    "prepack": "npm test && npm run validate"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
