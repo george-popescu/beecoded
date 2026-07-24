@@ -156,6 +156,8 @@ function makeFixture() {
     managedHome: path.join(root, 'beecoded'),
     env: {
       ...process.env,
+      HOME: path.join(root, 'home'),
+      XDG_CONFIG_HOME: path.join(root, 'xdg'),
       PATH: `${binDirectory}${path.delimiter}${path.dirname(process.execPath)}`,
       STUB_STATE_DIR: stateDirectory,
       BEECODED_HOME: path.join(root, 'beecoded'),
@@ -260,6 +262,10 @@ function skillsRoot(fixture, host) {
 
 function managedRoot(fixture, product, host) {
   return path.join(fixture.managedHome, 'marketplaces', product, host);
+}
+
+function globalGitIgnore(fixture) {
+  return path.join(fixture.env.XDG_CONFIG_HOME, 'git', 'ignore');
 }
 
 function installedSkillNames(fixture, host, product) {
@@ -389,8 +395,9 @@ try {
   const nectar = makeFixture();
   const nectarInstall = run('nectar', nectar, ['--claude']);
   assert.match(nectarInstall, /executing @beecoded\/nectar@\d+\.\d+\.\d+ source=/);
+  assert.equal(fs.readFileSync(globalGitIgnore(nectar), 'utf8'), '.nectar/\n');
   assert.deepEqual(readState(nectar, 'claude').plugins.map((entry) => entry.selector), ['nectar@beecoded-nectar']);
-  assert.equal(installedSkillNames(nectar, 'claude', 'nectar').length, 9);
+  assert.equal(installedSkillNames(nectar, 'claude', 'nectar').length, 10);
   assertOwnedSkill(nectar, 'claude', 'nectar-shape', '@beecoded/nectar');
   assert.equal(readState(nectar, 'codex').plugins.length, 0);
   assert.equal(readLog(nectar, 'codex').some((args) => args[0] === 'plugin'), false);
@@ -411,9 +418,15 @@ try {
   run('nectar', nectar, ['uninstall', '--all']);
   assert.equal(fs.existsSync(nectarProductRoot), false, 'explicit --all uninstall must remove managed files');
   assert.equal(installedSkillNames(nectar, 'claude', 'nectar').length, 0);
+  assert.equal(
+    fs.readFileSync(globalGitIgnore(nectar), 'utf8'),
+    '.nectar/\n',
+    'uninstall keeps the global ignore because existing projects may still contain Nectar state',
+  );
 
   const dryRun = makeFixture();
   run('nectar', dryRun, ['--all', '--dry-run']);
+  assert.equal(fs.existsSync(globalGitIgnore(dryRun)), false);
   assert.equal(fs.existsSync(path.join(dryRun.managedHome, 'marketplaces', 'nectar')), false);
   assert.equal(readState(dryRun, 'claude').plugins.length, 0);
   assert.equal(readState(dryRun, 'codex').plugins.length, 0);
@@ -422,6 +435,16 @@ try {
 
   const installedDryRun = makeFixture();
   run('nectar', installedDryRun, ['--all']);
+  fs.rmSync(globalGitIgnore(installedDryRun));
+  run('nectar', installedDryRun, ['--all']);
+  assert.equal(
+    fs.readFileSync(globalGitIgnore(installedDryRun), 'utf8')
+      .split('\n')
+      .filter((line) => line === '.nectar/')
+      .length,
+    1,
+    'update must restore exactly one missing global ignore entry',
+  );
   const installedDryRunVersion = JSON.parse(fs.readFileSync(
     path.join(repoRoot, 'plugins', 'nectar', 'package.json'),
     'utf8',
@@ -464,7 +487,7 @@ try {
       `dry-run uninstall must preserve the ${host} plugin`,
     );
     assert.equal(readState(installedDryRun, host).marketplaces.length, 1);
-    assert.equal(installedSkillNames(installedDryRun, host, 'nectar').length, 9);
+    assert.equal(installedSkillNames(installedDryRun, host, 'nectar').length, 10);
     assert.equal(fs.existsSync(managedRoot(installedDryRun, 'nectar', host)), true);
   }
 
@@ -523,12 +546,12 @@ try {
   run('nectar', together, ['--all']);
   for (const host of ['claude', 'codex']) {
     assert.equal(installedSkillNames(together, host, 'bee').length, 51);
-    assert.equal(installedSkillNames(together, host, 'nectar').length, 9);
+    assert.equal(installedSkillNames(together, host, 'nectar').length, 10);
   }
   run('bee', together, ['uninstall', '--all']);
   for (const host of ['claude', 'codex']) {
     assert.equal(installedSkillNames(together, host, 'bee').length, 0);
-    assert.equal(installedSkillNames(together, host, 'nectar').length, 9);
+    assert.equal(installedSkillNames(together, host, 'nectar').length, 10);
     assertOwnedSkill(together, host, 'nectar-orient', '@beecoded/nectar');
   }
   assert.deepEqual(

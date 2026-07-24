@@ -55,7 +55,7 @@ plugins/<product>/
 ```
 
 Bee keeps its canonical workflow definitions in `workflows/` and thin generated
-entry sources in `internal-skills/`. Nectar keeps its nine canonical entry
+entry sources in `internal-skills/`. Nectar keeps its ten canonical entry
 sources in `internal-skills/`. The installer materializes those entries into
 each selected host's user skill directory with Beecoded ownership metadata and
 durable references to the managed package under `~/.beecoded/`.
@@ -81,6 +81,15 @@ model usage:
 
 ```bash
 npm run test:installed-commands
+```
+
+Nectar's Atlas release gate is deterministic and does not invoke a model. It
+packs and globally installs the actual tarball in isolated homes, validates the
+Claude Code and Codex MCP registrations, and exercises the complete Atlas
+lifecycle:
+
+```bash
+npm run test:atlas-release
 ```
 
 ## Publishing

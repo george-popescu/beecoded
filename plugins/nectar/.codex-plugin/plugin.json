@@ -1,6 +1,6 @@
 {
   "name": "nectar",
-  "version": "2.2.0",
+  "version": "3.0.2",
   "description": "Lightweight spec-driven development skills for Codex with minimal ceremony.",
   "author": {
     "name": "Beecoded",
@@ -16,6 +16,7 @@
     "skills",
     "workflow"
   ],
+  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Nectar",
     "shortDescription": "Lightweight delivery discipline",

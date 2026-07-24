@@ -141,12 +141,13 @@ test('runs model jobs with bounded concurrency and preserves deterministic resul
   let maximumActive = 0;
   const expected = [
     'artifact-recovery',
+    'atlas-workflow-discipline',
     'contiguous-numbering',
-      'dependency-readiness',
-      'duplicate-detection',
-      'plan-risk-classification',
-      'review-risk-classification',
-      'split-approval',
+    'dependency-readiness',
+    'duplicate-detection',
+    'plan-risk-classification',
+    'review-risk-classification',
+    'split-approval',
   ];
   const outcome = await runEvalSuite({
     pluginRoot,

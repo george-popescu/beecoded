@@ -28,6 +28,9 @@ Beecoded-owned entries, and an unowned same-named skill is never overwritten.
 To remove the user-scoped installation, run
 `npx @beecoded/nectar@latest uninstall`.
 
+Nectar 3 requires Node `^22.18.0 || >=24.11.0`. This lets Atlas use Node's
+built-in SQLite support while keeping the package free of native build steps.
+
 The installer prints the exact package version and source path before changing
 either host. It refuses to replace a newer installed version with an older
 package unless the downgrade is explicit:
@@ -58,9 +61,9 @@ nectar eval --codex --case duplicate-detection
 nectar eval --all --dry-run
 ```
 
-The six shipped cases cover split approval, contiguous numbering, dependency
-readiness, duplicate detection, recovery from existing artifacts, and risk-aware
-review classification. Model
+The eight shipped cases cover split approval, contiguous numbering, dependency
+readiness, duplicate detection, recovery from existing artifacts, plan and
+review risk classification, and Atlas workflow discipline. Model
 evals are intentionally separate from the normal zero-credit test suite.
 Claude's native `plugin eval` may report unavailable when the installed CLI or
 account does not expose that early-access capability; this is distinct from a
@@ -203,3 +206,52 @@ The npm package is `@beecoded/nectar`. Its runner installs that same plugin
 payload through managed local marketplace catalogs for Claude Code and Codex,
 verifies every staged version before host installation, and prevents accidental
 downgrades from stale local or cached packages.
+
+## Atlas
+
+Atlas keeps one local index per Git repository and exposes compact,
+evidence-linked retrieval through the Nectar CLI and the bundled MCP server.
+Queries never create or refresh an index implicitly.
+
+```bash
+nectar atlas status --path .
+nectar atlas enable --path .
+nectar atlas refresh --path .
+nectar atlas disable --path .
+nectar atlas clear --path .
+nectar atlas explain --path .
+
+nectar atlas overview --path .
+nectar atlas find-symbol OrderService --path .
+nectar atlas find-related OrderService --path .
+nectar atlas trace-flow OrderService --path .
+nectar atlas find-tests src/OrderService.ts --path .
+nectar atlas context-for-task "change order validation" --path . --json
+```
+
+Atlas defaults to `auto` and needs one project-local choice before MCP
+retrieval is used. `enable` stores the choice and builds the first index;
+`disable` keeps the cache; `clear` removes only the active worktree snapshot.
+Preferences and SQLite data stay outside the repository and survive uninstall.
+Installing or updating Nectar never indexes a project.
+
+Maintainers can run `npm run evals:atlas` from the Nectar package to generate a
+reproducible small/large Atlas-on versus baseline JSON profile on isolated
+synthetic TypeScript projects. It records task outcome, recall, time to relevant
+evidence, files and context read, packet size, an explicitly approximate
+`ceil(characters / 4)` token estimate, and cold/incremental indexing latency.
+The suite covers exact-symbol lookup at small and large scale plus a broad,
+generated-source-noise large-project lookup. The baseline uses case-insensitive
+Git grep plus direct source reads; the Atlas side includes the retrieval packet
+plus the same full selected source files, so context and token deltas use the
+same boundary. Packet size remains separate. The report exposes small-project
+startup overhead, exact searches where grep uses fewer tokens, and broad
+searches where bounded Atlas retrieval avoids generated grep noise instead of
+hiding any result. A truncated packet is an Atlas failure, matching production
+workflow fallback. Timings apply only to the synthetic fixtures. Use
+`npm run evals:atlas -- --files 1000` for a single custom size.
+
+Before publishing from the repository root, `npm run test:atlas-release`
+packs the real tarball, installs it into isolated homes, validates both host
+registrations and MCP connections, and exercises prompt, enable, query, warm
+refresh, disable, clear, and uninstall without invoking a model.

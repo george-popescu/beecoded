@@ -22,11 +22,11 @@
       "name": "nectar",
       "displayName": "Nectar",
       "description": "Ten lightweight spec-driven development skills with compact project context.",
-      "version": "2.2.0",
+      "version": "3.0.2",
       "source": {
         "source": "npm",
         "package": "@beecoded/nectar",
-        "version": "2.2.0"
+        "version": "3.0.2"
       },
       "category": "development"
     }

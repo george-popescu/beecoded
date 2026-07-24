@@ -31,7 +31,11 @@ Usage:
   ${product} [install] [--claude | --codex | --all]
   ${product} uninstall [--claude | --codex | --all]
 ${product === 'nectar' ? `  ${product} doctor [path] [--json]
-  ${product} eval [--claude | --codex | --all] [--case <glob>]` : ''}
+  ${product} eval [--claude | --codex | --all] [--case <glob>]
+  ${product} atlas <operation> [query] [--path <project>] [--json]
+    lifecycle: status, enable, refresh, disable, clear, explain
+    queries: overview, find-symbol, find-related, trace-flow, find-tests,
+             context-for-task` : ''}
 
 Options:
   --claude       Target Claude Code only
@@ -200,6 +204,69 @@ export function formatProvenance({ name, version, packageRoot: source }) {
   return `[${label}] executing ${name}@${version} source=${source}`;
 }
 
+function expandHomePath(value, home) {
+  if (value === '~') return home;
+  if (value.startsWith(`~${path.sep}`) || value.startsWith('~/')) {
+    return path.join(home, value.slice(2));
+  }
+  return path.resolve(value);
+}
+
+export function ensureNectarGitIgnore({
+  env = process.env,
+  home = os.homedir(),
+  spawn = spawnSync,
+  dryRun = false,
+  log = console.log,
+} = {}) {
+  const configured = spawn(
+    'git',
+    [
+      '--no-optional-locks',
+      '-c',
+      'core.fsmonitor=false',
+      'config',
+      '--global',
+      '--path',
+      '--get',
+      'core.excludesFile',
+    ],
+    {
+      encoding: 'utf8',
+      env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  );
+  const configuredPath = !configured.error && configured.status === 0
+    ? configured.stdout.trim()
+    : '';
+  const xdgConfigHome = path.isAbsolute(env.XDG_CONFIG_HOME || '')
+    ? env.XDG_CONFIG_HOME
+    : path.join(home, '.config');
+  const file = configuredPath
+    ? expandHomePath(configuredPath, home)
+    : path.join(xdgConfigHome, 'git', 'ignore');
+  const existing = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+  const alreadyIgnored = existing
+    .split(/\r?\n/)
+    .some((line) => line.trim() === '.nectar/');
+
+  if (alreadyIgnored) {
+    log(`[nectar] global Git ignore already ignores .nectar/: ${file}`);
+    return { status: 'present', file };
+  }
+  if (dryRun) {
+    log(`[nectar] would configure global Git ignore for .nectar/: ${file}`);
+    return { status: 'would-add', file };
+  }
+
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const separator = existing && !existing.endsWith('\n') ? '\n' : '';
+  fs.appendFileSync(file, `${separator}.nectar/\n`);
+  log(`[nectar] configured global Git ignore for .nectar/: ${file}`);
+  return { status: 'added', file };
+}
+
 export function resolveProductCommand({ product: targetProduct, argv }) {
   if (targetProduct !== 'nectar') return null;
   const [command, ...args] = argv;
@@ -207,6 +274,7 @@ export function resolveProductCommand({ product: targetProduct, argv }) {
   if (command === 'eval' || command === 'evals') {
     return { script: 'scripts/run-behavioral-evals.mjs', args };
   }
+  if (command === 'atlas') return { script: 'scripts/run-atlas.mjs', args };
   return null;
 }
 
@@ -299,6 +367,12 @@ function absoluteSkillReferences(content, sourceDirectory, sourcePackageRoot, in
       /(`)((?:\.\.\/)+[^`\s#]+)(#[^`\s]*)?(`)/g,
       (_match, open, relative, anchor = '', close) => (
         `${open}${installedReference(relative)}${anchor}${close}`
+      ),
+    )
+    .replace(
+      /(["'])((?:\.\.\/)+[^"'\s#]+)(#[^"'\s]*)?\1/g,
+      (_match, quote, relative, anchor = '') => (
+        `${quote}${installedReference(relative)}${anchor}${quote}`
       ),
     );
 }
@@ -857,6 +931,13 @@ if (options.action === 'install') {
       });
     } catch (error) {
       fail(`Could not install prefixed skills: ${error.message}`);
+    }
+  }
+  if (product === 'nectar') {
+    try {
+      ensureNectarGitIgnore({ dryRun: options.dryRun });
+    } catch (error) {
+      console.warn(`[nectar] warning: could not configure global Git ignore: ${error.message}`);
     }
   }
   try {

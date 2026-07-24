@@ -2,6 +2,73 @@
 
 ## Unreleased
 
+## 3.0.2 — 2026-07-24
+
+### Fixed
+- Atlas skips anonymous PHP classes when emitting named symbols, exports, and
+  inheritance edges while still traversing their bodies for imports and calls.
+- Added parser and end-to-end indexer regressions for both `new class {}`
+  and `new class extends Foo {}`.
+
+## 3.0.1 — 2026-07-23
+
+### Fixed
+- Nectar install and update now ensure `.nectar/` is present in the effective
+  global Git excludes file without modifying each project's tracked
+  `.gitignore`.
+- The global ignore update is idempotent, respects an existing
+  `core.excludesFile`, and remains in place after uninstall so generated
+  project context cannot accidentally become Git-visible later.
+
+### Safety
+- Atlas now rejects `.nectar/` as a mandatory internal exclusion even when a
+  repository force-tracks generated Nectar context.
+
+## 3.0.0 — 2026-07-23
+
+### Breaking
+- Nectar now requires Node `^22.18.0 || >=24.11.0` so Atlas can use built-in SQLite and the current pure-JavaScript parser toolchain without native installation steps.
+
+### Added
+- Added Atlas, an optional per-Git-project local code index backed by built-in
+  SQLite, FTS5, and evidence-linked symbol and relationship data for
+  JavaScript, TypeScript, JSX/TSX, and PHP.
+- Added public `nectar atlas` lifecycle and retrieval commands plus one shared
+  local MCP used by Claude Code and Codex for overview, symbol, related,
+  flow, test, and task-context queries.
+- Added per-worktree activation choices, real indexing progress, incremental
+  refresh, safe cache cleanup, and an automatic recommendation that never
+  indexes before the user explicitly enables Atlas.
+- Integrated minimal Atlas profiles into Shape, Plan, Debug, Build, Review,
+  and Audit with frozen Build/Review snapshots, direct-source verification,
+  and deterministic fallback to the existing search/read workflow.
+- Added a reproducible small/large evaluation suite with exact-symbol and
+  broad high-noise profiles, reporting recall, same-boundary context,
+  approximate token economy, time to relevant evidence, and cold/incremental
+  latency.
+
+### Performance
+- Reduced the MCP query path to one reusable repository identity and a bounded
+  set of Git worktree probes, eliminating repeated identity resolution and
+  per-dirty-file Git subprocesses while preserving content-sensitive
+  freshness.
+- Warm refresh reuses unchanged parse records, avoids reopening unchanged
+  content, and persists only changed, added, or deleted file content while
+  retaining required cross-file relationship correctness.
+- Retrieval no longer performs a full SQLite integrity scan on every query;
+  full verification remains part of index lifecycle and explicit status.
+- Bounded packets cap retrieval metadata. The shipped evaluation reports
+  packet size separately from end-to-end context and includes direct-source
+  verification on both sides rather than claiming universal token savings.
+
+### Safety
+- Atlas respects `.gitignore`, rejects dependency/build/cache directories,
+  secret-like filenames, binaries, symlinks, and outside-root paths before
+  indexing, and stores private cache data outside the repository.
+- MCP access is confined to the active Claude roots or Codex sandbox workspace;
+  stale, corrupt, incompatible, disabled, or truncated retrieval falls back
+  without inventing evidence.
+
 ## 2.2.0 — 2026-07-23
 
 ### Added

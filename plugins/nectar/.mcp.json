@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "nectar-atlas": {
+      "title": "Nectar Atlas",
+      "description": "Local project index and evidence-linked code retrieval.",
+      "cwd": ".",
+      "command": "node",
+      "args": [
+        "./mcp/server.mjs"
+      ],
+      "env": {
+        "NODE_NO_WARNINGS": "1"
+      }
+    }
+  }
+}

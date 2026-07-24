@@ -17,7 +17,7 @@ function filesBelow(root) {
 }
 
 test('breaking package and marketplace versions are synchronized', () => {
-  const expected = { bee: '5.0.0', nectar: '2.1.0' };
+  const expected = { bee: '5.0.0', nectar: '3.0.2' };
   const claudeMarketplace = readJson('.claude-plugin/marketplace.json');
   const codexMarketplace = readJson('.agents/plugins/marketplace.json');
   const lock = readJson('package-lock.json');
@@ -86,7 +86,7 @@ test('current documentation teaches standalone prefixed skills and managed sourc
   assert.match(nectarReadme, /Reinstalling upgrades only/);
   assert.match(nectarReadme, /uninstall/);
   assert.match(nectarReadme, /Only confirmed medium-or-higher code defects block convergence/i);
-  assert.match(nectarReadme, /three full review rounds/i);
+  assert.match(nectarReadme, /default maximum of three full review passes/i);
 });
 
 test('installed-command smoke is read-only, environment-scrubbed, and cleans credentials on signals', () => {
@@ -105,4 +105,19 @@ test('installed-command smoke is read-only, environment-scrubbed, and cleans cre
   assert.match(smoke, /'install',\s*'--global'/);
   assert.match(smoke, /run\(product, \['--all'\]/);
   assert.doesNotMatch(smoke, /plugins['"], product, ['"]bin/);
+});
+
+test('Atlas release smoke uses isolated homes and never invokes a model', () => {
+  const smoke = read('tools/test-atlas-release.mjs');
+  assert.match(smoke, /ENVIRONMENT_ALLOWLIST/);
+  assert.match(smoke, /CODEX_HOME/);
+  assert.match(smoke, /CLAUDE_CONFIG_DIR/);
+  assert.match(smoke, /BEECODED_HOME/);
+  assert.match(smoke, /'pack'/);
+  assert.match(smoke, /'install',\s*'--global'/);
+  assert.match(smoke, /'atlas',\s*'enable'/);
+  assert.match(smoke, /'atlas',\s*'refresh'/);
+  assert.match(smoke, /'uninstall',\s*'--all'/);
+  assert.doesNotMatch(smoke, /codex['"], \['exec'/);
+  assert.doesNotMatch(smoke, /claude['"], \['-p'/);
 });

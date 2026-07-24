@@ -13,6 +13,7 @@ const agentPath = path.join(pluginRoot, 'agents/context-builder.md');
 
 test('nectar-context routes status and refresh through the safe context runner', () => {
   const skill = fs.readFileSync(skillPath, 'utf8');
+  const contextBuilderAgent = `nectar${':'}context-builder`;
 
   assert.match(skill, /^name: nectar-context$/m);
   assert.match(skill, /^description: Use (?:when|for)/m);
@@ -20,12 +21,12 @@ test('nectar-context routes status and refresh through the safe context runner',
   assert.match(skill, /run-context\.mjs" status/);
   assert.match(skill, /status is read-only/i);
   assert.match(skill, /run-context\.mjs" stage/);
-  assert.match(skill, /nectar:context-builder/);
+  assert.match(skill, new RegExp(contextBuilderAgent));
   assert.match(skill, /run-context\.mjs" promote/);
   assert.ok(
     skill.indexOf('run-context.mjs" stage')
-      < skill.indexOf('nectar:context-builder')
-      && skill.indexOf('nectar:context-builder')
+      < skill.indexOf(contextBuilderAgent)
+      && skill.indexOf(contextBuilderAgent)
         < skill.indexOf('run-context.mjs" promote'),
   );
 });

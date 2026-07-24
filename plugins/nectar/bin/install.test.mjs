@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import * as installerModule from './install.mjs';
 import {
   classifyManagedSkill,
   collectInstalledVersions,
@@ -124,6 +125,77 @@ test('formats package provenance with name, version, and source path', () => {
   assert.match(line, /plugins\/nectar/);
 });
 
+test('keeps Nectar project state in the effective global Git excludes file', () => {
+  assert.equal(typeof installerModule.ensureNectarGitIgnore, 'function');
+
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-global-ignore-'));
+  try {
+    const home = path.join(root, 'home');
+    const xdg = path.join(root, 'xdg');
+    const ignoreFile = path.join(xdg, 'git', 'ignore');
+    fs.mkdirSync(path.dirname(ignoreFile), { recursive: true });
+    fs.writeFileSync(ignoreFile, '*.local\n');
+    const messages = [];
+    const missingGlobalConfig = () => ({ status: 1, stdout: '', stderr: '' });
+
+    const added = installerModule.ensureNectarGitIgnore({
+      env: { XDG_CONFIG_HOME: xdg },
+      home,
+      spawn: missingGlobalConfig,
+      log: (message) => messages.push(message),
+    });
+    assert.deepEqual(added, { status: 'added', file: ignoreFile });
+    assert.equal(fs.readFileSync(ignoreFile, 'utf8'), '*.local\n.nectar/\n');
+
+    const present = installerModule.ensureNectarGitIgnore({
+      env: { XDG_CONFIG_HOME: xdg },
+      home,
+      spawn: missingGlobalConfig,
+      log: (message) => messages.push(message),
+    });
+    assert.deepEqual(present, { status: 'present', file: ignoreFile });
+    assert.equal(
+      fs.readFileSync(ignoreFile, 'utf8').split('\n').filter((line) => line === '.nectar/').length,
+      1,
+    );
+    assert.ok(messages.some((message) => message.includes('configured global Git ignore')));
+    assert.ok(messages.some((message) => message.includes('already ignores .nectar/')));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('respects core.excludesFile and previews global ignore changes without writing', () => {
+  assert.equal(typeof installerModule.ensureNectarGitIgnore, 'function');
+
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-configured-ignore-'));
+  try {
+    const configuredFile = path.join(root, 'custom', 'global-ignore');
+    const messages = [];
+    const configuredGlobalFile = () => ({
+      status: 0,
+      stdout: `${configuredFile}\n`,
+      stderr: '',
+    });
+
+    const preview = installerModule.ensureNectarGitIgnore({
+      env: {},
+      home: path.join(root, 'home'),
+      spawn: configuredGlobalFile,
+      dryRun: true,
+      log: (message) => messages.push(message),
+    });
+    assert.deepEqual(preview, { status: 'would-add', file: configuredFile });
+    assert.equal(fs.existsSync(configuredFile), false);
+    assert.ok(messages.some((message) => (
+      message.includes('would configure global Git ignore')
+      && message.includes(configuredFile)
+    )));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('routes Nectar reliability subcommands without exposing them through Bee', () => {
   assert.deepEqual(resolveProductCommand({
     product: 'nectar',
@@ -138,6 +210,13 @@ test('routes Nectar reliability subcommands without exposing them through Bee', 
   }), {
     script: 'scripts/run-behavioral-evals.mjs',
     args: ['--codex', '--dry-run'],
+  });
+  assert.deepEqual(resolveProductCommand({
+    product: 'nectar',
+    argv: ['atlas', 'find-symbol', 'OrderService', '--json'],
+  }), {
+    script: 'scripts/run-atlas.mjs',
+    args: ['find-symbol', 'OrderService', '--json'],
   });
   assert.equal(resolveProductCommand({
     product: 'bee',

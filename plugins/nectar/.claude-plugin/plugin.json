@@ -1,6 +1,6 @@
 {
   "name": "nectar",
-  "version": "2.2.0",
+  "version": "3.0.2",
   "description": "The essence of spec-driven development distilled into 10 skills and 4 agents — including compact, freshness-aware project context for Claude Code and Codex.",
   "author": {
     "name": "Beecoded",
@@ -18,5 +18,6 @@
     "debugging",
     "planning",
     "lightweight"
-  ]
+  ],
+  "mcpServers": "./.mcp.claude.json"
 }

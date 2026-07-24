@@ -148,15 +148,39 @@ if (product === 'bee') {
   check(!Object.hasOwn(codex, 'skills'), 'Codex manifest must not register Nectar public or internal skills');
   check(pkg.files.includes('evals/'), 'Nectar npm package must include evals/');
   check(pkg.files.includes('scripts/'), 'Nectar npm package must include scripts/');
+  check(pkg.files.includes('.mcp.json'), 'Nectar npm package must include the Codex MCP config');
+  check(pkg.files.includes('.mcp.claude.json'), 'Nectar npm package must include the Claude MCP config');
+  check(codex.mcpServers === './.mcp.json', 'Codex must use the package-relative MCP config');
+  check(claude.mcpServers === './.mcp.claude.json', 'Claude must use its host-specific MCP config');
+  const claudeMcp = readJson(path.join(pluginRoot, '.mcp.claude.json'));
+  check(
+    claudeMcp.mcpServers?.['nectar-atlas']?.args?.[0]
+      === '${CLAUDE_PLUGIN_ROOT}/mcp/server.mjs',
+    'Claude MCP server must resolve through CLAUDE_PLUGIN_ROOT',
+  );
   check(fs.existsSync(path.join(pluginRoot, 'scripts', 'run-doctor.mjs')), 'Nectar doctor runner is required');
   check(fs.existsSync(path.join(pluginRoot, 'scripts', 'run-context.mjs')), 'Nectar context runner is required');
   check(fs.existsSync(path.join(pluginRoot, 'scripts', 'run-behavioral-evals.mjs')), 'Nectar eval runner is required');
+  check(fs.existsSync(path.join(pluginRoot, 'scripts', 'run-atlas.mjs')), 'Nectar Atlas CLI runner is required');
+  check(fs.existsSync(path.join(pluginRoot, 'scripts', 'run-atlas-evals.mjs')), 'Nectar Atlas evaluation runner is required');
+  check(fs.existsSync(path.join(pluginRoot, 'mcp', 'server.mjs')), 'Nectar Atlas MCP server is required');
   check(fs.existsSync(path.join(pluginRoot, 'scripts', 'risk-classification.test.mjs')), 'Nectar risk-classification contract test is required');
   check(fs.existsSync(path.join(pluginRoot, 'evals', 'contracts', 'review-risk-classification.json')), 'Nectar review-risk-classification behavioral contract is required');
+  check(fs.existsSync(path.join(pluginRoot, 'evals', 'contracts', 'atlas-workflow-discipline.json')), 'Nectar Atlas workflow behavioral contract is required');
   check(pkg.scripts?.test?.includes('scripts/*.test.mjs'), 'Nectar npm test must run root script contract tests');
+  check(pkg.scripts?.test?.includes('mcp/*.test.mjs'), 'Nectar npm test must run MCP tests');
+  check(pkg.scripts?.test?.includes('scripts/atlas/*.test.mjs'), 'Nectar npm test must run recursive Atlas tests');
+  check(pkg.scripts?.['evals:atlas'] === 'node scripts/run-atlas-evals.mjs', 'Nectar must expose the Atlas evaluation suite');
+  check(pkg.engines?.node === '^22.18.0 || >=24.11.0', 'Nectar Node engine must match the Atlas runtime contract');
+  check(
+    JSON.stringify(Object.keys(pkg.dependencies || {}).sort())
+      === JSON.stringify(['@babel/parser', 'php-parser']),
+    'Nectar Atlas runtime dependencies must remain the approved pure-JavaScript parser pair',
+  );
   const installer = fs.readFileSync(installerPath, 'utf8');
   check(installer.includes("command === 'doctor'"), 'Nectar npm executable must route the doctor command');
   check(installer.includes("command === 'eval'"), 'Nectar npm executable must route the eval command');
+  check(installer.includes("command === 'atlas'"), 'Nectar npm executable must route Atlas commands');
 }
 
 for (const marketplacePath of [

@@ -14,13 +14,14 @@ import { normalizeResult } from './results.mjs';
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const pluginRoot = path.resolve(currentDirectory, '../..');
 
-test('loads the seven shipped behavioral contracts', () => {
+test('loads the eight shipped behavioral contracts', () => {
   const contracts = loadContracts(path.join(pluginRoot, 'evals', 'contracts'));
 
   assert.deepEqual(
     contracts.map((contract) => contract.id),
     [
       'artifact-recovery',
+      'atlas-workflow-discipline',
       'contiguous-numbering',
       'dependency-readiness',
       'duplicate-detection',

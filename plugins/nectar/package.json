@@ -1,14 +1,17 @@
 {
   "name": "@beecoded/nectar",
-  "version": "2.2.0",
-  "description": "Lightweight spec-driven development skills for Claude Code and Codex",
+  "version": "3.0.2",
+  "description": "Spec-driven development skills and an optional local code index for Claude Code and Codex",
   "keywords": [
     "claude-code",
     "codex",
     "agent-skills",
     "spec-driven-development",
     "tdd",
-    "code-review"
+    "code-review",
+    "mcp",
+    "code-index",
+    "local-first"
   ],
   "author": {
     "name": "Beecoded",
@@ -29,25 +32,33 @@
     "nectar": "bin/install.mjs"
   },
   "files": [
+    ".mcp.json",
+    ".mcp.claude.json",
     ".claude-plugin/",
     ".codex-plugin/",
     "agents/",
     "bin/",
     "evals/",
+    "mcp/",
     "scripts/",
     "internal-skills/",
     "LICENSE",
     "README.md"
   ],
   "scripts": {
-    "test": "node scripts/check-consistency.js && node --test bin/*.test.mjs scripts/*.test.mjs scripts/evals/*.test.mjs scripts/doctor/*.test.mjs",
+    "test": "node scripts/check-consistency.js && node --test bin/*.test.mjs mcp/*.test.mjs scripts/*.test.mjs scripts/atlas/*.test.mjs scripts/evals/*.test.mjs scripts/doctor/*.test.mjs",
     "doctor": "node scripts/run-doctor.mjs",
     "evals": "node scripts/run-behavioral-evals.mjs",
+    "evals:atlas": "node scripts/run-atlas-evals.mjs",
     "validate": "node ../../tools/validate-package.mjs nectar",
     "prepack": "npm test && npm run validate"
   },
+  "dependencies": {
+    "@babel/parser": "^8.0.4",
+    "php-parser": "^3.7.0"
+  },
   "engines": {
-    "node": ">=18"
+    "node": "^22.18.0 || >=24.11.0"
   },
   "publishConfig": {
     "access": "public"
