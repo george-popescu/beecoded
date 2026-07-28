@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 3.1.0 — 2026-07-28
+
+### Changed
+- Plan keeps work in one `plan.md` when the complete decomposition fits at
+  most five dependency waves and ten tasks. Work above either limit still
+  requires a cohesive, explicitly approved child-topic split.
+- Honey's separate review-loop policy is unchanged: three full passes remain
+  the default maximum, with any explicit positive integer accepted instead.
+
 ## 3.0.2 — 2026-07-24
 
 ### Fixed

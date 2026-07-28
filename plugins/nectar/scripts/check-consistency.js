@@ -216,6 +216,8 @@ const hierarchyContracts = [
   ['shape detects duplicate dated and legacy topics', skills.shape.includes('Duplicate check') && skills.shape.includes('legacy flat')],
   ['shape hands duplicate work to orient', skills.shape.includes('hand off to the orient skill')],
   ['plan decomposes before writing', skills.plan.includes('Complete decomposition first')],
+  ['plan keeps up to five waves and ten tasks in one plan', skills.plan.includes('At most 5 waves and at most 10 tasks')],
+  ['plan splits above five waves or ten tasks', skills.plan.includes('More than 5 waves or more than 10 tasks')],
   ['plan gates split writes on explicit approval', skills.plan.includes('Do not create') && skills.plan.includes('silence is not approval')],
   ['plan proposes ordered child paths', skills.plan.includes('NN-<topic-slug>') && skills.plan.includes('estimated tasks')],
   ['plan records exact dependency paths', skills.plan.includes('depends on: none') && skills.plan.includes('exact earlier child paths')],
@@ -235,6 +237,7 @@ const hierarchyContracts = [
   ['honey executes children by dependency readiness', skills.honey.includes('dependency-ready child')],
   ['honey closes only after every child is clean', skills.honey.includes('every child') && skills.honey.includes('clean pass')],
   ['README documents dated nested hierarchy', readme.includes('YYYY-MM-DD-<feature-slug>') && readme.includes('NN-<topic-slug>')],
+  ['README documents the five-wave split trigger', readme.includes('exceed 5 waves or 10 tasks')],
   ['README documents split approval and legacy support', readme.includes('Approve split') && readme.includes('legacy flat')],
 ];
 

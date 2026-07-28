@@ -175,7 +175,7 @@ docs/work/
 
 New work always uses a dated feature root. Existing legacy flat `docs/work/<topic>/` directories remain readable and resumable; Nectar does not force migration.
 
-Before creating a root, Shape checks for likely duplicate dated and legacy topics. Plan performs the full decomposition first. If it would exceed 3 waves or 10 tasks, Plan presents the complete ordered split with scope, size estimate, boundary reason, and exact `depends on` paths. It creates nothing until the user chooses `Approve split`; `Revise split` rebuilds the proposal and `Decline split` leaves the parent untouched.
+Before creating a root, Shape checks for likely duplicate dated and legacy topics. Plan performs the full decomposition first. If it would exceed 5 waves or 10 tasks, Plan presents the complete ordered split with scope, size estimate, boundary reason, and exact `depends on` paths. It creates nothing until the user chooses `Approve split`; `Revise split` rebuilds the proposal and `Decline split` leaves the parent untouched.
 
 If an unplanned legacy flat topic is oversized, Plan asks before doing anything: migrate it to a dated parent (recommended), keep one oversized legacy plan as an explicit compatibility exception, or cancel. Migration is never automatic.
 

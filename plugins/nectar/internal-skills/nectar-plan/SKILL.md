@@ -74,8 +74,8 @@ Write `plan.md` beside the resolved topic's `design.md` in exactly this format:
 After the complete decomposition, check the size before writing anything:
 
 - **One task total:** say so and skip the plan file. The work was quick-scale — return to inline execution with the build skill's discipline. A one-task plan.md is ceremony with no payoff.
-- **At most 3 waves and at most 10 tasks:** write one `plan.md` in the resolved topic directory.
-- **More than 3 waves or more than 10 tasks:** the topic has outgrown a single plan — this is plan's escalation trigger, not a scale definition. Do not write the oversized plan. Partition the complete graph into the smallest number of cohesive child topics for which each estimated child plan fits both limits. Boundaries follow deliverables and dependencies, never arbitrary task counts.
+- **At most 5 waves and at most 10 tasks:** write one `plan.md` in the resolved topic directory.
+- **More than 5 waves or more than 10 tasks:** the topic has outgrown a single plan — this is plan's escalation trigger, not a scale definition. Do not write the oversized plan. Partition the complete graph into the smallest number of cohesive child topics for which each estimated child plan fits both limits. Boundaries follow deliverables and dependencies, never arbitrary task counts.
 
 ## Split approval gate
 

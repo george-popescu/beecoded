@@ -1,6 +1,6 @@
 {
   "name": "@beecoded/nectar",
-  "version": "3.0.2",
+  "version": "3.1.0",
   "description": "Spec-driven development skills and an optional local code index for Claude Code and Codex",
   "keywords": [
     "claude-code",

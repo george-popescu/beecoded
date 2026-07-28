@@ -17,7 +17,7 @@ function filesBelow(root) {
 }
 
 test('breaking package and marketplace versions are synchronized', () => {
-  const expected = { bee: '5.0.0', nectar: '3.0.2' };
+  const expected = { bee: '5.0.0', nectar: '3.1.0' };
   const claudeMarketplace = readJson('.claude-plugin/marketplace.json');
   const codexMarketplace = readJson('.agents/plugins/marketplace.json');
   const lock = readJson('package-lock.json');

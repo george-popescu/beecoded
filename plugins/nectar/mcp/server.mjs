@@ -6,7 +6,7 @@ import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
 
 const SERVER_NAME = 'nectar-atlas';
-const SERVER_VERSION = '3.0.2';
+const SERVER_VERSION = '3.1.0';
 const DEFAULT_PROTOCOL_VERSION = '2025-06-18';
 const CODEX_SANDBOX_META = 'codex/sandbox-state-meta';
 
