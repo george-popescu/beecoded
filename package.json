@@ -2,20 +2,25 @@
   "name": "@beecoded/agent-plugins",
   "version": "0.1.0",
   "private": true,
-  "description": "Bee and Nectar plugins for Claude Code and Codex",
+  "description": "Beecoded workflow and audit plugins for Claude Code and Codex",
   "workspaces": [
     "plugins/bee",
-    "plugins/nectar"
+    "plugins/nectar",
+    "plugins/code-audit",
+    "plugins/ui-ux-audit"
   ],
   "scripts": {
     "generate:codex": "node tools/generate-codex-skills.mjs",
-    "check:generated": "node tools/generate-codex-skills.mjs --check",
-    "validate": "npm run check:generated && node tools/validate-package.mjs bee && node tools/validate-package.mjs nectar && node --test tools/prefixed-public-api.test.mjs tools/prefixed-bee-skills.test.mjs && npm run test:installers",
+    "generate:installers": "node tools/generate-managed-installers.mjs",
+    "generate:audit-surfaces": "node tools/generate-code-audit-surfaces.mjs",
+    "check:generated": "node tools/generate-codex-skills.mjs --check && node tools/generate-managed-installers.mjs --check && node tools/generate-code-audit-surfaces.mjs --check",
+    "validate": "npm run check:generated && node tools/validate-all-packages.mjs && node --test tools/*.test.mjs tools/evals/*.test.mjs && npm run test:installers",
     "test:installers": "node tools/test-runtime-installers.mjs",
     "test:installed-commands": "node tools/test-installed-commands.mjs",
     "test:atlas-release": "node tools/test-atlas-release.mjs",
     "test:nectar": "npm run test --workspace @beecoded/nectar",
-    "pack:check": "npm pack --workspace @beecoded/bee --dry-run && npm pack --workspace @beecoded/nectar --dry-run"
+    "eval:plugins": "node tools/run-plugin-evals.mjs",
+    "pack:check": "node tools/validate-all-packages.mjs --pack"
   },
   "engines": {
     "node": ">=18"

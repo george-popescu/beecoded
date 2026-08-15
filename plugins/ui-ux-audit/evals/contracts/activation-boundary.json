@@ -1,0 +1,31 @@
+{
+  "id": "activation-boundary",
+  "skill": "ui-ux-audit",
+  "fixture": {
+    "files": {
+      "src/Card.jsx": "export function Card({ title }) { return <article><h2>{title}</h2></article>; }\n"
+    }
+  },
+  "prompt": "Review only this component source. I do not want browser verification or a rendered UI/UX audit. Explain the skill boundary and do not write a report.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "browser-first"
+    },
+    {
+      "type": "pathAbsent",
+      "path": "ui-ux-audit-report.md"
+    }
+  ],
+  "graderCriteria": [
+    "Recognizes that a source-only component review is outside this browser-first audit boundary.",
+    "Does not create a report or change the fixture."
+  ],
+  "tags": [
+    "activation",
+    "browser-boundary"
+  ]
+}

@@ -4,14 +4,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { getProductDefinition } from './plugin-products.mjs';
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const product = process.argv[2];
-if (!['bee', 'nectar'].includes(product)) {
-  console.error('Usage: node tools/validate-package.mjs <bee|nectar>');
+let productDefinition;
+try {
+  productDefinition = getProductDefinition(product);
+} catch (error) {
+  console.error(error.message);
   process.exit(2);
 }
 
-const pluginRoot = path.join(repoRoot, 'plugins', product);
+const pluginRoot = path.join(repoRoot, productDefinition.packageRoot);
 const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 const pkg = readJson(path.join(pluginRoot, 'package.json'));
 const claude = readJson(path.join(pluginRoot, '.claude-plugin', 'plugin.json'));
@@ -19,7 +24,7 @@ const codex = readJson(path.join(pluginRoot, '.codex-plugin', 'plugin.json'));
 const failures = [];
 const check = (condition, message) => { if (!condition) failures.push(message); };
 
-check(pkg.name === `@beecoded/${product}`, `package name must be @beecoded/${product}`);
+check(pkg.name === productDefinition.packageName, `package name must be ${productDefinition.packageName}`);
 check(pkg.version === claude.version, 'npm and Claude manifest versions must match');
 check(pkg.version === codex.version, 'npm and Codex manifest versions must match');
 check(claude.name === product, 'Claude manifest name must match package product');
@@ -55,14 +60,14 @@ check(packedFiles.length > 0, 'package files allowlist must resolve to real file
 for (const file of packedFiles) {
   const relative = path.relative(pluginRoot, file).split(path.sep).join('/');
   check(!relative.includes('/node_modules/'), `${relative}: node_modules must not be packed`);
-  if (product === 'bee') {
+  if (productDefinition.kind === 'bee') {
     const parts = relative.toLowerCase().split('/');
     check(!parts.some((part) => part === 'dashboard' || part.startsWith('hive')), `${relative}: Hive artifact must not be packed`);
   }
   if (/\.(?:md|js|mjs|cjs|json|sh|yaml|yml)$/i.test(file)) {
     const content = fs.readFileSync(file, 'utf8');
     check(!content.includes('[TODO:'), `${relative}: unresolved TODO placeholder`);
-    if (product === 'bee') {
+    if (productDefinition.kind === 'bee') {
       const retiredHiveCommand = new RegExp(`/bee${':'}hive\\b`, 'i');
       check(!/Bee Hive|hive-server|emit-event|\.hive-pid/i.test(content)
         && !retiredHiveCommand.test(content), `${relative}: active Hive reference must not be packed`);
@@ -70,7 +75,7 @@ for (const file of packedFiles) {
   }
 }
 
-if (product === 'bee') {
+if (productDefinition.kind === 'bee') {
   const commands = fs.readdirSync(path.join(pluginRoot, 'workflows')).filter((file) => file.endsWith('.md'));
   const internalSkillsRoot = path.join(pluginRoot, 'internal-skills');
   const internalSkills = fs.existsSync(internalSkillsRoot)
@@ -121,20 +126,9 @@ if (product === 'bee') {
     const relative = path.relative(pluginRoot, file).split(path.sep).join('/');
     check(!legacyInvocation.test(fs.readFileSync(file, 'utf8')), `${relative}: legacy Bee invocation is not allowed`);
   }
-} else {
+} else if (productDefinition.kind === 'nectar') {
   const internalSkillsRoot = path.join(pluginRoot, 'internal-skills');
-  const expectedSkills = [
-    'nectar-audit',
-    'nectar-build',
-    'nectar-capture',
-    'nectar-context',
-    'nectar-debug',
-    'nectar-honey',
-    'nectar-orient',
-    'nectar-plan',
-    'nectar-review',
-    'nectar-shape',
-  ];
+  const expectedSkills = productDefinition.publicSkills;
   const skills = fs.existsSync(internalSkillsRoot)
     ? fs.readdirSync(internalSkillsRoot, { withFileTypes: true })
       .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(internalSkillsRoot, entry.name, 'SKILL.md')))
@@ -181,6 +175,27 @@ if (product === 'bee') {
   check(installer.includes("command === 'doctor'"), 'Nectar npm executable must route the doctor command');
   check(installer.includes("command === 'eval'"), 'Nectar npm executable must route the eval command');
   check(installer.includes("command === 'atlas'"), 'Nectar npm executable must route Atlas commands');
+} else {
+  const internalSkillsRoot = path.join(pluginRoot, 'internal-skills');
+  const skills = fs.existsSync(internalSkillsRoot)
+    ? fs.readdirSync(internalSkillsRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(internalSkillsRoot, entry.name, 'SKILL.md')))
+    : [];
+  const actualSkills = skills.map((entry) => entry.name).sort();
+  const expectedSkills = [...productDefinition.publicSkills].sort();
+  check(
+    JSON.stringify(actualSkills) === JSON.stringify(expectedSkills),
+    `${product} must ship exactly its declared public skills (expected ${expectedSkills.join(', ')}, found ${actualSkills.join(', ') || 'none'})`,
+  );
+  check(!fs.existsSync(path.join(pluginRoot, 'skills')), `${product} plugin-root skills/ must not exist because managed skills are installed standalone`);
+  check(pkg.files.includes('internal-skills/'), `${product} npm package must include internal-skills/`);
+  check(!pkg.files.includes('skills/'), `${product} npm package must not include plugin-discovered skills/`);
+  check(!Object.hasOwn(claude, 'skills'), `Claude manifest must not register ${product} public skills`);
+  check(!Object.hasOwn(codex, 'skills'), `Codex manifest must not register ${product} public skills`);
+  if (productDefinition.evalContracts) {
+    check(pkg.files.includes('evals/'), `${product} npm package must include evals/`);
+    check(fs.existsSync(path.join(pluginRoot, 'evals', 'contracts')), `${product} behavioral contract directory is required`);
+  }
 }
 
 for (const marketplacePath of [

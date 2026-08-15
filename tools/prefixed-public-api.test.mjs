@@ -4,6 +4,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { listProductDefinitions } from './plugin-products.mjs';
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (relative) => fs.readFileSync(path.join(repoRoot, relative), 'utf8');
 const readJson = (relative) => JSON.parse(read(relative));
@@ -17,18 +19,19 @@ function filesBelow(root) {
 }
 
 test('breaking package and marketplace versions are synchronized', () => {
-  const expected = { bee: '5.0.0', nectar: '3.1.0' };
   const claudeMarketplace = readJson('.claude-plugin/marketplace.json');
   const codexMarketplace = readJson('.agents/plugins/marketplace.json');
   const lock = readJson('package-lock.json');
 
-  for (const [product, version] of Object.entries(expected)) {
-    const packageManifest = readJson(`plugins/${product}/package.json`);
-    assert.equal(packageManifest.version, version);
+  for (const definition of listProductDefinitions()) {
+    const { id: product, packageRoot } = definition;
+    const packageManifest = readJson(`${packageRoot}/package.json`);
+    const { version } = packageManifest;
+    assert.match(version, /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/);
     assert.match(packageManifest.scripts.prepack, /npm test/);
     assert.match(packageManifest.scripts.prepack, /npm run validate/);
-    assert.equal(readJson(`plugins/${product}/.claude-plugin/plugin.json`).version, version);
-    assert.equal(readJson(`plugins/${product}/.codex-plugin/plugin.json`).version, version);
+    assert.equal(readJson(`${packageRoot}/.claude-plugin/plugin.json`).version, version);
+    assert.equal(readJson(`${packageRoot}/.codex-plugin/plugin.json`).version, version);
     assert.equal(
       claudeMarketplace.plugins.find((entry) => entry.name === product).source.version,
       version,
@@ -37,17 +40,17 @@ test('breaking package and marketplace versions are synchronized', () => {
       codexMarketplace.plugins.find((entry) => entry.name === product).source.version,
       version,
     );
-    assert.equal(lock.packages[`plugins/${product}`].version, version);
+    assert.equal(lock.packages[packageRoot].version, version);
   }
 });
 
 test('current public sources contain no colon-style Bee or Nectar invocation', () => {
   const colon = ':';
-  const legacy = new RegExp(`(?:/|\\$)(?:bee|nectar)${colon}`);
+  const products = listProductDefinitions().map(({ id }) => id).join('|');
+  const legacy = new RegExp(`(?:/|\\$)(?:${products})${colon}`);
   const roots = [
     path.join(repoRoot, 'README.md'),
-    path.join(repoRoot, 'plugins', 'bee'),
-    path.join(repoRoot, 'plugins', 'nectar'),
+    ...listProductDefinitions().map(({ packageRoot }) => path.join(repoRoot, packageRoot)),
     path.join(repoRoot, 'tools'),
     path.join(repoRoot, '.claude-plugin'),
     path.join(repoRoot, '.agents'),
@@ -120,4 +123,16 @@ test('Atlas release smoke uses isolated homes and never invokes a model', () => 
   assert.match(smoke, /'uninstall',\s*'--all'/);
   assert.doesNotMatch(smoke, /codex['"], \['exec'/);
   assert.doesNotMatch(smoke, /claude['"], \['-p'/);
+});
+
+test('root contributor commands enforce registry, generated installer, eval, and pack gates', () => {
+  const manifest = readJson('package.json');
+  assert.match(manifest.scripts['check:generated'], /generate-managed-installers\.mjs --check/);
+  assert.match(manifest.scripts.validate, /validate-all-packages\.mjs/);
+  assert.match(manifest.scripts.validate, /tools\/evals\/\*\.test\.mjs/);
+  assert.equal(manifest.scripts['eval:plugins'], 'node tools/run-plugin-evals.mjs');
+  assert.equal(manifest.scripts['pack:check'], 'node tools/validate-all-packages.mjs --pack');
+  assert.equal(manifest.scripts.install, undefined);
+  assert.equal(manifest.scripts.postinstall, undefined);
+  assert.equal(manifest.scripts.prepare, undefined);
 });

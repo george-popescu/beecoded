@@ -1,0 +1,34 @@
+{
+  "name": "code-audit",
+  "version": "0.1.0",
+  "description": "Evidence-backed whole-codebase audits with adversarial finding validation.",
+  "author": {
+    "name": "Beecoded",
+    "email": "george.popescu@beecoded.ro",
+    "url": "https://github.com/beecoded"
+  },
+  "homepage": "https://github.com/beecoded/bee-gpt/tree/main/plugins/code-audit",
+  "repository": "https://github.com/beecoded/bee-gpt",
+  "license": "MIT",
+  "keywords": [
+    "code-audit",
+    "security",
+    "code-quality",
+    "risk"
+  ],
+  "interface": {
+    "displayName": "Code Audit",
+    "shortDescription": "Risk-aware whole-codebase audit",
+    "longDescription": "Audit an unfamiliar codebase, adversarially validate candidates, and separate blocking defects from non-code observations without applying fixes.",
+    "developerName": "Beecoded",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/beecoded/bee-gpt",
+    "defaultPrompt": [
+      "Use $code-audit to audit this repository."
+    ]
+  }
+}

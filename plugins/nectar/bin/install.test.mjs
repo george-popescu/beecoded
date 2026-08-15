@@ -290,6 +290,37 @@ test('classifies absent, owned, and unowned standalone skills', () => {
   }
 });
 
+test('keeps a public skill equal to its product id without double-prefixing it', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'beecoded-exact-product-skill-'));
+  try {
+    const packageRoot = path.join(root, 'package');
+    const sourceRoot = path.join(packageRoot, 'internal-skills');
+    const source = path.join(sourceRoot, 'code-audit');
+    const skillsRoot = path.join(root, 'host-skills');
+    fs.mkdirSync(source, { recursive: true });
+    fs.writeFileSync(path.join(source, 'SKILL.md'), '---\nname: code-audit\n---\nAudit.\n');
+
+    const installed = installManagedSkills({
+      sourceRoot,
+      skillsRoot,
+      packageName: '@beecoded/code-audit',
+      packageVersion: '0.1.0',
+      packageRoot,
+    });
+
+    assert.deepEqual(installed, ['code-audit']);
+    assert.equal(
+      classifyManagedSkill(path.join(skillsRoot, 'code-audit'), {
+        packageName: '@beecoded/code-audit',
+      }),
+      'owned',
+    );
+    assert.equal(fs.existsSync(path.join(skillsRoot, 'code-audit-code-audit')), false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('renders a prefixed managed skill with package provenance and absolute references', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'beecoded-skill-render-'));
   try {

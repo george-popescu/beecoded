@@ -315,7 +315,7 @@ export function classifyManagedSkill(directory, { packageName }) {
   if (!directoryStat.isDirectory() || directoryStat.isSymbolicLink()) return 'unowned';
   const entryName = path.basename(directory);
   const targetProduct = packageName.split('/').at(-1);
-  if (!entryName.startsWith(`${targetProduct}-`)) return 'unowned';
+  if (entryName !== targetProduct && !entryName.startsWith(`${targetProduct}-`)) return 'unowned';
   const ownership = readOwnership(directory);
   return ownership?.schema === 1
     && ownership.package === packageName
@@ -334,7 +334,7 @@ function sourceSkillEntries(sourceRoot, packageName) {
       && fs.existsSync(path.join(sourceRoot, entry.name, 'SKILL.md')))
     .map((entry) => ({
       sourceDirectory: path.join(sourceRoot, entry.name),
-      entryName: entry.name.startsWith(`${targetProduct}-`)
+      entryName: entry.name === targetProduct || entry.name.startsWith(`${targetProduct}-`)
         ? entry.name
         : `${targetProduct}-${entry.name}`,
     }))
@@ -525,6 +525,51 @@ export function removeManagedSkills({ skillsRoot, packageName }) {
   return removed.sort();
 }
 
+function snapshotManagedSkills({ skillsRoot, packageName, dryRun }) {
+  if (dryRun) return { commit() {}, rollback() {} };
+  const backupRoot = fs.mkdtempSync(path.join(os.tmpdir(), `${product}-skills-backup-`));
+  const ownedNames = [];
+  if (fs.existsSync(skillsRoot)) {
+    for (const entry of fs.readdirSync(skillsRoot, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const source = path.join(skillsRoot, entry.name);
+      if (classifyManagedSkill(source, { packageName }) !== 'owned') continue;
+      fs.cpSync(source, path.join(backupRoot, entry.name), { recursive: true });
+      ownedNames.push(entry.name);
+    }
+  }
+
+  let settled = false;
+  const cleanup = () => fs.rmSync(backupRoot, { recursive: true, force: true });
+  return {
+    commit() {
+      if (settled) return;
+      cleanup();
+      settled = true;
+    },
+    rollback() {
+      if (settled) return;
+      fs.mkdirSync(skillsRoot, { recursive: true });
+      for (const entry of fs.readdirSync(skillsRoot, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const destination = path.join(skillsRoot, entry.name);
+        if (classifyManagedSkill(destination, { packageName }) === 'owned') {
+          fs.rmSync(destination, { recursive: true, force: true });
+        }
+      }
+      for (const name of ownedNames) {
+        const destination = path.join(skillsRoot, name);
+        if (fs.existsSync(destination)) {
+          throw new Error(`Refusing to restore an owned skill over unowned content: ${destination}`);
+        }
+        fs.cpSync(path.join(backupRoot, name), destination, { recursive: true });
+      }
+      cleanup();
+      settled = true;
+    },
+  };
+}
+
 function commandExists(command) {
   const result = spawnSync(command, ['--version'], { stdio: 'ignore' });
   return !result.error && result.status === 0;
@@ -589,6 +634,70 @@ function normalizedPath(value) {
   } catch {
     return resolved;
   }
+}
+
+function legacyMarketplaceIsOwned(existingPath) {
+  if (!existingPath
+    || normalizedPath(existingPath) !== normalizedPath(managedProductRoot)) return false;
+  try {
+    const rootStat = fs.lstatSync(existingPath);
+    if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) return false;
+    const parts = ['plugins', product, 'package.json'];
+    let manifest = existingPath;
+    for (const [index, part] of parts.entries()) {
+      manifest = path.join(manifest, part);
+      const stat = fs.lstatSync(manifest);
+      const leaf = index === parts.length - 1;
+      if (stat.isSymbolicLink() || (leaf ? !stat.isFile() : !stat.isDirectory())) return false;
+    }
+    return JSON.parse(fs.readFileSync(manifest, 'utf8')).name === pkg.name;
+  } catch {
+    return false;
+  }
+}
+
+function currentMarketplaceIsOwned(existingPath) {
+  if (!existingPath) return false;
+  try {
+    const rootStat = fs.lstatSync(existingPath);
+    if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) return false;
+    const requiredRelativeFiles = [
+      path.join('plugins', product, 'package.json'),
+      path.join('plugins', product, '.claude-plugin', 'plugin.json'),
+      path.join('plugins', product, '.codex-plugin', 'plugin.json'),
+      path.join('.claude-plugin', 'marketplace.json'),
+      path.join('.agents', 'plugins', 'marketplace.json'),
+    ];
+    for (const relative of requiredRelativeFiles) {
+      const parts = relative.split(path.sep);
+      let current = existingPath;
+      for (const [index, part] of parts.entries()) {
+        current = path.join(current, part);
+        const stat = fs.lstatSync(current);
+        const leaf = index === parts.length - 1;
+        if (stat.isSymbolicLink()
+          || (leaf ? !stat.isFile() : !stat.isDirectory())) return false;
+      }
+    }
+    const requiredFiles = requiredRelativeFiles.map((relative) => path.join(existingPath, relative));
+    const manifest = JSON.parse(fs.readFileSync(requiredFiles[0], 'utf8'));
+    verifyManagedPayload(existingPath, {
+      expectedName: pkg.name,
+      expectedProduct: product,
+      expectedVersion: manifest.version,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function marketplaceOwnership(existingPath, managedRoot) {
+  if (!existingPath) return null;
+  if (normalizedPath(existingPath) === normalizedPath(managedRoot)
+    && currentMarketplaceIsOwned(existingPath)) return 'current';
+  if (legacyMarketplaceIsOwned(existingPath)) return 'legacy';
+  return null;
 }
 
 function hasInstalledPlugin(value) {
@@ -719,11 +828,19 @@ function prepareManagedMarketplace(host, dryRun) {
   const managedRoot = managedRootForHost(host);
   if (dryRun) {
     console.log(`[${product}] would stage ${pkg.name}@${pkg.version} in ${managedRoot}`);
-    return;
+    return {
+      managedRoot,
+      commit() {},
+      rollback() {},
+    };
   }
 
   const temporaryRoot = `${managedRoot}.tmp-${process.pid}-${Date.now()}`;
+  const backupRoot = `${managedRoot}.backup-${process.pid}`;
+  let hadExistingRoot = false;
+  let staged = false;
   fs.rmSync(temporaryRoot, { recursive: true, force: true });
+  fs.rmSync(backupRoot, { recursive: true, force: true });
 
   try {
     copyPluginPayload(path.join(temporaryRoot, 'plugins', product));
@@ -772,81 +889,177 @@ function prepareManagedMarketplace(host, dryRun) {
     });
 
     fs.mkdirSync(path.dirname(managedRoot), { recursive: true });
-    const backupRoot = `${managedRoot}.backup-${process.pid}`;
-    fs.rmSync(backupRoot, { recursive: true, force: true });
-    const hadExistingRoot = fs.existsSync(managedRoot);
+    hadExistingRoot = fs.existsSync(managedRoot);
+    if (hadExistingRoot && !currentMarketplaceIsOwned(managedRoot)) {
+      throw new Error(`Refusing to replace unowned managed payload at ${managedRoot}`);
+    }
     if (hadExistingRoot) fs.renameSync(managedRoot, backupRoot);
 
     try {
       fs.renameSync(temporaryRoot, managedRoot);
+      staged = true;
     } catch (error) {
       if (hadExistingRoot && fs.existsSync(backupRoot)) fs.renameSync(backupRoot, managedRoot);
       throw error;
     }
-
-    fs.rmSync(backupRoot, { recursive: true, force: true });
   } catch (error) {
     fs.rmSync(temporaryRoot, { recursive: true, force: true });
+    if (!fs.existsSync(managedRoot) && hadExistingRoot && fs.existsSync(backupRoot)) {
+      fs.renameSync(backupRoot, managedRoot);
+    }
     throw error;
   }
 
   console.log(`[${product}] staged ${pkg.name}@${pkg.version} in ${managedRoot}`);
+  let settled = false;
+  return {
+    managedRoot,
+    commit() {
+      if (settled) return;
+      fs.rmSync(backupRoot, { recursive: true, force: true });
+      settled = true;
+    },
+    rollback() {
+      if (settled) return;
+      if (staged) fs.rmSync(managedRoot, { recursive: true, force: true });
+      if (hadExistingRoot && fs.existsSync(backupRoot)) fs.renameSync(backupRoot, managedRoot);
+      settled = true;
+    },
+  };
 }
 
-function ensureMarketplace(host, managedRoot, dryRun) {
+function marketplaceRemoveArgs(host) {
+  return host === 'claude'
+    ? ['plugin', 'marketplace', 'remove', marketplaceName, '--scope', 'user']
+    : ['plugin', 'marketplace', 'remove', marketplaceName, '--json'];
+}
+
+function marketplaceAddArgs(host, root) {
+  return host === 'claude'
+    ? ['plugin', 'marketplace', 'add', '--scope', 'user', root]
+    : ['plugin', 'marketplace', 'add', root, '--json'];
+}
+
+function pluginRemoveArgs(host) {
+  return host === 'claude'
+    ? ['plugin', 'uninstall', selector, '--scope', 'user', '--yes']
+    : ['plugin', 'remove', selector, '--json'];
+}
+
+function pluginAddArgs(host) {
+  return host === 'claude'
+    ? ['plugin', 'install', selector, '--scope', 'user']
+    : ['plugin', 'add', selector, '--json'];
+}
+
+function ensureMarketplace(host, managedRoot, dryRun, mutation) {
   const entries = marketplaceEntries(host, dryRun);
   const existing = entries.find((entry) => entry.name === marketplaceName);
   const existingPath = existing && marketplacePath(existing);
   const samePath = existingPath && normalizedPath(existingPath) === normalizedPath(managedRoot);
 
   if (existing && !samePath) {
-    const removeArgs = host === 'claude'
-      ? ['plugin', 'marketplace', 'remove', marketplaceName, '--scope', 'user']
-      : ['plugin', 'marketplace', 'remove', marketplaceName, '--json'];
-    execute(host, removeArgs, { dryRun });
+    if (marketplaceOwnership(existingPath, managedRoot) !== 'legacy') {
+      throw new Error(
+        `Refusing to replace unowned marketplace ${marketplaceName} at ${existingPath || 'an unknown path'}`,
+      );
+    }
+    mutation.marketplaceTouched = true;
+    execute(host, marketplaceRemoveArgs(host), { dryRun });
   }
 
   if (!existing || !samePath) {
-    const addArgs = host === 'claude'
-      ? ['plugin', 'marketplace', 'add', '--scope', 'user', managedRoot]
-      : ['plugin', 'marketplace', 'add', managedRoot, '--json'];
-    execute(host, addArgs, { dryRun });
+    mutation.marketplaceTouched = true;
+    execute(host, marketplaceAddArgs(host, managedRoot), { dryRun });
   } else if (host === 'claude') {
+    mutation.marketplaceTouched = true;
     execute('claude', ['plugin', 'marketplace', 'update', marketplaceName], { dryRun });
   }
 }
 
-function installForClaude(managedRoot, dryRun, installed) {
-  ensureMarketplace('claude', managedRoot, dryRun);
+function installForClaude(managedRoot, dryRun, installed, mutation) {
+  ensureMarketplace('claude', managedRoot, dryRun, mutation);
   const action = installed ? 'update' : 'install';
+  mutation.pluginTouched = true;
   execute('claude', ['plugin', action, selector, '--scope', 'user'], { dryRun });
   console.log(`[${product}] ${installed ? 'updated' : 'installed'} for Claude Code`);
 }
 
-function installForCodex(managedRoot, dryRun, installed) {
-  ensureMarketplace('codex', managedRoot, dryRun);
+function installForCodex(managedRoot, dryRun, installed, mutation) {
+  ensureMarketplace('codex', managedRoot, dryRun, mutation);
   if (installed) {
+    mutation.pluginTouched = true;
     execute('codex', ['plugin', 'remove', selector, '--json'], { dryRun });
   }
+  mutation.pluginTouched = true;
   execute('codex', ['plugin', 'add', selector, '--json'], { dryRun });
   console.log(`[${product}] ${installed ? 'updated' : 'installed'} for Codex`);
 }
 
-function uninstallFromHost(host, dryRun) {
-  const installed = pluginIsInstalled(host, dryRun);
-  if (installed) {
-    const removeArgs = host === 'claude'
-      ? ['plugin', 'uninstall', selector, '--scope', 'user', '--yes']
-      : ['plugin', 'remove', selector, '--json'];
-    execute(host, removeArgs, { dryRun });
+function restoreHostState({
+  host,
+  managedRoot,
+  managedRootIdentity = normalizedPath(managedRoot),
+  priorInstalled,
+  priorMarketplace,
+  mutation,
+  dryRun,
+}) {
+  if (dryRun || (!mutation.marketplaceTouched && !mutation.pluginTouched)) return;
+
+  if (mutation.pluginTouched && pluginIsInstalled(host, false)) {
+    execute(host, pluginRemoveArgs(host));
   }
 
+  if (mutation.marketplaceTouched) {
+    const current = marketplaceEntries(host, false).find((entry) => entry.name === marketplaceName);
+    const currentPath = current && marketplacePath(current);
+    const priorPath = priorMarketplace && marketplacePath(priorMarketplace);
+    const sameAsPrior = current && priorMarketplace && currentPath && priorPath
+      && normalizedPath(currentPath) === normalizedPath(priorPath);
+
+    if (current && !sameAsPrior) {
+      if (!currentPath || normalizedPath(currentPath) !== managedRootIdentity) {
+        throw new Error(
+          `Refusing to remove unexpected marketplace during rollback: ${currentPath || 'unknown path'}`,
+        );
+      }
+      execute(host, marketplaceRemoveArgs(host));
+    }
+
+    if (priorMarketplace && !sameAsPrior) {
+      if (!priorPath) throw new Error('Cannot restore the previous marketplace because its path is unavailable');
+      execute(host, marketplaceAddArgs(host, priorPath));
+    }
+  }
+
+  if (priorInstalled && mutation.pluginTouched) {
+    execute(host, pluginAddArgs(host));
+  }
+}
+
+function uninstallFromHost(host, dryRun) {
+  const managedRoot = managedRootForHost(host);
+  if (fs.existsSync(managedRoot) && !currentMarketplaceIsOwned(managedRoot)) {
+    throw new Error(`Refusing to remove unowned managed payload at ${managedRoot}`);
+  }
   const marketplace = marketplaceEntries(host, dryRun).find((entry) => entry.name === marketplaceName);
   if (marketplace) {
-    const removeMarketplaceArgs = host === 'claude'
-      ? ['plugin', 'marketplace', 'remove', marketplaceName, '--scope', 'user']
-      : ['plugin', 'marketplace', 'remove', marketplaceName, '--json'];
-    execute(host, removeMarketplaceArgs, { dryRun });
+    const existingPath = marketplacePath(marketplace);
+    if (!marketplaceOwnership(existingPath, managedRootForHost(host))) {
+      throw new Error(
+        `Refusing to remove unowned marketplace ${marketplaceName} at ${existingPath || 'an unknown path'}`,
+      );
+    }
+  }
+
+  const installed = pluginIsInstalled(host, dryRun);
+  if (installed) {
+    execute(host, pluginRemoveArgs(host), { dryRun });
+  }
+
+  if (marketplace) {
+    execute(host, marketplaceRemoveArgs(host), { dryRun });
   }
 
   console.log(`[${product}] removed from ${host === 'claude' ? 'Claude Code' : 'Codex'}`);
@@ -892,6 +1105,9 @@ if (!hosts.length) {
 
 const failures = [];
 const hostStates = new Map();
+const priorMarketplaces = new Map();
+const marketplaceTransactions = new Map();
+const skillTransactions = new Map();
 const sourceSkillsRoot = fs.existsSync(path.join(packageRoot, 'internal-skills'))
   ? path.join(packageRoot, 'internal-skills')
   : path.join(packageRoot, 'skills');
@@ -901,6 +1117,10 @@ if (options.action === 'install') {
     try {
       const state = installedPluginState(host, options.dryRun);
       hostStates.set(host, state);
+      priorMarketplaces.set(
+        host,
+        marketplaceEntries(host, options.dryRun).find((entry) => entry.name === marketplaceName) || null,
+      );
       selectedVersions.push(...state.versions);
     } catch (error) {
       fail(`Could not inspect installed ${displayName} versions for ${host}: ${error.message}`);
@@ -933,6 +1153,18 @@ if (options.action === 'install') {
       fail(`Could not install prefixed skills: ${error.message}`);
     }
   }
+  try {
+    for (const host of hosts) {
+      skillTransactions.set(host, snapshotManagedSkills({
+        skillsRoot: resolveSkillsRoot(host),
+        packageName: pkg.name,
+        dryRun: options.dryRun,
+      }));
+    }
+  } catch (error) {
+    for (const transaction of skillTransactions.values()) transaction.commit();
+    fail(`Could not snapshot managed skills: ${error.message}`);
+  }
   if (product === 'nectar') {
     try {
       ensureNectarGitIgnore({ dryRun: options.dryRun });
@@ -941,20 +1173,37 @@ if (options.action === 'install') {
     }
   }
   try {
-    for (const host of hosts) prepareManagedMarketplace(host, options.dryRun);
+    for (const host of hosts) {
+      marketplaceTransactions.set(host, prepareManagedMarketplace(host, options.dryRun));
+    }
   } catch (error) {
+    for (const transaction of [...marketplaceTransactions.values()].reverse()) {
+      try {
+        transaction.rollback();
+      } catch {
+        // Preserve the original staging failure diagnostic.
+      }
+    }
+    for (const transaction of skillTransactions.values()) transaction.commit();
     fail(`Could not stage the managed plugin: ${error.message}`);
   }
 }
 
 for (const host of hosts) {
+  const managedRoot = managedRootForHost(host);
+  const managedRootIdentity = normalizedPath(managedRoot);
+  const transaction = marketplaceTransactions.get(host);
+  const skillTransaction = skillTransactions.get(host);
+  const mutation = { marketplaceTouched: false, pluginTouched: false };
+  const priorInstalled = hostStates.get(host)?.installed || false;
+  const priorMarketplace = options.action === 'install' ? priorMarketplaces.get(host) : null;
+  let skillsTouched = false;
   try {
-    const managedRoot = managedRootForHost(host);
     if (options.action === 'install') {
       if (host === 'claude') {
-        installForClaude(managedRoot, options.dryRun, hostStates.get(host)?.installed || false);
+        installForClaude(managedRoot, options.dryRun, priorInstalled, mutation);
       } else {
-        installForCodex(managedRoot, options.dryRun, hostStates.get(host)?.installed || false);
+        installForCodex(managedRoot, options.dryRun, priorInstalled, mutation);
       }
       const skillsRoot = resolveSkillsRoot(host);
       const managedPackageRoot = path.join(managedRoot, 'plugins', product);
@@ -965,6 +1214,7 @@ for (const host of hosts) {
       if (options.dryRun) {
         console.log(`[${product}] would install prefixed skills in ${skillsRoot}`);
       } else {
+        skillsTouched = true;
         installManagedSkills({
           sourceRoot: managedSourceSkillsRoot,
           skillsRoot,
@@ -974,6 +1224,8 @@ for (const host of hosts) {
           installedPackageRoot: managedPackageRoot,
         });
       }
+      transaction.commit();
+      skillTransaction.commit();
     } else {
       uninstallFromHost(host, options.dryRun);
       const skillsRoot = resolveSkillsRoot(host);
@@ -985,8 +1237,40 @@ for (const host of hosts) {
       }
     }
   } catch (error) {
-    failures.push(`${host}: ${error.message}`);
-    console.error(`[${product}] ${host} failed: ${error.message}`);
+    const recoveryErrors = [];
+    if (transaction) {
+      try {
+        transaction.rollback();
+      } catch (rollbackError) {
+        recoveryErrors.push(`managed payload rollback failed: ${rollbackError.message}`);
+      }
+    }
+    if (skillTransaction) {
+      try {
+        if (skillsTouched) skillTransaction.rollback();
+        else skillTransaction.commit();
+      } catch (rollbackError) {
+        recoveryErrors.push(`managed skill rollback failed: ${rollbackError.message}`);
+      }
+    }
+    if (options.action === 'install') {
+      try {
+        restoreHostState({
+          host,
+          managedRoot,
+          managedRootIdentity,
+          priorInstalled,
+          priorMarketplace,
+          mutation,
+          dryRun: options.dryRun,
+        });
+      } catch (rollbackError) {
+        recoveryErrors.push(`host state rollback failed: ${rollbackError.message}`);
+      }
+    }
+    const message = [error.message, ...recoveryErrors].join('; ');
+    failures.push(`${host}: ${message}`);
+    console.error(`[${product}] ${host} failed: ${message}`);
   }
 }
 

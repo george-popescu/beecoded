@@ -31,6 +31,34 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Productivity"
+    },
+    {
+      "name": "code-audit",
+      "source": {
+        "source": "npm",
+        "package": "@beecoded/code-audit",
+        "version": "0.1.0",
+        "registry": "https://registry.npmjs.org"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "ui-ux-audit",
+      "source": {
+        "source": "npm",
+        "package": "@beecoded/ui-ux-audit",
+        "version": "0.1.0",
+        "registry": "https://registry.npmjs.org"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
     }
   ]
 }

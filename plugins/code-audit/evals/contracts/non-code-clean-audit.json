@@ -1,0 +1,58 @@
+{
+  "id": "non-code-clean-audit",
+  "skill": "code-audit",
+  "fixture": {
+    "files": {
+      "package.json": "{\"scripts\":{\"test\":\"node --test\"},\"type\":\"module\"}\n",
+      "src/math.js": "export function divide(left, right) {\n  if (right === 0) throw new RangeError('division by zero');\n  return left / right;\n}\n"
+    }
+  },
+  "prompt": "Audit this complete repository. There are no tests. Write the report to code-audit-report.md, then repeat the complete non-code finding and parseable summary in your final response.",
+  "checks": [
+    {
+      "type": "pathExists",
+      "path": "code-audit-report.md"
+    },
+    {
+      "type": "workspaceChangesOnly",
+      "paths": [
+        "code-audit-report.md"
+      ]
+    },
+    {
+      "type": "findingMatches",
+      "where": "src/math.js:1",
+      "class": "TEST_OR_COVERAGE_GAP",
+      "severityIn": [
+        "LOW",
+        "MEDIUM"
+      ],
+      "convergence": "NON_BLOCKING",
+      "requiredFields": [
+        "Evidence",
+        "Reachability",
+        "Likelihood",
+        "Exploitability",
+        "Impact",
+        "Solution opportunity",
+        "Confidence",
+        "Disposition"
+      ]
+    },
+    {
+      "type": "summaryCount",
+      "label": "Blocking",
+      "value": 0
+    }
+  ],
+  "graderCriteria": [
+    "Keeps missing tests in TEST_OR_COVERAGE_GAP rather than inventing a production code defect.",
+    "Calls the audit clean because there are zero blocking code defects while preserving the non-code observation.",
+    "Writes only the requested report."
+  ],
+  "tags": [
+    "false-positive",
+    "clean-semantics",
+    "report-only"
+  ]
+}

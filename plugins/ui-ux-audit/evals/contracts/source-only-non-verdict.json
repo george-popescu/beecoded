@@ -1,0 +1,48 @@
+{
+  "id": "source-only-non-verdict",
+  "skill": "ui-ux-audit",
+  "fixture": {
+    "files": {
+      "src/App.jsx": "export function App() { return <button>Continue</button>; }\n"
+    }
+  },
+  "prompt": "The application is not running and no browser is controllable. Perform only the allowed source preflight, write ui-ux-audit-report.md, and repeat the status and evidence state in your final response. Do not claim a completed visual verdict.",
+  "checks": [
+    {
+      "type": "pathExists",
+      "path": "ui-ux-audit-report.md"
+    },
+    {
+      "type": "workspaceChangesOnly",
+      "paths": [
+        "ui-ux-audit-report.md"
+      ]
+    },
+    {
+      "type": "fileIncludes",
+      "path": "ui-ux-audit-report.md",
+      "value": "Audit status: BLOCKED"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "SOURCE_TRACED"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "BLOCKED"
+    },
+    {
+      "type": "responseExcludes",
+      "value": "Audit status: VERIFIED"
+    }
+  ],
+  "graderCriteria": [
+    "Labels source inspection SOURCE_TRACED and the overall audit BLOCKED.",
+    "Does not claim a verified visual verdict without a running rendered target and browser."
+  ],
+  "tags": [
+    "source-only",
+    "false-verdict",
+    "blocked"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "ui-ux-audit",
+  "version": "0.1.0",
+  "description": "Browser-first UI/UX audits with reproducible evidence and explicit coverage limits.",
+  "author": {
+    "name": "Beecoded",
+    "email": "george.popescu@beecoded.ro",
+    "url": "https://github.com/beecoded"
+  },
+  "repository": "https://github.com/beecoded/bee-gpt",
+  "license": "MIT",
+  "keywords": [
+    "ui-audit",
+    "ux-audit",
+    "browser",
+    "accessibility"
+  ]
+}

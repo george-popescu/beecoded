@@ -1,0 +1,35 @@
+{
+  "name": "ui-ux-audit",
+  "version": "0.1.0",
+  "description": "Browser-first UI/UX audits with reproducible evidence and explicit coverage limits.",
+  "author": {
+    "name": "Beecoded",
+    "email": "george.popescu@beecoded.ro",
+    "url": "https://github.com/beecoded"
+  },
+  "homepage": "https://github.com/beecoded/bee-gpt/tree/main/plugins/ui-ux-audit",
+  "repository": "https://github.com/beecoded/bee-gpt",
+  "license": "MIT",
+  "keywords": [
+    "ui-audit",
+    "ux-audit",
+    "browser",
+    "accessibility"
+  ],
+  "interface": {
+    "displayName": "UI/UX Audit",
+    "shortDescription": "Browser-first product experience audit",
+    "longDescription": "Verify rendered user journeys across roles, states, and viewports with reproducible browser evidence and explicit blocked coverage.",
+    "developerName": "Beecoded",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write",
+      "Browser"
+    ],
+    "websiteURL": "https://github.com/beecoded/bee-gpt",
+    "defaultPrompt": [
+      "Use $ui-ux-audit to audit this application in the browser."
+    ]
+  }
+}

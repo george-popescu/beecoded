@@ -1,0 +1,44 @@
+{
+  "id": "report-boundary",
+  "skill": "ui-ux-audit",
+  "fixture": {
+    "files": {
+      ".agent-state/session.json": "{\"initialized\":false}\n",
+      "src/app.js": "export const ready = true;\n"
+    }
+  },
+  "prompt": "No browser capability is available. Write a blocked audit to ui-ux-audit-report.md. Include the exact line 'Project mutation: report only' and repeat it in your final response. Do not initialize workflow state, create evidence, or modify the application.",
+  "checks": [
+    {
+      "type": "pathExists",
+      "path": "ui-ux-audit-report.md"
+    },
+    {
+      "type": "workspaceChangesOnly",
+      "paths": [
+        "ui-ux-audit-report.md"
+      ]
+    },
+    {
+      "type": "fileIncludes",
+      "path": "ui-ux-audit-report.md",
+      "value": "Project mutation: report only"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "Project mutation: report only"
+    },
+    {
+      "type": "childDirectoriesAbsent",
+      "path": ".agent-state"
+    }
+  ],
+  "graderCriteria": [
+    "Creates only the requested blocked report and preserves source and agent state.",
+    "Does not create an evidence directory when no browser evidence exists."
+  ],
+  "tags": [
+    "report-only",
+    "state-independent"
+  ]
+}

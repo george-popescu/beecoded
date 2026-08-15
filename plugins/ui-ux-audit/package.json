@@ -1,0 +1,53 @@
+{
+  "name": "@beecoded/ui-ux-audit",
+  "version": "0.1.0",
+  "description": "Browser-first UI and UX audits for Claude Code and Codex",
+  "keywords": [
+    "claude-code",
+    "codex",
+    "agent-skills",
+    "ui-audit",
+    "ux-audit",
+    "accessibility"
+  ],
+  "author": {
+    "name": "Beecoded",
+    "email": "george.popescu@beecoded.ro",
+    "url": "https://github.com/beecoded"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beecoded/bee-gpt.git",
+    "directory": "plugins/ui-ux-audit"
+  },
+  "homepage": "https://github.com/beecoded/bee-gpt/tree/main/plugins/ui-ux-audit",
+  "bugs": {
+    "url": "https://github.com/beecoded/bee-gpt/issues"
+  },
+  "bin": {
+    "ui-ux-audit": "bin/install.mjs"
+  },
+  "files": [
+    ".claude-plugin/",
+    ".codex-plugin/",
+    "bin/",
+    "evals/",
+    "internal-skills/",
+    "references/",
+    "scripts/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test scripts/*.test.mjs",
+    "validate": "node ../../tools/validate-package.mjs ui-ux-audit",
+    "prepack": "npm test && npm run validate"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

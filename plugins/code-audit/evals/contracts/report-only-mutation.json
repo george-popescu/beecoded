@@ -1,0 +1,44 @@
+{
+  "id": "report-only-mutation",
+  "skill": "code-audit",
+  "fixture": {
+    "files": {
+      ".agent-state/session.json": "{\"initialized\":false}\n",
+      "package.json": "{\"type\":\"module\"}\n",
+      "src/app.js": "export function greeting(name) {\n  return `Hello, ${name}`;\n}\n"
+    }
+  },
+  "prompt": "Audit this complete small repository. Write the report to code-audit-report.md and repeat the parseable summary in your final response. Do not initialize any workflow state or modify the project.",
+  "checks": [
+    {
+      "type": "pathExists",
+      "path": "code-audit-report.md"
+    },
+    {
+      "type": "workspaceChangesOnly",
+      "paths": [
+        "code-audit-report.md"
+      ]
+    },
+    {
+      "type": "fileIncludes",
+      "path": "code-audit-report.md",
+      "value": "Confirmed code defects:"
+    },
+    {
+      "type": "summaryCount",
+      "label": "Blocking",
+      "value": 0
+    }
+  ],
+  "graderCriteria": [
+    "Creates exactly the requested report and leaves source, configuration, agent state, and Git state unchanged.",
+    "Does not initialize Bee, Nectar, Atlas, or another workflow system.",
+    "Uses zero blocking defects as the clean-audit condition."
+  ],
+  "tags": [
+    "read-only",
+    "state-independent",
+    "report-only"
+  ]
+}

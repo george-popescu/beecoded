@@ -1,0 +1,61 @@
+{
+  "id": "reachable-code-defect",
+  "skill": "code-audit",
+  "fixture": {
+    "files": {
+      "package.json": "{\"type\":\"module\"}\n",
+      "src/routes.js": "import { download } from './server.js';\nexport const routes = [['GET', '/download', download]];\n",
+      "src/server.js": "import fs from 'node:fs';\n\nexport function download(req, res) {\n  const requested = req.query.path;\n  return res.send(fs.readFileSync(requested));\n}\n"
+    }
+  },
+  "prompt": "Audit this complete repository. Write the report to code-audit-report.md, then repeat the complete confirmed finding and parseable summary in your final response.",
+  "checks": [
+    {
+      "type": "pathExists",
+      "path": "code-audit-report.md"
+    },
+    {
+      "type": "workspaceChangesOnly",
+      "paths": [
+        "code-audit-report.md"
+      ]
+    },
+    {
+      "type": "findingMatches",
+      "where": "src/server.js:5",
+      "class": "CODE_DEFECT",
+      "severityIn": [
+        "HIGH",
+        "MEDIUM"
+      ],
+      "convergence": "BLOCKING",
+      "requiredFields": [
+        "Evidence",
+        "Runtime path",
+        "Reachability",
+        "Exposure/preconditions",
+        "Likelihood",
+        "Exploitability",
+        "Impact",
+        "Solution opportunity",
+        "Confidence",
+        "Disposition"
+      ]
+    },
+    {
+      "type": "summaryCount",
+      "label": "Blocking",
+      "value": 1
+    }
+  ],
+  "graderCriteria": [
+    "Traces the exported download handler through the registered GET route.",
+    "Classifies arbitrary filesystem reads from untrusted query input as a reachable blocking code defect.",
+    "Does not edit source, tests, configuration, or Git state."
+  ],
+  "tags": [
+    "risk",
+    "reachability",
+    "report-only"
+  ]
+}

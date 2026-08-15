@@ -20,20 +20,28 @@ and `Conventions` sections, then pass each lens only the evidence-linked
 sections relevant to its assigned scope. Native `AGENTS.md` and `CLAUDE.md`
 instructions always have higher priority than generated context.
 
+## Audit boundary and repository survey
+
+Resolve the actual repository root and instructions before selecting lenses. Inventory tracked source, manifests, entry points, routes, jobs, migrations, schemas, tests, build and deployment configuration, and generated-code boundaries. Trace framework registration and dynamic loading; grep alone never proves code is dead or reachable.
+
+Use read-only inspection by default. Do not fetch, install, migrate, seed, build, format, or run commands that can create caches or artifacts. Explicit authorization for additional diagnostics never expands the report-only write boundary. Run a diagnostic only when it is demonstrably artifact-free inside the audited repository; otherwise run it in a disposable copy outside the repository or omit it and record the limitation.
+
+Survey entry points once. Give every lens an exact, non-overlapping scope and only the native instructions or evidence-linked context relevant to that scope. Generated context may guide navigation but is never finding evidence.
+
 ## Lens library
 
-- **security:** OWASP top 10, authz, secrets exposure
-- **error handling:** unhandled paths, swallowed exceptions
-- **database:** N+1, missing indexes, migration drift
-- **API:** contract consistency, errors, input validation
-- **performance:** live hot paths, caching, bundle size
-- **frontend:** loading/empty/error states, leaks, a11y
-- **architecture:** boundaries, duplication, dependency direction
-- **dependencies:** vulnerabilities, abandonware
-- **test health:** coverage gaps, stale or tautological tests
-- **integration:** cross-layer wiring, dead endpoints, unreachable UI
+- **security:** OWASP categories, authentication, authorization, secrets, unsafe input, and trust boundaries
+- **error handling:** unhandled failure paths, swallowed exceptions, unsafe fallback, and recovery behavior
+- **database:** query shape, N+1 behavior, indexes, migrations, constraints, transactions, and persistence drift
+- **API:** input validation, response/error contracts, versioning, authorization, and integration boundaries
+- **performance:** demonstrably live hot paths, repeated work, caching, memory, query count, and bundle cost
+- **frontend:** loading, empty, error, concurrency, state ownership, data exposure, and code-level accessibility
+- **architecture:** module boundaries, dependency direction, duplication, lifecycle ownership, and reachable dead paths
+- **dependencies:** known advisories from available lockfile evidence, runtime support, abandonment, and supply-chain surface
+- **test health:** missing behavioral coverage, false-green tests, stale fixtures, wrong-layer assertions, and flakiness
+- **integration:** cross-layer wiring, events, jobs, routes, policies, callbacks, dynamic imports, and unreachable UI or APIs
 
-Pick lenses by codebase shape. Always include security and error handling; drop frontend or database when absent. More than two lenses or more than 50 tracked source files means one parallel `nectar:lens` role per lens; otherwise run inline. Survey entry points once and give each lens only its own scope and relevant paths. On hosts without named roles, load `../../agents/lens.md` for the general agent.
+Select lenses from codebase shape. Always include security and error handling. Drop frontend, database, API, or other lenses only when the surveyed repository lacks that surface, and record every drop with its evidence. More than two selected lenses or more than 50 tracked source files means one parallel `nectar:lens` role per lens. Otherwise run lenses inline. On hosts without named roles, load `../../agents/lens.md` as the general agent's role instructions.
 
 ## Finding classes
 
@@ -78,28 +86,37 @@ Solution opportunity explicitly accounts for approved or planned work that will 
 - MEDIUM = a reachable code defect with bounded impact, uncommon preconditions, recoverability, or limited blast radius.
 - LOW = a minor bounded defect, very rare multi-condition failure, small inefficiency, or non-code engineering concern.
 
-Severity follows credible impact, exposure, and likelihood. Worst-case imagination is not risk, and confidence is not likelihood.
+Severity is a risk conclusion, not the opening label. Derive it from credible impact, exposure, and likelihood; do not use confidence as likelihood or worst-case possibility as credible impact.
 
-## Validation
+A dependency advisory requires current lockfile/package evidence and an authoritative advisory source when network access is available. Only confirmed CODE_DEFECT findings at MEDIUM, HIGH, or CRITICAL are BLOCKING. Low code defects and every non-code class are NON_BLOCKING.
 
-Deduplicate the same root cause without upgrading its class. Validate every candidate adversarially. For more than eight candidates, dispatch file/module groups to fresh parallel `nectar:validator` roles; otherwise validate inline. Trace the actual entry point, callers, guards, preconditions, gating tests, and proposed fix. On hosts without named roles, load `../../agents/validator.md`.
+## Deduplication and adversarial validation
+
+Merge candidates with the same file, line, root cause, and proportional fix. Agreement between lenses raises confidence but never upgrades a non-code class into a code defect.
+
+Validate every candidate adversarially. Read the cited code, trace the real entry point and complete runtime path, inspect callers, guards, middleware, framework guarantees, configuration, and gating tests, and verify that all preconditions are simultaneously satisfiable. Try to refute or reclassify before calibrating risk. Reject fixes whose complexity is disproportionate to credible risk.
+
+For more than eight candidates, group by file or module and dispatch fresh parallel `nectar:validator` roles. Otherwise validate inline. On hosts without named roles, load `../../agents/validator.md`. Validators report verdicts only and never edit.
 
 Verdicts:
 
 - CONFIRMED — evidence verifies the adjusted class and its stated risk; this does not imply the class is a code defect or a convergence blocker.
 - REFUTED — evidence or runtime wiring disproves the candidate; discard it.
 
-Every verdict includes adjusted class, severity, Runtime path, Reachability, Exposure/preconditions, Likelihood, Exploitability, Impact, Solution opportunity, Confidence, convergence, disposition, and a validation note. A useful concern unsupported as a code defect is reclassified, not inflated. Only confirmed `CODE_DEFECT` findings at `MEDIUM`, `HIGH`, or `CRITICAL` are `BLOCKING`; audit still never fixes them.
+Every verdict records the adjusted class and severity, Runtime path, Reachability, Exposure/preconditions, Likelihood, Exploitability, Impact, Solution opportunity, Confidence, convergence, disposition, and a note naming what was checked. A finding without quotable evidence is `REFUTED`. Evidence for a useful concern without a production defect becomes a confirmed non-code class. Re-examine the two weakest findings when an entire batch survives without any refutation, reclassification, or severity adjustment.
 
-## Report
+## Report contract
 
-Write `docs/work/audit-YYYY-MM-DD.md`; a later audit on the same date replaces it. Include:
+Write the report to a path explicitly requested by the user, otherwise `docs/work/audit-YYYY-MM-DD.md`. Before writing, verify with no-follow filesystem inspection that the destination remains inside the repository, every existing ancestor from the repository root is a normal directory, and the destination is absent or a normal file. If the report path or any existing ancestor is a symbolic link, the destination escapes the repository, or the destination is another entry type, stop without writing and report the blocked path to the user. Re-check immediately before replacement and use a normal temporary file in the verified destination directory plus atomic rename when the host supports it; if the host cannot guarantee a no-follow write, stop without writing. A later audit targeting the same default date replaces only that verified normal report. The report is the only write: do not edit source, tests, configuration, dependencies, Git state, Bee/Nectar state, or any other project artifact.
 
-1. The lens manifest and reason for every dropped lens.
-2. Validated findings grouped first by Class and then by severity.
-3. The validation kill rate and reclassification count.
-4. A top-three action list ordered by credible risk, then Solution opportunity.
-5. This parseable summary:
+The report contains:
+
+1. Repository boundary, point-in-time limitations, and the exact report path.
+2. Lens manifest with the reason and evidence for every selected or dropped lens.
+3. Validated findings grouped first by Class and then by severity.
+4. Validation kill rate and reclassification count.
+5. Top three follow-up opportunities ordered by credible risk, then Solution opportunity.
+6. The exact parseable summary:
 
 ```text
 Confirmed code defects: Critical N, High N, Medium N, Low N
@@ -110,7 +127,7 @@ Stylistic: N
 Refuted: N
 ```
 
-A clean audit means zero blocking code defects, not zero observations. Writing the report is the only mutation. Offer blocking defects for shape/debug follow-up and preserve non-blockers as optional work; never fix them inline or commit without approval.
+Clean audit means zero blocking code defects, not zero observations. Offer blocking defects for a separate debugging or delivery workflow and retain non-blockers as optional follow-up. Never apply fixes, commit, push, publish, or deploy during the audit.
 
 ## Atlas context profile
 

@@ -1,0 +1,31 @@
+{
+  "id": "activation-boundary",
+  "skill": "code-audit",
+  "fixture": {
+    "files": {
+      "src/app.js": "export const ready = true;\n"
+    }
+  },
+  "prompt": "Review only the latest diff, not the whole repository. Explain the skill boundary and do not write an audit report.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "whole-codebase"
+    },
+    {
+      "type": "pathAbsent",
+      "path": "code-audit-report.md"
+    }
+  ],
+  "graderCriteria": [
+    "Recognizes that a diff review is outside the whole-codebase audit boundary.",
+    "Does not create an audit report or change the fixture."
+  ],
+  "tags": [
+    "activation",
+    "read-only"
+  ]
+}

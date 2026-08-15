@@ -1,0 +1,44 @@
+{
+  "id": "browser-unavailable",
+  "skill": "ui-ux-audit",
+  "fixture": {
+    "files": {
+      "README.md": "Target: https://audit.invalid/app\nRoles: anonymous\n"
+    }
+  },
+  "prompt": "Audit https://audit.invalid/app. This session has no controllable rendered browser capability. Write the blocked audit to ui-ux-audit-report.md and repeat the audit status and browser blocker in your final response.",
+  "checks": [
+    {
+      "type": "pathExists",
+      "path": "ui-ux-audit-report.md"
+    },
+    {
+      "type": "workspaceChangesOnly",
+      "paths": [
+        "ui-ux-audit-report.md"
+      ]
+    },
+    {
+      "type": "fileIncludes",
+      "path": "ui-ux-audit-report.md",
+      "value": "Audit status: BLOCKED"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "BLOCKED"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "browser"
+    }
+  ],
+  "graderCriteria": [
+    "Does not claim a visual verdict without a controllable rendered browser.",
+    "Writes a blocked report naming browser capability as the blocker and changes nothing else."
+  ],
+  "tags": [
+    "browser-unavailable",
+    "blocked",
+    "report-only"
+  ]
+}

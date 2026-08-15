@@ -1,0 +1,54 @@
+{
+  "name": "@beecoded/code-audit",
+  "version": "0.1.0",
+  "description": "Evidence-backed whole-codebase audits for Claude Code and Codex",
+  "keywords": [
+    "claude-code",
+    "codex",
+    "agent-skills",
+    "code-audit",
+    "security-audit",
+    "code-quality"
+  ],
+  "author": {
+    "name": "Beecoded",
+    "email": "george.popescu@beecoded.ro",
+    "url": "https://github.com/beecoded"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beecoded/bee-gpt.git",
+    "directory": "plugins/code-audit"
+  },
+  "homepage": "https://github.com/beecoded/bee-gpt/tree/main/plugins/code-audit",
+  "bugs": {
+    "url": "https://github.com/beecoded/bee-gpt/issues"
+  },
+  "bin": {
+    "code-audit": "bin/install.mjs"
+  },
+  "files": [
+    ".claude-plugin/",
+    ".codex-plugin/",
+    "agents/",
+    "bin/",
+    "evals/",
+    "internal-skills/",
+    "methodology/",
+    "scripts/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test scripts/*.test.mjs",
+    "validate": "node ../../tools/validate-package.mjs code-audit",
+    "prepack": "npm test && npm run validate"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

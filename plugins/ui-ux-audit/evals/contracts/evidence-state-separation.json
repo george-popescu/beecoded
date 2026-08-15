@@ -1,0 +1,52 @@
+{
+  "id": "evidence-state-separation",
+  "skill": "ui-ux-audit",
+  "fixture": {
+    "files": {
+      "src/App.jsx": "export function App() { return <main>Ready</main>; }\n",
+      "tests/app.test.js": "test('renders', () => {});\n"
+    }
+  },
+  "prompt": "Do not start an audit or write a report. Explain the six distinct UI/UX evidence states for these examples: direct rendered observation, a passing browser assertion, a source line, an in-scope state not exercised, a route blocked by missing access, and a subjective color choice for the product owner.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "BROWSER_VERIFIED"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "AUTOMATION_PROVEN"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "SOURCE_TRACED"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "NOT_OBSERVED"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "BLOCKED"
+    },
+    {
+      "type": "responseIncludes",
+      "value": "PRODUCT_DECISION"
+    },
+    {
+      "type": "pathAbsent",
+      "path": "ui-ux-audit-report.md"
+    }
+  ],
+  "graderCriteria": [
+    "Maps each example to the correct evidence state without collapsing source, automation, and browser observation.",
+    "Does not begin an audit or write project files."
+  ],
+  "tags": [
+    "evidence",
+    "classification"
+  ]
+}

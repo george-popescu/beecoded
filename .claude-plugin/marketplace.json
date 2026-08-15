@@ -29,6 +29,30 @@
         "version": "3.1.0"
       },
       "category": "development"
+    },
+    {
+      "name": "code-audit",
+      "displayName": "Code Audit",
+      "description": "Evidence-backed whole-codebase audits with adversarial finding validation.",
+      "version": "0.1.0",
+      "source": {
+        "source": "npm",
+        "package": "@beecoded/code-audit",
+        "version": "0.1.0"
+      },
+      "category": "development"
+    },
+    {
+      "name": "ui-ux-audit",
+      "displayName": "UI/UX Audit",
+      "description": "Browser-first UI/UX audits with reproducible evidence and explicit coverage limits.",
+      "version": "0.1.0",
+      "source": {
+        "source": "npm",
+        "package": "@beecoded/ui-ux-audit",
+        "version": "0.1.0"
+      },
+      "category": "development"
     }
   ]
 }
