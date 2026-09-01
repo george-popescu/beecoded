@@ -1,0 +1,29 @@
+{
+  "id": "tenant-isolation",
+  "skill": "nectar-shape",
+  "tags": [
+    "quality-lifecycle"
+  ],
+  "fixture": {
+    "files": {
+      "src/orders/repository.js": "export async function findInvoice(database, invoiceId) {\n  return database.first('SELECT * FROM invoices WHERE id = ?', [invoiceId]);\n}\n",
+      "test/orders-tenant.test.js": "// Proposed acceptance sketch; do not execute before the plan is approved.\n// Given tenantId tenant-a and invoiceId invoice-1, the repository query binds both identifiers.\n// An invoice with the same invoiceId under tenant-b remains invisible, preventing cross-tenant reads.\n"
+    }
+  },
+  "prompt": "Run read-only Shape for an explicit tenantId-scoped invoice lookup using src/orders/repository.js and the acceptance sketch in test/orders-tenant.test.js. Do not implement or execute the proposed test now. Plan meaningful persistence-layer isolation coverage that prevents cross-tenant visibility.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Selects meaningful tenant-isolation coverage at the persistence or boundary owner.",
+    "The proposed scenario prevents cross-tenant visibility rather than testing labels or calls."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

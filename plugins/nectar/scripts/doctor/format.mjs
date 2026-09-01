@@ -6,10 +6,12 @@ export function formatDoctorHuman(report) {
 
   const lines = report.diagnostics.map((diagnostic) => {
     const evidence = diagnostic.evidence ? ` [${diagnostic.evidence}]` : '';
-    return `ERROR ${diagnostic.code} ${diagnostic.path} — ${diagnostic.message}${evidence}`;
+    return `${diagnostic.severity.toUpperCase()} ${diagnostic.code} ${diagnostic.path} — ${diagnostic.message}${evidence}`;
   });
+  const blocking = report.diagnostics.filter((diagnostic) => diagnostic.severity === 'error').length;
+  const warnings = report.diagnostics.length - blocking;
   lines.push(
-    `Nectar doctor: ${report.diagnostics.length} blocking ${report.diagnostics.length === 1 ? 'issue' : 'issues'} across ${topicCount} ${topicCount === 1 ? 'topic' : 'topics'}`,
+    `Nectar doctor: ${blocking} blocking ${blocking === 1 ? 'issue' : 'issues'}, ${warnings} ${warnings === 1 ? 'warning' : 'warnings'} across ${topicCount} ${topicCount === 1 ? 'topic' : 'topics'}`,
   );
   return lines.join('\n');
 }

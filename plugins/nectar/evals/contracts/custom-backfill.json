@@ -1,0 +1,33 @@
+{
+  "id": "custom-backfill",
+  "skill": "nectar-shape",
+  "tags": [
+    "quality-lifecycle"
+  ],
+  "fixture": {
+    "files": {
+      "database/backfills/normalize-orders.js": "export async function normalizeOrders(rows, write) {\n  for (const row of rows) await write(row.id, Number(row.total));\n}\n",
+      "database/schema.sql": "CREATE TABLE orders (id INTEGER PRIMARY KEY, total TEXT NOT NULL, normalized_total INTEGER);\n"
+    }
+  },
+  "prompt": "Inspect database/schema.sql and database/backfills/normalize-orders.js, then shape this as feature historical-order-total-backfill. Historical totals are canonical decimal currency strings with exactly two decimal places; normalized_total must store integer minor units, so '12.34' becomes 1234. Blank, malformed, exponent, or otherwise noncanonical totals must be quarantined rather than coerced. The production dataset has millions of rows: process ordered bounded batches, commit and checkpoint only after a complete batch, use an idempotent upsert keyed by order ID, leave the checkpoint unchanged on batch failure, and resume safely from the last committed checkpoint. Write only the allowed design artifact, and include the Test Value decision plus concrete completion evidence in the user-facing answer.",
+  "checks": [
+    {
+      "type": "onlyDatedTopicDesignAdded",
+      "slug": "historical-order-total-backfill"
+    },
+    {
+      "type": "fixtureFilesUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Protects data invariants, idempotency, batching, restart, and recovery.",
+    "Chooses valuable automation or isolated rehearsal rather than migration boilerplate."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

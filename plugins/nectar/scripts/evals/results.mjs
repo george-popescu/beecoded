@@ -1,12 +1,34 @@
+import crypto from 'node:crypto';
+
 const VALID_HOSTS = new Set(['claude', 'codex']);
 const VALID_STATUSES = new Set(['passed', 'failed', 'unavailable']);
 
+export function redactExcludedValues(contract, value) {
+  let redacted = String(value ?? '');
+  for (const check of contract?.checks || []) {
+    if (check.type !== 'responseExcludes' || !check.value) continue;
+    const escaped = check.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    redacted = redacted.replace(new RegExp(escaped, 'gi'), '<redacted>');
+  }
+  return redacted;
+}
+
+export function actorResponseArtifacts(contract, response) {
+  const actorResponse = redactExcludedValues(contract, response);
+  return {
+    actorResponse,
+    actorResponseSha256: crypto.createHash('sha256').update(actorResponse).digest('hex'),
+  };
+}
+
 export function normalizeResult({
+  artifacts,
   host,
   caseId,
   passed,
   score,
   evidence,
+  metadata,
   status = passed ? 'passed' : 'failed',
 }) {
   const failures = [];
@@ -17,6 +39,22 @@ export function normalizeResult({
   if (!VALID_STATUSES.has(status)) failures.push('status must be passed, failed, or unavailable');
   if (status === 'passed' && !passed) failures.push('passed status requires passed=true');
   if (status !== 'passed' && passed) failures.push(`${status} status requires passed=false`);
+  if (artifacts !== undefined) {
+    if (!artifacts || typeof artifacts !== 'object' || Array.isArray(artifacts)) {
+      failures.push('artifacts must be an object');
+    } else {
+      if (typeof artifacts.actorResponse !== 'string' || !artifacts.actorResponse.trim()) {
+        failures.push('artifacts.actorResponse must be a non-empty string');
+      }
+      if (!/^[a-f0-9]{64}$/.test(artifacts.actorResponseSha256 || '')) {
+        failures.push('artifacts.actorResponseSha256 must be a SHA-256 hex digest');
+      } else if (typeof artifacts.actorResponse === 'string'
+        && crypto.createHash('sha256').update(artifacts.actorResponse).digest('hex')
+          !== artifacts.actorResponseSha256) {
+        failures.push('artifacts.actorResponseSha256 does not match actorResponse');
+      }
+    }
+  }
   if (failures.length) throw new Error(failures.join('\n'));
 
   const normalizedEvidence = Array.isArray(evidence) ? evidence : [evidence];
@@ -31,6 +69,8 @@ export function normalizeResult({
     passed,
     score,
     evidence: normalizedEvidence,
+    ...(artifacts === undefined ? {} : { artifacts }),
+    ...(metadata === undefined ? {} : { metadata }),
   };
 }
 

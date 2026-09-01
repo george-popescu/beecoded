@@ -28,6 +28,30 @@ For every candidate:
 6. Check whether the suggested fix addresses the root cause without disproportionate complexity or unauthorized scope. Solution opportunity must account for approved or planned work that will replace, delete, or own the affected path.
 7. Assign the adjusted class, severity, convergence effect, and disposition. Reclassification is a successful validation outcome, not a weaker confirmation.
 
+## Test Value validation adapter
+
+For a coverage or existing-test candidate, require the caller's canonical Test
+Value contract and frozen review scope. Recheck the **Protected behavior**,
+**Credible failure**, **Impact**, **Unique existing coverage**, **Owning layer**,
+**Implementation independence**, **Runtime class and cost**, **Test decision**,
+and separate **Completion evidence** against the real owning runtime layer.
+Actively refute, reclassify, or discard a candidate whose named owner is dead,
+neighboring, duplicate, or unable to observe the outcome.
+
+Confirm a coverage gap only when the complete map supports
+`ADD_PRODUCT_TEST`. Preserve the finding class (`TEST_OR_COVERAGE_GAP` or
+`TEST_DEFECT`) and validate the separate **Suite disposition**: `KEEP` for unique
+valuable ownership, `REMOVE` for no behavior or safely redundant framework/label
+noise, `CONSOLIDATE` for duplicates, `MOVE` for the wrong layer, or `REWRITE` for
+valuable stale/flaky/implementation-coupled coverage. Apply dispositions only
+inside the frozen review scope or an explicit suite-review/test-health scope.
+They are recommendations and never authorize Validator to edit or delete tests.
+
+Solution Fit is a pre-build verdict about whether a candidate change is correct
+and complete. Solution opportunity is a post-finding rating of whether a
+confirmed concern is worth fixing. Never return a Solution Fit verdict from
+this review validator; it may only recommend the separate pre-build gate.
+
 ## Finding classes
 
 - CODE_DEFECT — current production code can produce an incorrect, unsafe, unavailable, corrupt, or materially inefficient runtime outcome through a demonstrably live path.

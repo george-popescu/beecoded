@@ -10,21 +10,22 @@
   "prompt": "Let's build a checkout rebuild.",
   "checks": [
     {
-      "type": "responseIncludes",
-      "value": "docs/work/2026-07-15-checkout-rebuild"
-    },
-    {
-      "type": "responseIncludes",
-      "value": "Continue existing work"
-    },
-    {
       "type": "pathAbsent",
       "path": "docs/work/2026-07-16-checkout-rebuild"
+    },
+    {
+      "type": "fixtureUnchanged"
     }
   ],
   "graderCriteria": [
     "Surfaces the exact existing topic path and its artifact set.",
     "Offers Continue existing work, Create a distinct feature, and Cancel.",
     "Does not create a second checkout-rebuild root before the user chooses."
-  ]
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
 }

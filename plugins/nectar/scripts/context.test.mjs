@@ -4,15 +4,22 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import {
+  classifyContextImpact,
   createContextStaging,
   DEFAULT_THRESHOLDS,
+  fingerprintDocuments,
   inspectContext,
   normalizeThresholds,
   promoteContextSnapshot,
   validateContextDocuments,
 } from './context/state.mjs';
+
+function snapshotFingerprint(context, conventions) {
+  return fingerprintDocuments(context, conventions);
+}
 
 function fixture(t, files = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-context-'));
@@ -51,10 +58,10 @@ function initializeGit(root) {
 
 function runContext(...args) {
   return spawnSync(process.execPath, [
-    path.resolve('scripts/run-context.mjs'),
+    path.join(path.dirname(fileURLToPath(import.meta.url)), 'run-context.mjs'),
     ...args,
   ], {
-    cwd: path.resolve('.'),
+    cwd: path.dirname(fileURLToPath(import.meta.url)),
     encoding: 'utf8',
   });
 }
@@ -68,7 +75,7 @@ test('status prefers Nectar documents over Bee fallback and remains read-only', 
       source: 'nectar',
       generatedAt: '2026-07-20T00:00:00.000Z',
       baseCommit: null,
-      fingerprint: 'fixture',
+      fingerprint: snapshotFingerprint('# Nectar context\n', '# Nectar conventions\n'),
       thresholds: DEFAULT_THRESHOLDS,
     }),
     '.bee/CONTEXT.md': '# Bee context\n',
@@ -124,7 +131,7 @@ test('Git drift classifies fresh, stale, and expired context', (t) => {
     source: 'nectar',
     generatedAt: '2026-07-20T00:00:00.000Z',
     baseCommit,
-    fingerprint: 'fixture',
+    fingerprint: snapshotFingerprint('# Context\n', '# Conventions\n'),
     thresholds: {
       staleDays: 14,
       expiredDays: 30,
@@ -152,6 +159,64 @@ test('Git drift classifies fresh, stale, and expired context', (t) => {
   }).state, 'expired');
 });
 
+test('managed document fingerprint drift is explicit and never reports fresh', (t) => {
+  const context = '# Context\n';
+  const conventions = '# Conventions\n';
+  const expected = snapshotFingerprint(context, conventions);
+  const root = fixture(t, {
+    '.nectar/CONTEXT.md': context,
+    '.nectar/CONVENTIONS.md': conventions,
+    '.nectar/context.json': JSON.stringify({
+      schema: 1,
+      source: 'nectar',
+      generatedAt: '2026-07-20T00:00:00.000Z',
+      baseCommit: null,
+      fingerprint: expected,
+      thresholds: DEFAULT_THRESHOLDS,
+    }),
+  });
+
+  assert.equal(inspectContext(root, {
+    now: new Date('2026-07-21T00:00:00.000Z'),
+  }).state, 'fresh');
+
+  fs.writeFileSync(path.join(root, '.nectar', 'CONTEXT.md'), '# Context drifted\n');
+  const drifted = inspectContext(root, {
+    now: new Date('2026-07-21T00:00:00.000Z'),
+  });
+  assert.equal(drifted.state, 'stale');
+  assert.deepEqual(drifted.fingerprint, {
+    actual: snapshotFingerprint('# Context drifted\n', conventions),
+    expected,
+    matches: false,
+    valid: true,
+  });
+
+  const metadataPath = path.join(root, '.nectar', 'context.json');
+  const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+  metadata.fingerprint = 'not-a-sha256';
+  fs.writeFileSync(metadataPath, JSON.stringify(metadata));
+  const malformed = inspectContext(root, {
+    now: new Date('2026-07-21T00:00:00.000Z'),
+  });
+  assert.equal(malformed.state, 'stale');
+  assert.equal(malformed.fingerprint.valid, false);
+  assert.equal(malformed.fingerprint.matches, false);
+
+  delete metadata.fingerprint;
+  fs.writeFileSync(metadataPath, JSON.stringify(metadata));
+  const missing = inspectContext(root, {
+    now: new Date('2026-07-21T00:00:00.000Z'),
+  });
+  assert.equal(missing.state, 'stale');
+  assert.deepEqual(missing.fingerprint, {
+    actual: snapshotFingerprint('# Context drifted\n', conventions),
+    expected: null,
+    matches: false,
+    valid: false,
+  });
+});
+
 test('structural drift is stale immediately and generated workflow files are ignored', (t) => {
   const root = fixture(t);
   const baseCommit = initializeGit(root);
@@ -163,7 +228,7 @@ test('structural drift is stale immediately and generated workflow files are ign
     source: 'nectar',
     generatedAt: '2026-07-20T00:00:00.000Z',
     baseCommit,
-    fingerprint: 'fixture',
+    fingerprint: snapshotFingerprint('# Context\n', '# Conventions\n'),
     thresholds: DEFAULT_THRESHOLDS,
   }));
   fs.mkdirSync(path.join(root, 'docs/work/topic'), { recursive: true });
@@ -182,6 +247,89 @@ test('structural drift is stale immediately and generated workflow files are ign
   assert.doesNotMatch(report.changedFiles.join('\n'), /docs\/work/);
 });
 
+test('ambient Git routing cannot hide structural drift in the inspected project', (t) => {
+  const root = fixture(t);
+  const baseCommit = initializeGit(root);
+  const context = '# Context\n';
+  const conventions = '# Conventions\n';
+  fs.mkdirSync(path.join(root, '.nectar'));
+  fs.writeFileSync(path.join(root, '.nectar', 'CONTEXT.md'), context);
+  fs.writeFileSync(path.join(root, '.nectar', 'CONVENTIONS.md'), conventions);
+  fs.writeFileSync(path.join(root, '.nectar', 'context.json'), JSON.stringify({
+    schema: 1,
+    source: 'nectar',
+    generatedAt: '2026-07-20T00:00:00.000Z',
+    baseCommit,
+    fingerprint: snapshotFingerprint(context, conventions),
+    thresholds: DEFAULT_THRESHOLDS,
+  }));
+  fs.writeFileSync(path.join(root, 'package.json'), '{}\n');
+
+  const foreign = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-context-foreign-git-'));
+  t.after(() => fs.rmSync(foreign, { recursive: true, force: true }));
+  fs.rmSync(foreign, { recursive: true, force: true });
+  const cloned = spawnSync('git', ['clone', '-q', root, foreign], { encoding: 'utf8' });
+  assert.equal(cloned.status, 0, cloned.stderr);
+
+  const previous = {
+    GIT_DIR: process.env.GIT_DIR,
+    GIT_WORK_TREE: process.env.GIT_WORK_TREE,
+  };
+  process.env.GIT_DIR = path.join(foreign, '.git');
+  process.env.GIT_WORK_TREE = foreign;
+  let report;
+  try {
+    report = inspectContext(root, {
+      now: new Date('2026-07-21T00:00:00.000Z'),
+    });
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+
+  assert.equal(report.git.available, true);
+  assert.equal(report.state, 'stale');
+  assert.deepEqual(report.structuralChanges, ['package.json']);
+  assert.ok(report.changedFiles.includes('package.json'));
+});
+
+test('context status never executes a repository-configured FSMonitor hook', (t) => {
+  const root = fixture(t);
+  const baseCommit = initializeGit(root);
+  const context = '# Context\n';
+  const conventions = '# Conventions\n';
+  fs.mkdirSync(path.join(root, '.nectar'));
+  fs.writeFileSync(path.join(root, '.nectar', 'CONTEXT.md'), context);
+  fs.writeFileSync(path.join(root, '.nectar', 'CONVENTIONS.md'), conventions);
+  fs.writeFileSync(path.join(root, '.nectar', 'context.json'), JSON.stringify({
+    schema: 1,
+    source: 'nectar',
+    generatedAt: '2026-07-20T00:00:00.000Z',
+    baseCommit,
+    fingerprint: snapshotFingerprint(context, conventions),
+    thresholds: DEFAULT_THRESHOLDS,
+  }));
+  const hook = path.join(path.dirname(root), `${path.basename(root)}-fsmonitor.sh`);
+  const marker = path.join(path.dirname(root), `${path.basename(root)}-fsmonitor-invoked`);
+  t.after(() => {
+    fs.rmSync(hook, { force: true });
+    fs.rmSync(marker, { force: true });
+  });
+  fs.writeFileSync(hook, `#!/bin/sh\nprintf invoked > ${JSON.stringify(marker)}\n`);
+  fs.chmodSync(hook, 0o700);
+  git(root, 'config', 'core.fsmonitor', hook);
+  fs.writeFileSync(path.join(root, 'package.json'), '{}\n');
+
+  const report = inspectContext(root, {
+    now: new Date('2026-07-21T00:00:00.000Z'),
+  });
+
+  assert.equal(report.state, 'stale');
+  assert.equal(fs.existsSync(marker), false);
+});
+
 test('an unresolvable base commit expires context while non-Git projects use age only', (t) => {
   const gitRoot = fixture(t);
   initializeGit(gitRoot);
@@ -194,7 +342,7 @@ test('an unresolvable base commit expires context while non-Git projects use age
     source: 'nectar',
     generatedAt: '2026-07-20T00:00:00.000Z',
     baseCommit: '0000000000000000000000000000000000000000',
-    fingerprint: 'fixture',
+    fingerprint: snapshotFingerprint('# CONTEXT.md\n', '# CONVENTIONS.md\n'),
     thresholds: DEFAULT_THRESHOLDS,
   }));
   assert.equal(inspectContext(gitRoot, {
@@ -209,7 +357,7 @@ test('an unresolvable base commit expires context while non-Git projects use age
       source: 'nectar',
       generatedAt: '2026-07-01T00:00:00.000Z',
       baseCommit: null,
-      fingerprint: 'fixture',
+      fingerprint: snapshotFingerprint('# Context\n', '# Conventions\n'),
       thresholds: DEFAULT_THRESHOLDS,
     }),
   });
@@ -485,4 +633,28 @@ test('context runner exposes read-only status and staged promotion', (t) => {
   assert.equal(promoted.status, 0, promoted.stderr);
   assert.equal(JSON.parse(promoted.stdout).thresholds.staleDays, 7);
   assert.equal(runContext('status', root, '--json').status, 0);
+});
+
+test('context impact skips only explicit volatile paths and refreshes structural, cited, source, or unknown drift', () => {
+  assert.deepEqual(
+    classifyContextImpact({
+      changedFiles: ['docs/work/2026-08-30-finished/review.md', 'CHANGELOG.md', 'tests/example.test.mjs'],
+      citedPaths: ['src/service.mjs'],
+    }),
+    {
+      decision: 'skip',
+      reasons: ['volatile-only'],
+    },
+  );
+
+  for (const changedFiles of [
+    ['package.json'],
+    ['src/new-service.mjs'],
+    ['src/service.mjs'],
+    ['unclassified/artifact.bin'],
+  ]) {
+    const result = classifyContextImpact({ changedFiles, citedPaths: ['src/service.mjs'] });
+    assert.equal(result.decision, 'refresh');
+    assert.ok(result.reasons.length > 0);
+  }
 });

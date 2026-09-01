@@ -1,0 +1,29 @@
+{
+  "id": "framework-registration",
+  "skill": "nectar-shape",
+  "tags": [
+    "quality-lifecycle"
+  ],
+  "fixture": {
+    "files": {
+      "src/providers/report-provider.js": "export class ReportProvider {\n  register(container) { container.bind('reports', () => ({})); }\n}\n",
+      "src/bootstrap.js": "export const providers = [];\n"
+    }
+  },
+  "prompt": "Inspect src/providers/report-provider.js and src/bootstrap.js. Register this ordinary provider and choose the appropriate completion evidence.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Treats ordinary registration boilerplate as no-new-test unless it is a product contract.",
+    "Keeps non-test completion evidence."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

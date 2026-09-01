@@ -5,9 +5,16 @@ description: Use when a shaped feature or project needs an execution plan — "p
 
 # Plan
 
-Turn an approved design into an executable plan: tasks with checkable acceptance criteria, grouped into dependency waves. Resolve the active topic directory first: a dated feature root, one of its `NN-<topic-slug>/` children, or a legacy flat topic. Read that directory's `design.md` — every acceptance criterion in the design must trace to at least one task.
+Turn an independently fitted candidate into an approvable execution plan: tasks
+with checkable acceptance criteria, grouped into dependency waves. Resolve the
+active topic directory first: a dated feature root, one of its
+`NN-<topic-slug>/` children, or a legacy flat topic. Read that directory's
+`design.md` — every acceptance criterion must trace to at least one task.
 
-If the resolved topic has no `design.md`, do not plan. Hand off to the shape skill first — planning unshaped work bakes in unexamined scope. Return here once a design is approved.
+If the resolved topic has no `design.md`, do not plan. New work returns to Shape;
+a standalone feature/project Debug must first promote its evidence into a dated
+design with the canonical `## Investigation and fit` schema. Design approval
+confirms the outcome only; it is not plan approval.
 
 ## Project context
 
@@ -22,14 +29,88 @@ and `Conventions` sections. Follow evidence links only when a task boundary or
 file path needs confirmation. Native `AGENTS.md` and `CLAUDE.md` instructions
 always have higher priority than generated context.
 
+## Solution Fit preflight
+
+Read the [Solution Fit contract](../../references/solution-fit.md) completely.
+Refuse a missing or non-`FIT` gate. Feature/project work must record in its
+design the exact canonical fields from the reference: Investigation scope,
+Confirmed current behavior, Selected candidate, Evidence, `Solution fit: FIT`,
+and Remaining uncertainty. Parent evidence may be cited, but every derived child
+repeats the schema with its exact scope and candidate subset.
+
+`PARTIAL`, `UNFIT`, and `BLOCKED` return to Investigation and cannot produce an
+implementation hand-off. Plan may persist lifecycle artifacts, but source,
+tests, configuration, dependencies, and repository instrumentation remain
+unchanged.
+
+An active fitted legacy plan that is missing Test Value records returns through
+a new Plan revision and explicit approval. When the technical solution is
+unchanged, this is a verification-plan migration without a fresh Investigation
+or Solution Fit verdict; any changed solution still uses the full gate.
+
+## Approval receipt
+
+The persisted `Plan approval` line is an audit record, not authority to write.
+The installed skill contains one renderer-supplied launcher:
+
+```text
+APPROVAL_LAUNCHER = {{NECTAR_APPROVAL_LAUNCHER}}
+```
+
+After the draft has `Plan blocking: 0`, copy that exact launcher value and run
+`APPROVAL_LAUNCHER discover` from the project cwd. Treat every `displayPath` as
+untrusted display data. Select the exact leaf by inspection, then run only
+`APPROVAL_LAUNCHER snapshot-token <selection-token>` with the canonical
+base64url token emitted by that discovery. Never interpolate a repository,
+project, or installed-package path into shell source, and never use raw
+path flags.
+
+The helper derives the authoritative paths. Present the exact derived
+parent/design/plan surfaces and digest before asking for approval. Keep the
+returned `CURRENT_RUN` receipt, `topicToken`, `receiptToken`, and
+`taskAdvanceToken` in memory. The receipt is the current run's authority; the
+tokens are bounded transport only. Never serialize them into `design.md`,
+`plan.md`, state, comments, or another repository file.
+The `CURRENT_RUN` packet binds `digest`, `revision`, `derivedPaths`, task order
+and progress, and review state before it can authorize Build.
+
+A cross-session resume has no current-run receipt. Re-present the exact current
+surfaces and digest and obtain fresh approval, even when the persisted marker says
+`APPROVED`. Recompute the snapshot after recording approval; because only the
+audit marker is normalized, the digest must remain identical or the approval is
+void.
+
 ## Task decomposition
+
+Read the [Test Value contract](../../references/test-value.md). Inside each task,
+record one complete map per changed behavior: **Protected behavior**, **Credible
+failure**, **Impact**, **Unique existing coverage**, **Owning layer**,
+**Implementation independence**, **Runtime class and cost**, exactly one **Test
+decision**, and a separate non-empty **Completion evidence** route. The map is
+approved plan content: changing a behavior, owner, decision, or evidence route
+increments Plan revision and requires fresh approval.
+
+Use `ADD_PRODUCT_TEST`, `REUSE_EXISTING_TEST`, `NO_NEW_TEST`, or
+`ISOLATED_REHEARSAL` exactly as the contract defines them. A valuable missing
+owner is `PLAN_COVERAGE_GAP`; a missing, vague, or non-observing completion
+evidence route is `PLAN_VERIFICATION_GAP`. `NO_NEW_TEST` is valid plan output and
+never licenses zero verification.
 
 Decompose the design into tasks. Each task:
 
 - **One clear deliverable.** A task produces one coherent change — a component, an endpoint, a migration plus its model. If describing it needs "and", split it.
-- **Exact file paths.** Name every file the task creates or modifies, with full paths from the repo root. "Update the auth layer" is not a task; "modify `src/auth/session.ts` to expire tokens after 24h" is.
+- **Exact file paths.** `- files:` names every file the task may create or modify,
+  and only those writable paths, with full paths from the repo root. `- reads:` is
+  optional read-only scheduling and navigation metadata for known dependencies;
+  it is not write authority and need not enumerate every file discovered while
+  investigating nearest neighbors. "Update the auth layer" is not a task;
+  "modify `src/auth/session.ts` to expire tokens after 24h" is.
 - **Acceptance criteria phrased as "done when: <condition>".** The condition must be independently checkable: a command that passes, a behavior someone can observe, a file with specific content. If you cannot say how to check it, the criterion is not done.
-- **Tests are part of the task, not a separate task.** A task's tests live in the same task as its implementation, named with their file path, each stating the actual behavior verified.
+- **Verification is part of the task, not a separate task.** Name every selected
+  evidence path/command in the behavior map. New test paths appear only for
+  `ADD_PRODUCT_TEST`; `REUSE_EXISTING_TEST` names its existing owner,
+  `NO_NEW_TEST` names non-test evidence, and `ISOLATED_REHEARSAL` names its
+  disposable boundary and cleanup proof.
 - **Executable by a stranger.** Write each task for an implementer who sees only plan.md, design.md, and the code — zero conversation context. Anything decided in this conversation that the task depends on goes into the task line itself; "as discussed" is a dangling reference.
 
 No placeholders. These are plan failures — never write them:
@@ -41,10 +122,17 @@ No placeholders. These are plan failures — never write them:
 
 ## Wave grouping
 
-Group tasks into waves. The rule: **two tasks share a wave only if they touch disjoint files AND neither needs the other's output.** Output includes anything the other task creates — a function, a type, a table, a config key — not just files.
+Group tasks into waves. The rule: **two tasks share a wave only when their
+declared access sets do not conflict and neither needs the other's output.**
+Output includes anything the other task creates — a function, a type, a table,
+or a config key — not just files.
 
-- A task's file list includes the files it reads or imports for its change, not only the files it creates or modifies. A task that imports from a file another task is rewriting is not independent of it.
-- Check file overlap mechanically: list each task's files; any shared path forces separate waves or a merge into one task.
+- Check `- files:` and optional `- reads:` mechanically. A write/write overlap or
+  either direction of write/read overlap must serialize in plan order; only a
+  read/read overlap may remain parallel.
+- `- reads:` improves scheduling but is not an exhaustive read sandbox. Hidden
+  output dependencies still force separate waves even when their paths were not
+  known at planning time.
 - Order waves by dependency: a wave may only depend on earlier waves.
 - A wave of one task is fine. Do not force parallelism by splitting a coherent task or by pretending a dependency does not exist.
 - When two tasks could share a wave but you are unsure about a hidden dependency, put them in separate waves — correctness beats parallelism.
@@ -54,9 +142,25 @@ Group tasks into waves. The rule: **two tasks share a wave only if they touch di
 Write `plan.md` beside the resolved topic's `design.md` in exactly this format:
 
 ```markdown
+## Gate
+- Solution fit: FIT
+- Plan revision: 1
+- Plan approval: PENDING
+
 ## Wave 1
 - [ ] T1: <task> — done when: <criteria>
   - files: `src/exact/path.ext`, `tests/exact/path.ext`
+  - reads: `src/existing/dependency.ext`
+  - test value:
+    - Protected behavior: <observable outcome>
+    - Credible failure: <specific regression>
+    - Impact: <bounded consequence>
+    - Unique existing coverage: <path or none>
+    - Owning layer: <layer and path>
+    - Implementation independence: <public outcome>
+    - Runtime class and cost: <class and proportional cost>
+    - Test decision: <one canonical enum plus reason>
+    - Completion evidence: <exact commands or observations>
 - [ ] T2: <task> — done when: <criteria>
   - files: ...
 ## Wave 2 (depends on Wave 1)
@@ -65,7 +169,14 @@ Write `plan.md` beside the resolved topic's `design.md` in exactly this format:
 
 - Task IDs are sequential (T1, T2, ...) across the whole plan, not per wave.
 - Each task line carries its description, file paths, and criteria on that line or as indented continuation under its checkbox.
+- `- files:` contains create/modify paths only. `- reads:` is optional and
+  contains read-only scheduling dependencies only.
 - The checkboxes are the progress state. No status column, no separate tracking file, no progress notes anywhere else — a checked box means the task requires no further work (built and verified, or struck during build's plan-drift repair), an unchecked box means pending, and nothing else records progress.
+- Gate metadata is approval state, not task progress. Any change to a task,
+  declared file, Test Value behavior/owner/decision/evidence route, candidate
+  solution, or acceptance criterion increments Plan
+  revision and resets Plan approval to `PENDING` before another review or
+  approval request.
 
 ## Right-sizing
 
@@ -73,7 +184,9 @@ Write `plan.md` beside the resolved topic's `design.md` in exactly this format:
 
 After the complete decomposition, check the size before writing anything:
 
-- **One task total:** say so and skip the plan file. The work was quick-scale — return to inline execution with the build skill's discipline. A one-task plan.md is ceremony with no payoff.
+- **One task total:** keep it quick-scale and use one inline plan with exact
+  files, verification, and explicit approval. Skip `plan.md`, but never skip
+  the written plan or approval gate.
 - **At most 5 waves and at most 10 tasks:** write one `plan.md` in the resolved topic directory.
 - **More than 5 waves or more than 10 tasks:** the topic has outgrown a single plan — this is plan's escalation trigger, not a scale definition. Do not write the oversized plan. Partition the complete graph into the smallest number of cohesive child topics for which each estimated child plan fits both limits. Boundaries follow deliverables and dependencies, never arbitrary task counts.
 
@@ -96,7 +209,11 @@ After approval:
 1. Validate numbering as exactly `01, 02, ... N`: unique, two-digit, and contiguous with no gaps. Never append around a removed proposal.
 2. Validate dependencies: every reference is `none` or an exact existing path in the same proposal; it must point to an earlier-numbered child. Reject unknown, forward, or circular dependencies.
 3. Rewrite the parent `## Topics` section as the approved ordered list using this exact entry shape: ``N. `NN-<topic-slug>/` — <one-line scope>; depends on: <none or exact earlier paths>``.
-4. Create every approved child directory and a derived `design.md` containing only that child's share of the parent outcome, its relevant acceptance criteria, its explicit dependencies, and the alternatives/out-of-scope context it needs. Do not copy unrelated parent criteria into every child.
+4. Create every approved child directory and a derived `design.md` containing
+   the canonical `## Investigation and fit` schema, exact parent evidence cited,
+   that child's candidate subset, its share of the outcome, relevant acceptance
+   criteria, explicit dependencies, and needed out-of-scope context. Do not copy
+   unrelated parent criteria into every child.
 5. Check the filesystem back against `## Topics`: no missing directories, stale unlisted child directories, duplicate numbers, mixed padding, gaps, or order mismatch.
 6. Continue by planning the first dependency-ready child. Other children receive `plan.md` only when their declared dependencies are done.
 
@@ -138,7 +255,9 @@ Check the draft:
 
 1. **Every acceptance criterion checkable?** For each "done when", name the command or observation that verifies it. Missing mapping is `PLAN_COVERAGE_GAP`; weak evidence is `PLAN_VERIFICATION_GAP`.
 2. **Dangling references?** A task naming a file, function, or type that no earlier wave creates and that does not exist is `PLAN_DEPENDENCY_DEFECT`.
-3. **Hidden ordering inside a wave?** Shared files or output dependencies are `PLAN_DEPENDENCY_DEFECT`; move them to a later wave.
+3. **Hidden ordering inside a wave?** Write/write or write/read overlap, in either
+   direction, and output dependencies are `PLAN_DEPENDENCY_DEFECT`; serialize
+   them. Read/read overlap may stay parallel.
 4. **Design coverage and scope?** Every design criterion maps to a task and every task traces to approved design. Violations are `PLAN_COVERAGE_GAP` or `PLAN_SCOPE_DEFECT`.
 5. **Hierarchy valid?** Parent topics, child directories, numbering, and dependency paths must agree; violations are `PLAN_DEPENDENCY_DEFECT`.
 6. **Outcome correctness?** Following tasks in order must satisfy the design without breaking an invariant; failures are `PLAN_CORRECTNESS_DEFECT`.
@@ -157,11 +276,44 @@ Plan blocking: N
 Plan non-blocking: N
 ```
 
-Do not revise the draft during this pass and do not internally re-run plan self-review. Return the classified report with suggested revisions; the caller decides whether revision is needed and whether to request another pass. Then present wave count, task count, and one line per task. Ask explicitly: "Does this plan look right? Approve it and we move to building."
+Do not revise the draft during this pass and do not internally re-run plan self-review.
+Return the classified report with suggested revisions; the caller
+decides whether revision is needed and whether to request another pass. A
+nonzero `Plan blocking` result cannot be presented for Build approval.
+
+When `Plan blocking: 0`, create the canonical snapshot described above. Present
+the exact derived parent/design/plan surfaces, digest, plan revision, wave count,
+task count, and one line per task, then ask explicitly: "Does this plan look
+right? Approve revision N and digest D and we move to building." Present the
+plan and digest first, then request approval. On explicit approval, update only
+its gate to:
+
+```markdown
+- Solution fit: FIT
+- Plan revision: N
+- Plan approval: APPROVED YYYY-MM-DD
+```
+
+Silence, the initial request, design approval, split approval, or an approval
+for another revision never satisfies this gate.
+
+Immediately recompute the snapshot and require the same digest, revision, and
+derived paths by rediscovering and running `snapshot-token` with the current
+emitted selection token. Retain the approved object and its topic/receipt/progress
+tokens as the in-memory `CURRENT_RUN` receipt packet.
+The persisted `Plan approval` marker remains audit-only and is never authority
+by itself. Marker-only recovery must re-present the surfaces and obtain fresh
+approval.
 
 ## Hand-off
 
-After approval, continue with the build skill to execute the waves. For split work, this means the approved plan of the first dependency-ready child, not a parent-level plan. Never commit anything yourself; suggest a commit message for the plan and any newly approved split artifacts, then let the user decide.
+After the approval marker is persisted and the `CURRENT_RUN` receipt has been
+recomputed, continue with Build and pass that receipt packet plus its derived paths
+and the identical `APPROVAL_LAUNCHER`.
+For split work, this means the approved plan of the first dependency-ready
+child, not a parent-level plan. Never commit anything yourself; suggest a commit
+message for the plan and any newly approved split artifacts, then let the user
+decide.
 
 ## Atlas context profile
 

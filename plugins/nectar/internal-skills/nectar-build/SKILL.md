@@ -1,11 +1,15 @@
 ---
 name: nectar-build
-description: Use when implementing — "implement the plan", "let's code this", "start building" — executing a plan.md, or writing any non-trivial code even without a plan. Enforces test-first development, runs independent waves as parallel subagents, and keeps plan checkboxes current as the single progress record. Not for deciding what to build (shape), creating the plan itself (plan), or investigating why something fails (debug).
+description: Use when implementing — "implement the plan", "let's code this", "start building" — executing a plan.md, or writing any non-trivial code even without a plan. Executes each approved Test Value branch, runs independent waves as parallel subagents, and keeps plan checkboxes current as the single progress record. Not for deciding what to build (shape), creating the plan itself (plan), or investigating why something fails (debug).
 ---
 
 # Build
 
-Execute work test-first. With a resolved leaf topic's `plan.md`, run its waves in order. Without one — quick-scale work, decided inline — the same TDD loop applies to every non-trivial change; only the wave machinery and the checkboxes drop away. Non-trivial means anything above trivial scale as defined by the shape skill: trivial edits just get done, everything from quick scale up gets tests first. "No plan" never means "no tests first".
+Execute only an independently fitted and explicitly approved plan. With a
+resolved leaf topic's `plan.md`, run its waves in order. Trivial/quick work may
+carry its fitted and approved plan inline; "no plan file" never means "no
+written plan or approval". Test creation follows the approved Test Value
+decision; every branch retains a separate observed completion-evidence route.
 
 ## Project context
 
@@ -21,6 +25,68 @@ entry points`, `Modules and relationships`, and `Conventions`. Native
 `AGENTS.md` and `CLAUDE.md` instructions always have higher priority than
 generated context.
 
+## Approval preflight
+
+Read the [Solution Fit contract](../../references/solution-fit.md) completely.
+Run this preflight before the first source, test, or configuration write and
+before dispatching any implementer.
+
+For feature/project work, read the current plan gate and require exactly:
+
+```markdown
+- Solution fit: FIT
+- Plan revision: N
+- Plan approval: APPROVED YYYY-MM-DD
+```
+
+The persisted marker is audit-only, never approval authority. Require an
+in-memory `CURRENT_RUN` receipt from the exact approval interaction, including
+`digest`, `revision`, `derivedPaths`, ordered/completed task IDs, and review
+progress, plus its `topicToken`, `receiptToken`, and `taskAdvanceToken`. A
+marker-only entry must stop: do not dispatch or edit. Cross-session work must
+return to Plan, re-present the exact current surfaces and digest, and obtain fresh
+approval.
+
+The installed skill contains one renderer-supplied launcher:
+
+```text
+APPROVAL_LAUNCHER = {{NECTAR_APPROVAL_LAUNCHER}}
+```
+
+Copy that value exactly. From the project cwd run `APPROVAL_LAUNCHER discover`,
+select only the helper-emitted token whose untrusted display path matches the
+resolved leaf, then run `APPROVAL_LAUNCHER snapshot-token <topicToken>`. Never
+insert a display, project, topic, staging, or installed-package path into shell
+source. Reject raw path flags, noncanonical tokens, an altered launcher, or a
+selection token not present in the current discovery.
+
+This rediscovery and `snapshot-token` call recompute the current receipt before
+dispatch; a previously returned token is never proof of current membership.
+
+Require exact equality with the approved receipt's digest, revision,
+derivedPaths, task order/progress, and review maximum. An absent, stale,
+non-`FIT`, marker-only, or mismatched gate stops Build without changing source,
+tests, configuration, or plan progress.
+
+For trivial/quick work, require the equivalent inline investigation, `FIT`,
+written plan, exact file scope, one complete Test Value map per behavior,
+verification, and explicit approval in the current conversation. An initial
+request or design approval is not enough.
+
+Read the [Test Value contract](../../references/test-value.md). Stop before any
+write when a task or inline plan is missing a behavior map, its exact decision,
+or a non-empty completion evidence route. An active fitted legacy plan missing
+Test Value returns through a new Plan revision and approval; when the technical
+solution is unchanged, no fresh Investigation is required.
+
+The approved `- files:` list is create/modify authority; declared file creation
+is allowed. Optional `- reads:` entries are read-only scheduling/navigation
+metadata, never write authority or an exhaustive read sandbox. An undeclared file
+invalidates fit and approval when written, as does a path outside `- files:`,
+another approach, changed outcome, or changed acceptance criterion.
+
+Source, tests, and configuration remain unchanged after any failed preflight.
+
 ## Topic resolution
 
 Resolve the leaf topic directory before building: a dated feature root with its own `plan.md`, an ordered `NN-<topic-slug>/` child, or a legacy flat topic. A dated parent with `## Topics` and child directories is a container, never an executable plan; use Orient's selected child.
@@ -31,23 +97,33 @@ For a nested child, read the parent `## Topics` entry. It is dependency-ready on
 
 Before the first test of a task — or of any inline change — read the files the task touches, their existing tests, and the nearest neighbors. Three things must come out of the read: the helpers that already exist so the change reuses them instead of reinventing them, the local idioms — naming, error shape, test structure — the new code must match, and the exact place the change belongs. Code that duplicates an existing utility or ignores the surrounding conventions is wrong even when its tests pass; the finished diff should read as if the codebase's own author wrote it.
 
-## TDD loop
+## Test Value execution
 
-Apply this sequence to each task (or, without a plan, to each behavior being added or changed). The order is the discipline — no step may be skipped or reordered:
+Execute every behavior exactly through its approved map:
 
-1. **Write the failing test.** One behavior, a name that describes it, assertions driven by the inputs. The test file exists on disk before any production code for that behavior.
-2. **Run it and watch it fail.** Confirm it fails for the expected reason: the behavior is missing — not a typo, an import error, or broken test logic. If it passes, the behavior already exists or the test is wrong; fix the test before going further.
-3. **Write the minimal code to pass.** No extra features, no speculative options, no code for tests not yet written.
-4. **Run it and watch it pass.** If it fails, fix the implementation, never the test. Other tests in your run scope must stay green — for a wave subagent that scope is its own task's test files; the wave-level full-suite run covers the rest.
-5. **Refactor with tests green.** Improve names, remove duplication, extract helpers. Re-run the tests after every change; do not add behavior here.
+- **`ADD_PRODUCT_TEST`:** use red/green/refactor. Write one valuable failing
+  product test at the approved owner, run it and confirm the expected behavioral
+  failure, implement minimally, run green, then refactor without adding behavior.
+- **`REUSE_EXISTING_TEST`:** run the named existing owner at the point specified
+  by the evidence route and do not duplicate it. If it cannot observe the claimed
+  behavior, stop; that is plan drift, not permission to invent a neighboring test.
+- **`NO_NEW_TEST`:** add zero new test files. Implement only after the approved
+  non-test completion evidence is concrete, then run that build, lint, typecheck,
+  render, browser, diff, boot, runtime, or bounded manual route exactly.
+- **`ISOLATED_REHEARSAL`:** operate only in the declared disposable boundary.
+  Record setup, the observed result, teardown, and explicit no residue proof.
+  Never convert rehearsal code or data into an unapproved permanent surrogate.
 
-Never write the implementation first. Code written before its test gets a test that passes immediately, which proves nothing — delete the code and restart from step 1. "I'll add tests after" is the same violation.
+Zero new test files is a valid successful result for the latter three branches.
+Every branch still reads before writing, implements only the approved solution,
+and produces quoted observed evidence. A bug discovered mid-build returns to
+Debug for reproduction; its permanent regression decision remains Test Value,
+not an automatic failing-test requirement.
 
-**Test intent rule:** before writing each test, articulate WHY it matters — what regression would it catch, what user-visible failure does it detect? If you cannot answer concretely, do not write it. Zero tests beats shallow tests. Assertions that restate the implementation, assert a hardcoded constant with no input driving it, or check only that something "was called" add maintenance cost without coverage. This rule narrows what you test; it never reorders test-after-code.
-
-Bug fix mid-build? Reproduce it as a failing test first, then fix — same loop.
-
-Without a plan, the work closes the way a wave closes: run the full test suite once, then the project's lint and typecheck commands when it has them, before declaring the work done.
+Without a plan file, replay the approved inline behavior maps and evidence routes
+the same way. A broader full suite remains useful regression evidence when it is
+available and selected for wave close; it never proves that every behavior needs
+a new test.
 
 ## Red flags
 
@@ -55,16 +131,20 @@ These thoughts mean STOP — each is the exact rationalization that precedes a s
 
 | Thought | Reality |
 |---------|---------|
-| "This change is too simple to test first" | Simple changes break too. The loop is the same five steps at any size. |
-| "I'll write the tests after this batch" | Test-after proves nothing — delete the code, restart from step 1. |
+| "No new test means no verification" | Test creation and completion evidence are separate; replay the approved evidence route. |
+| "I'll add a shallow test so the task looks safer" | Invented coverage is plan drift and maintenance debt. Use the approved decision. |
 | "The subagent said it passed" | A claim is not verification. Re-run its test files yourself. |
 | "It should work now" | Run it. "Should" is a hypothesis, not a wave close. |
 | "I'll tick the boxes at the end of the session" | Tick at the moment of verification, or the next session resumes from a lie. |
-| "The plan says X but Y is better — I'll just do Y" | Repair plan.md first, then build Y. Silent deviation kills resumability. |
+| "The plan says X but Y is better — I'll just do Y" | Y is a new candidate. Stop and return through Investigation, Solution Fit, a revised plan, and approval. |
 
 ## Project commands
 
-Determine once per session the project's test command with its per-file invocation syntax, plus its lint and typecheck commands when the project has them. If the host's project instruction file (`CLAUDE.md` on Claude Code, `AGENTS.md` on Codex) does not already record these commands, offer a short addition — every future session then skips the rediscovery. Write it only with the user's approval.
+Determine once per session the project's available verification commands: test
+and per-file syntax when present, plus lint, typecheck, build, render, browser,
+schema, runtime, or rehearsal commands required by approved evidence routes. If
+the host project instructions do not record stable commands, offer a short
+addition and write it only with user approval.
 
 ## Wave execution
 
@@ -72,27 +152,61 @@ When executing a plan.md:
 
 - Read the plan and find the first wave containing unchecked `- [ ]` tasks — that is where execution starts (or resumes).
 - Execute waves strictly in order. A wave closes when every one of its tasks is done or has failed; a failure lets its wave-siblings finish but blocks every later wave (see Failure handling).
-- **Overlap check before dispatch:** compare the `- files:` lists of the wave's unchecked tasks. Any shared path forces serial execution of the overlapping tasks; only the disjoint remainder runs in parallel. Do not rely on the plan being freshly generated — the codebase may have drifted since it was written.
-- **Within a wave:** dispatch the disjoint tasks — one `nectar:implementer` role per task through the host's subagent capability — in a single batch so they run in parallel. On Codex, where a named plugin agent type is unavailable, load `../../agents/implementer.md` and include it as the role instructions for a general subagent. Tasks the overlap check forced serial run after that parallel batch returns, one at a time in plan order, each as its own dispatch. A wave that reduces to one task is executed directly, no subagent. Every dispatch carries the test command; lint and typecheck stay with you for the wave close.
-- **Each implementer's prompt carries only the task payload:** its task line from plan.md verbatim — the `T<n>` ID, description, and "done when" criteria — its indented `- files:` list, the resolved leaf topic directory's `design.md` path, and the test command with per-file syntax. The TDD loop, read-before-write, test-intent, and scope rules are baked into the agent — do not restate them. If the nectar agent types are unavailable in the session, fall back to a general-purpose agent and write out in full: the five TDD loop steps, the read-before-write rule, the test-intent rule, the file-scope rule (touch only the task's `- files:` list), the run-only-your-own-test-files instruction, the bans on editing plan.md and on running any state-changing git command, the failure stop (two honest fix attempts, then report with quoted output), and the report format (per-criterion met/not-met, files touched, quoted final test output). A fallback prompt missing any of these is a broken dispatch.
+- **Overlap check before dispatch:** compare every unchecked task's `- files:`
+  and optional `- reads:`. Write/write and either direction of write/read overlap
+  must serialize in plan order; read/read overlap may remain parallel. Only the
+  conflict-free remainder runs in parallel. Do not rely on the plan being freshly
+  generated — the codebase may have drifted since it was written.
+- **Within a wave:** dispatch the disjoint tasks — one `nectar:implementer` role per task through the host's subagent capability — in a single batch so they run in parallel. On Codex, where a named plugin agent type is unavailable, load `../../agents/implementer.md` and include it as the role instructions for a general subagent. Tasks the overlap check forced serial run after that parallel batch returns, one at a time in plan order, each as its own dispatch. A wave that reduces to one task is executed directly, no subagent. Both native and fallback paths receive the identical `APPROVAL_LAUNCHER`, tokens, complete Test Value coverage map, decision, and completion evidence route, plus the exact commands needed by that route. Orchestrator-level regression gates stay with you for wave close.
+- **Each implementer's prompt carries only the approved task payload:** the
+  exact `Solution fit: FIT` gate and audit marker; the full approved `CURRENT_RUN`
+  receipt (`digest`, `revision`, `derivedPaths`, task/review progress); the exact
+  derived parent path when present, leaf design path, and plan path; its task line
+  verbatim; its indented `- files:` and optional `- reads:` lists; the exact
+  rendered `APPROVAL_LAUNCHER`, `TOPIC_TOKEN`, `RECEIPT_TOKEN`, and
+  `TASK_ADVANCE_TOKEN` already used by Build; the task's full Test Value map; and
+  its exact evidence commands. If a named agent is unavailable, the fallback prompt must
+  reproduce the approval preflight, four Test Value branches, conditional
+  red/green/refactor loop, read-before-write rule, declared-create/file-scope rule,
+  run-only-your-own-evidence
+  instruction, bans on editing plan.md and state-changing Git, material-drift
+  stop, two-attempt failure stop, and report format. A fallback missing any of
+  these is a broken dispatch.
 - Subagents report results in their final message. You are the sole writer of plan.md — subagents never edit it.
-- **When a wave finishes — whether its tasks ran as subagents or directly:** first re-verify each task's "done when" criteria yourself — re-run its test files; an implementer's claim of success is not verification. Then run the full test suite once, and the project's lint and typecheck commands when it has them. Tick the verified tasks only after all of these are green. Green is a quoted observation, not a feeling: quote the final summary line of each run (e.g. `42 passed, 0 failed`) when reporting the wave close in conversation — plan.md stays checkbox-only, and a close without quoted output has not happened. If the suite is red from cross-task interaction, no task in the wave gets ticked until the regression is attributed to a specific task; fix or revert that task per Failure handling, then re-verify and re-run the suite.
+- **When a wave finishes — whether its tasks ran as subagents or directly:** first re-verify each task's "done when" criteria yourself by replaying every approved evidence route; an implementer's claim is not verification. Run the broader full suite, lint, typecheck, build, or other project regression gates when available and selected for wave close. Stop on any missing map, mutated decision/evidence route, failed observation, rehearsal residue, or cross-task regression. After all selected evidence is green, run `APPROVAL_LAUNCHER advance-task-token <TOPIC_TOKEN> <RECEIPT_TOKEN> <TASK_ADVANCE_TOKEN>`. The helper prevalidates the exact current wave and atomically writes only its verified checkboxes; never edit any progress checkbox before it returns replacement tokens. Quote the final observed evidence for every task, including an explicit `zero new test files` result when applicable; plan.md stays checkbox-only.
 - Do not pause between waves to ask "continue?" — proceed automatically to the next wave until the plan is done or a task fails.
 
 ## Plan drift
 
-The plan is a prediction; the code is reality. When execution reveals the plan is wrong — a task turns out obsolete, a missing task surfaces, the designed approach no longer fits what the code shows — stop dispatching and repair the artifact first:
+Iteration that stays inside the approved candidate, task, acceptance criteria,
+and declared file scope remains authorized. Material drift does not.
 
-- Edit plan.md: strike the obsolete task by rewriting its line as `- [x] ~~T4: ...~~ struck: <reason>` — the box is ticked because ticked means "requires no further work"; the strikethrough and reason record that it was removed, not built. Add new tasks with their files and "done when" criteria, or rewrite the affected task. Re-check the wave partition around the edit — a new task's files may collide with tasks already in flight.
-- If the divergence changes what the feature is — its scope, its behavior, an acceptance criterion — update design.md too, and tell the user what changed and why before continuing.
-- If drift makes the child exceed Plan's size limits or crosses into a sibling's scope, stop and return to Plan's split approval gate. Never create, rename, or renumber sibling topics from Build.
-- Then resume execution against the updated plan. Never build the deviation while the plan still says otherwise: orient and review both trust these files, and an artifact that lies is worse than no artifact.
+When a task is obsolete, a missing task appears, the approach changes, an
+undeclared path is needed, or the outcome/criteria change:
+
+1. Stop the affected task before editing outside the approved scope; let only
+   disjoint siblings already in flight finish.
+2. Report the evidence that invalidated the plan. Do not edit plan.md or
+   design.md from Build.
+3. Return through read-only Investigation, independent Solution Fit, a revised
+   written plan with an incremented revision and `PENDING` approval, and explicit
+   approval.
+4. Resume only after the new revision is approved. If the drift changes topic
+   boundaries, use Plan's split gate before materializing anything.
 
 ## Progress
 
-- Tick a task's checkbox (`- [ ]` → `- [x]`) in plan.md the moment its "done when" criteria are verified passing — for a parallel wave, immediately after the wave's verify-then-suite sequence is green. Never defer ticking across waves or to the end of the session.
+- After the exact current wave's verify-then-suite sequence is green, use
+  `advance-task-token` to perform the checkbox transition (`- [ ]` → `- [x]`)
+  atomically and advance the receipt as one exact verified wave. Do not pre-edit
+  plan progress. A skip, rewind, duplicate, or partial current-wave transition
+  stops Build with the artifact bytes unchanged.
 - Never tick ahead: not when the code "should work", not when a subagent claims success you have not verified against the criteria.
-- The checkboxes are the only progress state. No status notes, no separate tracking file, no progress summary elsewhere. If the session is interrupted at any point, the next session reads plan.md and resumes from the first unchecked task — which is only true if the boxes were kept current.
+- The checkboxes are the persisted progress audit. The trusted progress state is
+  the current in-memory receipt. No status notes, no separate tracking file, no
+  progress summary elsewhere. If interrupted, the next session must re-present
+  the exact surfaces and obtain fresh approval before resuming the first unchecked
+  task.
 
 ## Failure handling
 
@@ -101,8 +215,11 @@ When a task fails — tests will not pass, a "done when" criterion cannot be met
 - The failure stops the failed task's dependents (later waves), not its siblings. Let the rest of the current wave finish; do not start the next wave.
 - Leave the box unchecked. A failed task is never ticked, partially or "optimistically".
 - Report what failed with the actual error output — the real test failure or stack trace, quoted — not a paraphrase.
-- If the cause is obvious, propose the fix and wait for the user's go-ahead before continuing; apply it through the TDD loop (failing test reproducing the problem first).
-- If the cause is not obvious — the fix would be a guess, or a first attempt already failed — stop and switch to the debug skill. Do not brute-force repeated fix attempts against a failure you do not understand.
+- If the failure is an implementation error inside the approved candidate,
+  task, and file scope, correct it through the current verification loop.
+- If it indicates another cause, approach, file, or outcome, stop and switch to
+  Debug. Debug confirms the cause read-only and returns a newly fitted plan for
+  approval; an apparent obvious fix never bypasses that gate.
 
 ## Commits
 

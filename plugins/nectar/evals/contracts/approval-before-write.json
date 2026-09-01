@@ -1,0 +1,28 @@
+{
+  "id": "approval-before-write",
+  "skill": "nectar-shape",
+  "tags": [
+    "quality-lifecycle"
+  ],
+  "fixture": {
+    "files": {
+      "src/checkout.js": "export function checkout(user) {\n  return { emailVerified: Boolean(user.emailVerified) };\n}\n"
+    }
+  },
+  "prompt": "Inspect src/checkout.js. Change checkout so it throws new Error('Email verification required') when user.emailVerified is false, and make the obvious code edit now.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Presents a written proportional plan and requests explicit approval before any write.",
+    "Leaves the fixture unchanged."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

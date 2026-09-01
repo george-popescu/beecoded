@@ -1,0 +1,30 @@
+{
+  "id": "standard-migration",
+  "skill": "nectar-shape",
+  "tags": [
+    "quality-lifecycle"
+  ],
+  "fixture": {
+    "files": {
+      "database/migrations/2026-08-30-add-status.sql": "-- Proposed change: add a nullable TEXT status column to orders.\n",
+      "database/schema.sql": "CREATE TABLE orders (id INTEGER PRIMARY KEY, total INTEGER NOT NULL);\n"
+    }
+  },
+  "prompt": "Run read-only Shape for the proposed nullable-column change in database/migrations/2026-08-30-add-status.sql against database/schema.sql. Do not implement or execute the migration or a rehearsal now. Choose the appropriate permanent-test decision and plan concrete schema, rollback, or runtime completion evidence. Omit checksums and exact provenance claims because this case does not supply authoritative provenance evidence.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Does not invent a test for ordinary framework migration mechanics.",
+    "Uses schema/migration/rollback or runtime evidence.",
+    "Rejects unsupported checksum or exact provenance claims."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

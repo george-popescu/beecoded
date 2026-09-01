@@ -2,6 +2,98 @@
 
 ## Unreleased
 
+## 3.2.0 — 2026-08-30
+
+### Added
+- Added 23 host-neutral behavioral contracts with shared final-workspace checks,
+  bounded semantic grading on Claude Code and Codex, and honest actor/judge/run
+  metadata. Keywords alone can no longer produce a behavioral pass.
+- Added release-owned batch Close for an exact ignored/untracked root set, with
+  one immutable assets snapshot, one pending manifest, one user commit gate,
+  monotonic multi-root archive recovery, and fail-closed SQLite coordination.
+- Added a canonical technical Solution Fit contract and a fifth read-only
+  investigator role for current-behavior mapping and fresh fit validation.
+- Added a deterministic, no-follow approval receipt that binds the exact parent
+  design, leaf design, and leaf plan to one current-run digest and carries
+  monotonic task/review baselines.
+- Added helper-discovered opaque selection, receipt, progress, and sealed-stage
+  tokens. Legacy names with whitespace, Unicode, quotes, newlines, and shell
+  metacharacters remain display data and require no migration.
+- Added one canonical Test Value contract with behavior ownership, separate
+  completion evidence, and the four decisions `ADD_PRODUCT_TEST`,
+  `REUSE_EXISTING_TEST`, `NO_NEW_TEST`, and `ISOLATED_REHEARSAL`.
+- Added transactional promotion of standalone feature-scale Debug evidence into
+  a dated design, with raw-byte identity, fatal UTF-8 validation, exclusive
+  destination creation, visible recovery claims, identity-owned rollback, and
+  preserved `investigation-evidence.md` on success.
+- Added the public `nectar-close` workflow with one exact completion parser,
+  durable prepare/support manifests, commit-proven tracked cleanup, recoverable
+  ignored/mixed archives, SQLite-serialized recovery, Doctor rechecks, and
+  conservative post-delivery context refresh decisions.
+
+### Changed
+- Removed twelve prose-regex suites that treated Markdown wording as behavioral
+  evidence. Deterministic checks now stay structural or executable; semantic
+  relevance belongs to the cross-host behavioral contracts.
+- Shape, Debug, Plan, Build, Honey, Orient, Review, and Audit now preserve an
+  approval-before-write boundary: investigation, candidate solution, `FIT`, a
+  written plan revision, and explicit approval precede implementation.
+- Honey now presents the fitted zero-blocker plan with the user-visible outcome
+  before its single confirmation. It writes to a helper-owned mode-0700 stage,
+  seals and revalidates an exact no-follow descendant manifest, materializes
+  byte-equivalent content only after approval, and refuses disposal on drift so
+  the reported recovery path remains intact. It keeps one receipt per leaf;
+  material drift requires a fresh fit and plan.
+- Plan now separates writable `- files:` from optional read-only `- reads:`.
+  Build and Honey serialize write/write and write/read conflicts while allowing
+  read/read overlap, and progress changes are atomic receipt transitions.
+- The canonical managed-installer template now renders one static
+  `APPROVAL_LAUNCHER` for every managed installer. Installed helper paths travel
+  only as base64url data; Node invokes the helper with structured arguments,
+  `shell: false`, inherited stdout/stderr, and propagated errors/status/signals.
+  Plan, Build, Honey, Orient, and native or fallback implementers pass only
+  helper-emitted opaque tokens, so raw repository/staging paths are never
+  interpolated into executable shell source.
+- The shared renderer now applies the same static encoded launcher to every
+  executable installed Node helper, including project context. Debug promotion
+  discovers root-bound source tokens, seals a helper-owned fixed-name design
+  stage, and promotes only paired opaque tokens; its legacy raw path CLI fails
+  closed and committed cleanup warnings never trigger promotion retries.
+- Fresh receipts reject partial ordinary waves and checked future ordinary waves.
+  Struck tasks remain digest-bound without advancing the executable frontier.
+- Debug promotion preserves concurrent/new evidence, reports an exact visible
+  recovery path on ambiguity, and states the pure-Node same-user TOCTOU limit
+  instead of claiming absolute race safety.
+- Orient now separates legacy gate migration from approval refresh: missing fit
+  evidence requires a new investigation/candidate/fit/revision, while fitted
+  pre-digest or cross-session work re-presents the same content and digest for
+  fresh approval. Completed topics are not retrofitted.
+- Persisted Plan approval and Honey mode markers are audit/routing records, not
+  write authority; interrupted work needs a newly approved current-run receipt.
+- Tokens provide bounded transport and integrity, not authority. The helper
+  rediscovers and revalidates live or sealed-stage state for each transition;
+  older managed sessions fail closed pending plugin upgrade and fresh approval.
+- Shape, Plan, Build, Debug, Implementer, Honey, and Orient now preserve the
+  approved Test Value map. Only `ADD_PRODUCT_TEST` mandates red/green/refactor;
+  zero-new-test work closes through its observed evidence route, and rehearsal
+  must prove teardown with no residue.
+- Review, Lens, Validator, and Nectar Audit retain the existing finding taxonomy
+  while adding scoped `KEEP`, `REMOVE`, `CONSOLIDATE`, `MOVE`, or `REWRITE`
+  suite recommendations. They remain read-only and never apply a disposition.
+- Standard framework/schema migration mechanics no longer force surrogate tests;
+  custom backfills remain protected by data-invariant automation or realistic
+  isolated rehearsal according to risk and stable ownership.
+- Deterministic contracts validate the packaged workflow invariants but cannot
+  prove model compliance; cross-host behavioral execution remains a separate
+  release gate.
+- Review, Orient, Shape, and Honey now delegate completion and cleanup to
+  `nectar-close`; historical clean prose remains explicit
+  `legacy-needing-adjudication`, and unrelated old roots no longer create
+  blocking dependency noise for completed historical chains.
+- Non-blocking receipt durability/parser hardening remains deferred; behavioral
+  prose compliance and version reconciliation stay with the release-owned eval
+  work rather than expanding this repair.
+
 ## 3.1.0 — 2026-07-28
 
 ### Changed

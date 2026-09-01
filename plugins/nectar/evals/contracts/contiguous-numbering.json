@@ -12,17 +12,18 @@
   "prompt": "Where were we and what should happen next?",
   "checks": [
     {
-      "type": "responseIncludes",
-      "value": "02"
-    },
-    {
-      "type": "responseIncludes",
-      "value": "contiguous"
+      "type": "fixtureUnchanged"
     }
   ],
   "graderCriteria": [
     "Identifies that child numbering is invalid because 02 is missing.",
     "Makes resolving the structural mismatch the single next action.",
     "Does not propose planning or building either child while the parent is invalid."
-  ]
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
 }

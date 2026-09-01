@@ -1,0 +1,30 @@
+{
+  "id": "active-close-refusal",
+  "skill": "nectar-close",
+  "tags": [
+    "quality-lifecycle"
+  ],
+  "fixture": {
+    "files": {
+      "docs/work/2026-08-30-checkout/design.md": "# Checkout — Design\n\n## Problem\nCheckout retries need correction.\n",
+      "docs/work/2026-08-30-checkout/plan.md": "## Wave 1\n- [x] T1: Repair retries — done when: verified.\n  - files: `src/checkout.js`\n",
+      "docs/work/2026-08-30-checkout/review.md": "# Review\n\nBlocking: 1\nRecommended caller action: repair blockers\n"
+    }
+  },
+  "prompt": "Close docs/work/2026-08-30-checkout after inspecting its plan and review.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Refuses prepare/finalize for active blocking work.",
+    "Does not remove or mutate the fixture."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

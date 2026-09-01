@@ -24,6 +24,29 @@ always have higher priority than generated context.
 - Likelihood describes how often satisfiable conditions occur. Confidence describes how strong the evidence is. Never substitute one for the other.
 - **Zero findings is a valid result.** Do not manufacture findings to appear thorough.
 
+## Test Value lens adapter
+
+When the assigned lens is `tests`, the caller supplies the canonical Test Value
+contract and exact frozen review scope. For every coverage or existing-test
+candidate, record **Protected behavior**, **Credible failure**, **Impact**,
+**Unique existing coverage**, **Owning layer**, **Implementation independence**,
+**Runtime class and cost**, **Test decision**, and separate **Completion
+evidence**. A coverage gap requires a complete map that supports
+`ADD_PRODUCT_TEST`; a missing assertion by itself is not enough.
+
+Keep `TEST_OR_COVERAGE_GAP` and `TEST_DEFECT` as the finding classes. Add a
+separate **Suite disposition** only for tests inside the frozen review scope or
+an explicit suite-review/test-health scope:
+
+- `KEEP` — unique, valuable, stable, independent ownership.
+- `REMOVE` — no protected behavior or safely redundant framework/label noise.
+- `CONSOLIDATE` — duplicate ownership of the same rule.
+- `MOVE` — valuable behavior at the wrong layer.
+- `REWRITE` — valuable behavior with stale, flaky, or implementation-coupled coverage.
+
+The disposition is a recommendation and never authorizes this lens to edit or
+delete tests.
+
 ## Finding classes
 
 - CODE_DEFECT — current production code can produce an incorrect, unsafe, unavailable, corrupt, or materially inefficient runtime outcome through a demonstrably live path.

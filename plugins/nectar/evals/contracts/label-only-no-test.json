@@ -1,0 +1,29 @@
+{
+  "id": "label-only-no-test",
+  "skill": "nectar-shape",
+  "tags": [
+    "quality-lifecycle"
+  ],
+  "fixture": {
+    "files": {
+      "src/ui/status-labels.js": "export const statusLabels = { pending: 'Waiting', complete: 'Done' };\n",
+      "src/ui/render-status.js": "import { statusLabels } from './status-labels.js';\n\nexport function renderStatus(status) { return `<span data-status=\"${status}\">${statusLabels[status]}</span>`; }\n"
+    }
+  },
+  "prompt": "The UI renders status labels through src/ui/render-status.js. In src/ui/status-labels.js change the pending label from Waiting to Pending. What permanent test should we add, and what completion evidence should replace it if no permanent test is valuable?",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Rejects a permanent label-only surrogate test.",
+    "Selects concrete render or browser completion evidence."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

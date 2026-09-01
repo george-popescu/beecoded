@@ -16,6 +16,26 @@ const MANAGED_FILES = Object.freeze([
   'context.json',
 ]);
 const DOCUMENT_LIMIT_BYTES = 6 * 1024;
+const GIT_ROUTING_VARIABLES = new Set([
+  'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+  'GIT_CEILING_DIRECTORIES',
+  'GIT_COMMON_DIR',
+  'GIT_CONFIG',
+  'GIT_CONFIG_COUNT',
+  'GIT_CONFIG_GLOBAL',
+  'GIT_CONFIG_NOSYSTEM',
+  'GIT_CONFIG_PARAMETERS',
+  'GIT_CONFIG_SYSTEM',
+  'GIT_DIR',
+  'GIT_DISCOVERY_ACROSS_FILESYSTEM',
+  'GIT_INDEX_FILE',
+  'GIT_NAMESPACE',
+  'GIT_OBJECT_DIRECTORY',
+  'GIT_PREFIX',
+  'GIT_QUARANTINE_PATH',
+  'GIT_SHALLOW_FILE',
+  'GIT_WORK_TREE',
+]);
 
 export function normalizeThresholds(overrides = {}) {
   const thresholds = { ...DEFAULT_THRESHOLDS, ...overrides };
@@ -99,10 +119,28 @@ function readMetadata(active) {
   return JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
 }
 
+function gitEnvironment() {
+  const environment = { ...process.env };
+  for (const key of Object.keys(environment)) {
+    if (GIT_ROUTING_VARIABLES.has(key)
+      || /^GIT_CONFIG_(?:KEY|VALUE)_\d+$/.test(key)) {
+      delete environment[key];
+    }
+  }
+  environment.GIT_OPTIONAL_LOCKS = '0';
+  return environment;
+}
+
 function runGit(projectRoot, args) {
-  return spawnSync('git', args, {
+  return spawnSync('git', [
+    '--no-optional-locks',
+    '-c',
+    'core.fsmonitor=false',
+    ...args,
+  ], {
     cwd: projectRoot,
     encoding: 'utf8',
+    env: gitEnvironment(),
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 }
@@ -123,6 +161,31 @@ function isStructuralFile(relativePath) {
     || /^package(?:-lock)?\.json$/.test(base)
     || /^(?:pnpm-lock\.yaml|yarn\.lock|bun\.lockb?|composer\.lock|Gemfile\.lock|Cargo\.lock|go\.sum)$/.test(base)
     || /(?:^|\/)(?:routes?|routing|config|configuration)(?:\/|\.|$)/i.test(relativePath);
+}
+
+export function classifyContextImpact({ changedFiles = [], citedPaths = [] } = {}) {
+  const cited = new Set(citedPaths.map((entry) => entry.split(path.sep).join('/')));
+  const reasons = new Set();
+  const sourcePattern = /\.(?:[cm]?[jt]sx?|php|py|rb|go|rs|java|kt|kts|swift|cs|cpp|cc|c|h)$/i;
+  const volatile = (relativePath) => {
+    const base = path.posix.basename(relativePath);
+    return relativePath === 'docs/work'
+      || relativePath.startsWith('docs/work/')
+      || /^CHANGELOG(?:\..+)?$/i.test(base)
+      || /(?:^|\/)(?:tests?|specs?|reports?|coverage)(?:\/|$)/i.test(relativePath)
+      || /\.(?:test|spec)\.[^.]+$/i.test(base);
+  };
+
+  for (const candidate of changedFiles) {
+    const relativePath = candidate.split(path.sep).join('/');
+    if (cited.has(relativePath)) reasons.add('cited-evidence');
+    else if (isStructuralFile(relativePath)) reasons.add('structural');
+    else if (volatile(relativePath)) continue;
+    else if (sourcePattern.test(relativePath)) reasons.add('source-or-module');
+    else reasons.add('unknown');
+  }
+  if (!reasons.size) return { decision: 'skip', reasons: ['volatile-only'] };
+  return { decision: 'refresh', reasons: [...reasons].sort() };
 }
 
 function inspectGit(projectRoot, baseCommit) {
@@ -160,7 +223,9 @@ function inspectGit(projectRoot, baseCommit) {
     };
   }
 
-  const diff = runGit(projectRoot, ['diff', '--name-only', '--relative', baseCommit, '--']);
+  const diff = runGit(projectRoot, [
+    'diff', '--no-ext-diff', '--no-textconv', '--name-only', '--relative', baseCommit, '--',
+  ]);
   const untracked = runGit(projectRoot, ['ls-files', '--others', '--exclude-standard']);
   const changedFiles = [...new Set([
     ...(diff.status === 0 ? diff.stdout.split('\n') : []),
@@ -415,6 +480,7 @@ export function inspectContext(projectRoot, { now = new Date() } = {}) {
       ageDays: null,
       baseCommit: null,
       changedFiles: [],
+      fingerprint: null,
       structuralChanges: [],
       thresholds: DEFAULT_THRESHOLDS,
       git: inspectGit(resolvedRoot, null),
@@ -422,6 +488,20 @@ export function inspectContext(projectRoot, { now = new Date() } = {}) {
   }
 
   const metadata = readMetadata(active);
+  const fingerprintActual = fingerprintDocuments(
+    fs.readFileSync(path.join(active.root, 'CONTEXT.md'), 'utf8'),
+    fs.readFileSync(path.join(active.root, 'CONVENTIONS.md'), 'utf8'),
+  );
+  const fingerprintExpected = typeof metadata?.fingerprint === 'string'
+    ? metadata.fingerprint
+    : null;
+  const fingerprintValid = /^[a-f0-9]{64}$/.test(fingerprintExpected || '');
+  const fingerprint = {
+    actual: fingerprintActual,
+    expected: fingerprintExpected,
+    matches: fingerprintValid && fingerprintExpected === fingerprintActual,
+    valid: fingerprintValid,
+  };
   const thresholds = normalizeThresholds(metadata?.thresholds);
   const generatedAt = metadata?.generatedAt
     ? new Date(metadata.generatedAt)
@@ -438,6 +518,7 @@ export function inspectContext(projectRoot, { now = new Date() } = {}) {
     : ageDays >= thresholds.staleDays
       || git.changedFiles.length >= thresholds.staleFiles
       || git.structuralChanges.length > 0
+      || !fingerprint.matches
       || !metadata
       ? 'stale'
       : 'fresh';
@@ -449,6 +530,7 @@ export function inspectContext(projectRoot, { now = new Date() } = {}) {
     generatedAt: generatedAt.toISOString(),
     baseCommit: metadata?.baseCommit ?? null,
     changedFiles: git.changedFiles,
+    fingerprint,
     structuralChanges: git.structuralChanges,
     thresholds,
     git,

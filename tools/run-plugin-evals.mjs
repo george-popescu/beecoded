@@ -5,13 +5,39 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-import { runClaudeCase } from './evals/claude.mjs';
-import { runCodexCase } from './evals/codex.mjs';
-import { loadContracts, selectContracts } from './evals/contracts.mjs';
+import { runClaudeCase as runGenericClaudeCase } from './evals/claude.mjs';
+import { runCodexCase as runGenericCodexCase } from './evals/codex.mjs';
+import {
+  loadContracts as loadGenericContracts,
+  selectContracts as selectGenericContracts,
+} from './evals/contracts.mjs';
 import { aggregateResults } from './evals/results.mjs';
 import { listProductDefinitions } from './plugin-products.mjs';
+import { runClaudeCase as runNectarClaudeCase } from '../plugins/nectar/scripts/evals/claude.mjs';
+import { runCodexCase as runNectarCodexCase } from '../plugins/nectar/scripts/evals/codex.mjs';
+import {
+  loadContracts as loadNectarContracts,
+  selectContracts as selectNectarContracts,
+} from '../plugins/nectar/scripts/evals/contracts.mjs';
 
 const defaultRepoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+export function runnerFamilyFor(definition) {
+  return definition.kind === 'nectar' ? 'nectar' : 'generic';
+}
+
+async function runNativeNectar(runner, job) {
+  const result = await runner(job);
+  return { ...result, product: job.product };
+}
+
+const defaultRunnerFamilies = {
+  generic: { claude: runGenericClaudeCase, codex: runGenericCodexCase },
+  nectar: {
+    claude: (job) => runNativeNectar(runNectarClaudeCase, job),
+    codex: (job) => runNativeNectar(runNectarCodexCase, job),
+  },
+};
 
 export function parseEvalArguments(argv) {
   const options = {
@@ -87,7 +113,8 @@ export async function runPluginEvals({
   repoRoot = defaultRepoRoot,
   options,
   definitions = listProductDefinitions(),
-  runners = { claude: runClaudeCase, codex: runCodexCase },
+  runners,
+  runnerFamilies = defaultRunnerFamilies,
 } = {}) {
   const selectedDefinitions = definitions.filter(({ id, evalContracts }) => (
     evalContracts && (!options.products.length || options.products.includes(id))
@@ -103,14 +130,21 @@ export async function runPluginEvals({
 
   const jobs = [];
   for (const definition of selectedDefinitions) {
-    const contracts = selectContracts(loadContracts(
-      path.join(repoRoot, definition.evalContracts),
-      { allowedSkills: definition.publicSkills },
-    ), options.casePatterns);
+    const family = runnerFamilyFor(definition);
+    const contracts = family === 'nectar'
+      ? selectNectarContracts(
+        loadNectarContracts(path.join(repoRoot, definition.evalContracts)),
+        options.casePatterns,
+      )
+      : selectGenericContracts(loadGenericContracts(
+        path.join(repoRoot, definition.evalContracts),
+        { allowedSkills: definition.publicSkills },
+      ), options.casePatterns);
     for (const contract of contracts) {
       for (const host of hosts) {
         jobs.push({
           product: definition.id,
+          runnerFamily: family,
           host,
           contract,
           pluginRoot: path.join(repoRoot, definition.packageRoot),
@@ -122,7 +156,11 @@ export async function runPluginEvals({
   const listing = jobs.map((job) => `${job.host}:${job.product}:${job.contract.id}`).join('\n');
   if (options.dryRun) return { output: listing, aggregate: null, jobs };
 
-  const results = await runWithConcurrency(jobs, options.concurrency, (job) => runners[job.host](job));
+  const results = await runWithConcurrency(jobs, options.concurrency, (job) => {
+    const runner = runners?.[job.host] || runnerFamilies[job.runnerFamily]?.[job.host];
+    if (!runner) throw new Error(`No ${job.runnerFamily} ${job.host} eval runner is configured.`);
+    return runner(job);
+  });
   const aggregate = aggregateResults(results);
   if (options.outputDir) {
     const outputDirectory = path.resolve(repoRoot, options.outputDir);

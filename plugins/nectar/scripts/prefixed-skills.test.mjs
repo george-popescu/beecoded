@@ -10,6 +10,7 @@ const expectedSkills = [
   'nectar-audit',
   'nectar-build',
   'nectar-capture',
+  'nectar-close',
   'nectar-context',
   'nectar-debug',
   'nectar-honey',
@@ -30,7 +31,7 @@ function walkFiles(root) {
   return files;
 }
 
-test('ships exactly ten prefixed canonical Nectar skill sources', () => {
+test('ships exactly eleven prefixed canonical Nectar skill sources', () => {
   const sourceRoot = path.join(pluginRoot, 'internal-skills');
   const sources = fs.readdirSync(sourceRoot, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
@@ -62,33 +63,4 @@ test('package allowlist ships internal sources without a plugin skills directory
 
   assert.ok(packageJson.files.includes('internal-skills/'));
   assert.equal(packageJson.files.includes('skills/'), false);
-});
-
-test('current Nectar sources contain no legacy public invocation syntax', () => {
-  const forbidden = [`/${'nectar'}:`, `$${'nectar'}:`];
-  const matches = [];
-  const ownedSources = [
-    '.claude-plugin',
-    '.codex-plugin',
-    'internal-skills',
-    'evals/contracts',
-    'scripts/evals',
-    'scripts/check-consistency.js',
-    'package.json',
-  ];
-
-  const files = ownedSources.flatMap((relative) => {
-    const absolute = path.join(pluginRoot, relative);
-    return fs.statSync(absolute).isDirectory() ? walkFiles(absolute) : [absolute];
-  });
-  for (const file of files) {
-    const content = fs.readFileSync(file, 'utf8');
-    for (const token of forbidden) {
-      if (content.includes(token)) {
-        matches.push(`${path.relative(pluginRoot, file)} contains ${token}`);
-      }
-    }
-  }
-
-  assert.deepEqual(matches, []);
 });

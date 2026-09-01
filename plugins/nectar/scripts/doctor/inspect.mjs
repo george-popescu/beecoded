@@ -1,9 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { parseReviewCompletion } from '../review-completion.mjs';
+
 const DATED_ROOT = /^(\d{4})-(\d{2})-(\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 const CHILD_TOPIC = /^(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$/;
+const ARTIFACT_LIMIT_BYTES = 256 * 1024;
 const PARENT_STRUCTURE_CODES = new Set([
+  'ARTIFACT_TOO_LARGE',
   'INVALID_TOPIC_ENTRY',
   'INVALID_DEPENDENCY_SYNTAX',
   'PARENT_TOPICS_MISSING',
@@ -18,6 +22,8 @@ const PARENT_STRUCTURE_CODES = new Set([
   'MISSING_LISTED_CHILD',
   'UNLISTED_CHILD',
   'TOPIC_ORDER_MISMATCH',
+  'UNSAFE_ARTIFACT',
+  'UNSAFE_TOPIC_PATH',
   'UNSUPPORTED_NESTING',
 ]);
 
@@ -29,18 +35,171 @@ function relativeProjectPath(projectRoot, absolute) {
   return toPosix(path.relative(projectRoot, absolute));
 }
 
-function directories(root) {
-  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) return [];
-  return fs.readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort();
+function isInside(root, candidate) {
+  const relative = path.relative(root, candidate);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
-function readIfPresent(file) {
-  return fs.existsSync(file) && fs.statSync(file).isFile()
-    ? fs.readFileSync(file, 'utf8')
-    : null;
+function normalPathState(projectRoot, realProjectRoot, candidate) {
+  const relative = path.relative(projectRoot, candidate);
+  if (!isInside(projectRoot, candidate)) return { exists: false, safe: false };
+
+  let current = projectRoot;
+  let stat = null;
+  for (const segment of relative.split(path.sep).filter(Boolean)) {
+    current = path.join(current, segment);
+    try {
+      stat = fs.lstatSync(current, { bigint: true });
+    } catch (error) {
+      if (error.code === 'ENOENT') return { exists: false, safe: true };
+      throw error;
+    }
+    if (stat.isSymbolicLink()) return { exists: true, safe: false };
+  }
+
+  if (!stat) stat = fs.lstatSync(projectRoot, { bigint: true });
+  const realCandidate = fs.realpathSync(candidate);
+  if (!isInside(realProjectRoot, realCandidate)) return { exists: true, safe: false };
+  return { exists: true, safe: true, stat };
+}
+
+function normalDirectories({
+  addDiagnostic,
+  projectRoot,
+  realProjectRoot,
+  root,
+  rootPath,
+  unsafePaths,
+}) {
+  let entries;
+  try {
+    entries = fs.readdirSync(root, { withFileTypes: true });
+  } catch {
+    addDiagnostic(
+      'UNSAFE_TOPIC_PATH',
+      rootPath,
+      'Work topic directories must be normal readable directories inside docs/work.',
+    );
+    unsafePaths.add(rootPath);
+    return [];
+  }
+
+  const found = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory() && !entry.isSymbolicLink()) continue;
+    const absolute = path.join(root, entry.name);
+    const relative = `${rootPath}/${entry.name}`;
+    let state;
+    try {
+      state = normalPathState(projectRoot, realProjectRoot, absolute);
+    } catch {
+      state = { exists: true, safe: false };
+    }
+    if (!state.safe || !state.exists || !state.stat?.isDirectory()) {
+      addDiagnostic(
+        'UNSAFE_TOPIC_PATH',
+        relative,
+        'Work topic directories must be normal non-symlink directories inside docs/work.',
+      );
+      unsafePaths.add(relative);
+      continue;
+    }
+    found.push(entry.name);
+  }
+  return found.sort();
+}
+
+function readBoundedArtifact({
+  addDiagnostic,
+  cache,
+  file,
+  projectRoot,
+  realProjectRoot,
+  unsafePaths,
+}) {
+  if (cache.has(file)) return cache.get(file);
+  const relative = relativeProjectPath(projectRoot, file);
+  const reject = (code, message) => {
+    addDiagnostic(code, relative, message);
+    unsafePaths.add(relative);
+    cache.set(file, null);
+    return null;
+  };
+
+  let state;
+  try {
+    state = normalPathState(projectRoot, realProjectRoot, file);
+  } catch {
+    return reject(
+      'UNSAFE_ARTIFACT',
+      'Work artifacts must be normal readable files inside the project root.',
+    );
+  }
+  if (!state.exists) {
+    cache.set(file, null);
+    return null;
+  }
+  if (!state.safe || !state.stat?.isFile()) {
+    return reject(
+      'UNSAFE_ARTIFACT',
+      'Work artifacts must be normal non-symlink files inside the project root.',
+    );
+  }
+  if (state.stat.size > BigInt(ARTIFACT_LIMIT_BYTES)) {
+    return reject(
+      'ARTIFACT_TOO_LARGE',
+      `Work artifacts must not exceed ${ARTIFACT_LIMIT_BYTES} bytes.`,
+    );
+  }
+
+  let descriptor;
+  try {
+    descriptor = fs.openSync(
+      file,
+      fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0),
+    );
+    const before = fs.fstatSync(descriptor, { bigint: true });
+    if (!before.isFile()
+      || before.size > BigInt(ARTIFACT_LIMIT_BYTES)
+      || before.dev !== state.stat.dev
+      || before.ino !== state.stat.ino) {
+      const tooLarge = before.size > BigInt(ARTIFACT_LIMIT_BYTES);
+      return reject(
+        tooLarge ? 'ARTIFACT_TOO_LARGE' : 'UNSAFE_ARTIFACT',
+        tooLarge
+          ? `Work artifacts must not exceed ${ARTIFACT_LIMIT_BYTES} bytes.`
+          : 'Work artifacts must remain normal files while Doctor reads them.',
+      );
+    }
+    const bytes = Buffer.alloc(Number(before.size));
+    let offset = 0;
+    while (offset < bytes.length) {
+      const count = fs.readSync(descriptor, bytes, offset, bytes.length - offset, offset);
+      if (count === 0) break;
+      offset += count;
+    }
+    const after = fs.fstatSync(descriptor, { bigint: true });
+    if (offset !== bytes.length
+      || after.dev !== before.dev
+      || after.ino !== before.ino
+      || after.size !== before.size
+      || after.mtimeNs !== before.mtimeNs) {
+      return reject(
+        'UNSAFE_ARTIFACT',
+        'Work artifacts must remain unchanged while Doctor reads them.',
+      );
+    }
+    const content = bytes.toString('utf8');
+    cache.set(file, content);
+    return content;
+  } catch {
+    return reject(
+      'UNSAFE_ARTIFACT',
+      'Work artifacts must be normal readable files inside the project root.',
+    );
+  } finally {
+    if (descriptor !== undefined) fs.closeSync(descriptor);
+  }
 }
 
 function validCalendarDate(year, month, day) {
@@ -231,10 +390,10 @@ function firstHeading(content) {
   return match ? match[1] : null;
 }
 
-function leafArtifacts(absoluteRoot) {
-  const design = readIfPresent(path.join(absoluteRoot, 'design.md'));
-  const plan = readIfPresent(path.join(absoluteRoot, 'plan.md'));
-  const review = readIfPresent(path.join(absoluteRoot, 'review.md'));
+function leafArtifacts(absoluteRoot, readArtifact) {
+  const design = readArtifact(path.join(absoluteRoot, 'design.md'));
+  const plan = readArtifact(path.join(absoluteRoot, 'plan.md'));
+  const review = readArtifact(path.join(absoluteRoot, 'review.md'));
   const debugFiles = fs.existsSync(absoluteRoot)
     ? fs.readdirSync(absoluteRoot)
       .filter((file) => /^debug-.+\.md$/.test(file))
@@ -254,9 +413,9 @@ function leafArtifacts(absoluteRoot) {
   };
 }
 
-function deriveLeafStatus(topic, projectRoot, addDiagnostic) {
+function deriveLeafStatus(topic, projectRoot, addDiagnostic, readArtifact, unsafePaths) {
   const absoluteRoot = path.join(projectRoot, topic.path);
-  const artifacts = leafArtifacts(absoluteRoot);
+  const artifacts = leafArtifacts(absoluteRoot, readArtifact);
   const artifactPath = topic.path;
 
   topic.artifacts = {
@@ -267,6 +426,10 @@ function deriveLeafStatus(topic, projectRoot, addDiagnostic) {
     checkedTasks: artifacts.checkedTasks,
     uncheckedTasks: artifacts.uncheckedTasks,
   };
+
+  if ([...unsafePaths].some((candidate) => (
+    candidate === artifactPath || candidate.startsWith(`${artifactPath}/`)
+  ))) return null;
 
   if (artifacts.plan !== null && artifacts.design === null) {
     addDiagnostic(
@@ -308,28 +471,16 @@ function deriveLeafStatus(topic, projectRoot, addDiagnostic) {
   if (artifacts.design !== null && artifacts.plan === null) return 'designed, needs plan';
   if (artifacts.plan === null || artifacts.checkboxCount === 0 || artifacts.design === null) return null;
   if (artifacts.uncheckedTasks > 0) return 'building';
-  const blockerCounts = artifacts.review === null
-    ? []
-    : [...artifacts.review.matchAll(/^Blocking:\s*(\d+)\s*$/gim)]
-      .map((match) => Number.parseInt(match[1], 10));
-  const cleanCount = blockerCounts.length
-    ? blockerCounts.at(-1) === 0
-    : artifacts.review !== null
-      && (/(zero blocking code defects remain)/i.test(artifacts.review)
-        || /\b(?:no|zero)\s+confirmed findings remain\b/i.test(artifacts.review));
-  const cleanReview = artifacts.review !== null
-    && (/^## Clean pass\s*$/im.test(artifacts.review) || /clean pass confirmation/i.test(artifacts.review))
-    && cleanCount;
-  if (cleanReview) return 'done';
-  return 'in review';
+  if (artifacts.review === null) return 'in review';
+  return parseReviewCompletion(artifacts.review).state;
 }
 
-function addDuplicateDiagnostics(topics, projectRoot, addDiagnostic) {
+function addDuplicateDiagnostics(topics, projectRoot, addDiagnostic, readArtifact) {
   const aliases = new Map();
   for (const topic of topics) {
     const absoluteRoot = path.join(projectRoot, topic.path);
     const values = new Set([normalizedAlias(path.basename(topic.path))]);
-    const heading = firstHeading(readIfPresent(path.join(absoluteRoot, 'design.md')));
+    const heading = firstHeading(readArtifact(path.join(absoluteRoot, 'design.md')));
     if (heading) values.add(normalizedAlias(heading));
     for (const alias of values) {
       if (!alias) continue;
@@ -363,6 +514,7 @@ function deriveParentStatuses(topics, diagnostics, addDiagnostic) {
     ['open debug hunt', 4],
     ['in review', 3],
     ['building', 2],
+    ['legacy-needing-adjudication', 1],
     ['designed, needs plan', 1],
     ['done', 0],
   ]);
@@ -376,6 +528,22 @@ function deriveParentStatuses(topics, diagnostics, addDiagnostic) {
       || topic.artifacts.review
       || topic.artifacts.debug.length > 0;
     if (unfinished.length && progressStarted) {
+      const historicalComplete = topic.artifacts.uncheckedTasks === 0
+        && topic.artifacts.checkedTasks > 0
+        && topic.artifacts.review;
+      const onlyLegacyDependencies = unfinished.every((dependency) => (
+        dependency?.status === 'legacy-needing-adjudication'
+      ));
+      if (historicalComplete && onlyLegacyDependencies) {
+        addDiagnostic(
+          'LEGACY_DEPENDENCY_HISTORY',
+          topic.path,
+          'Completed historical progress depends on legacy review evidence that needs adjudication.',
+          unfinished.map((dependency) => dependency.path).join(', '),
+          'warning',
+        );
+        continue;
+      }
       addDiagnostic(
         'DEPENDENCY_PROGRESS_STARTED',
         topic.path,
@@ -416,21 +584,59 @@ function deriveParentStatuses(topics, diagnostics, addDiagnostic) {
 
 export function inspectWorkTree(projectRoot) {
   const resolvedProjectRoot = path.resolve(projectRoot);
+  const realProjectRoot = fs.realpathSync(resolvedProjectRoot);
   const workRoot = path.join(resolvedProjectRoot, 'docs', 'work');
   const diagnostics = [];
   const topics = [];
+  const unsafePaths = new Set();
+  const artifactCache = new Map();
 
-  function addDiagnostic(code, diagnosticPath, message, evidence) {
+  function addDiagnostic(code, diagnosticPath, message, evidence, severity = 'error') {
+    const normalizedPath = toPosix(diagnosticPath);
     diagnostics.push({
       code,
-      severity: 'error',
-      path: toPosix(diagnosticPath),
+      severity,
+      path: normalizedPath,
       message,
       ...(evidence ? { evidence } : {}),
     });
   }
 
-  for (const rootName of directories(workRoot)) {
+  const readArtifact = (file) => readBoundedArtifact({
+    addDiagnostic,
+    cache: artifactCache,
+    file,
+    projectRoot: resolvedProjectRoot,
+    realProjectRoot,
+    unsafePaths,
+  });
+  const childDirectories = (root, rootPath) => normalDirectories({
+    addDiagnostic,
+    projectRoot: resolvedProjectRoot,
+    realProjectRoot,
+    root,
+    rootPath,
+    unsafePaths,
+  });
+
+  let workState;
+  try {
+    workState = normalPathState(resolvedProjectRoot, realProjectRoot, workRoot);
+  } catch {
+    workState = { exists: true, safe: false };
+  }
+  if (workState.exists && (!workState.safe || !workState.stat?.isDirectory())) {
+    addDiagnostic(
+      'UNSAFE_WORK_ROOT',
+      'docs/work',
+      'docs/work must be a normal non-symlink directory inside the project root.',
+    );
+    unsafePaths.add('docs/work');
+  }
+
+  for (const rootName of workState.exists && workState.safe && workState.stat?.isDirectory()
+    ? childDirectories(workRoot, 'docs/work')
+    : []) {
     if (rootName === 'debug') continue;
     const absoluteRoot = path.join(workRoot, rootName);
     const rootPath = relativeProjectPath(resolvedProjectRoot, absoluteRoot);
@@ -445,7 +651,7 @@ export function inspectWorkTree(projectRoot) {
         );
       }
       topics.push({ path: rootPath, kind: 'legacy', dependencies: [] });
-      for (const nested of directories(absoluteRoot)) {
+      for (const nested of childDirectories(absoluteRoot, rootPath)) {
         addDiagnostic(
           'UNSUPPORTED_NESTING',
           `${rootPath}/${nested}`,
@@ -464,8 +670,8 @@ export function inspectWorkTree(projectRoot) {
 
     const designFile = path.join(absoluteRoot, 'design.md');
     const designPath = `${rootPath}/design.md`;
-    const topicEntries = parseTopics(readIfPresent(designFile), designPath, addDiagnostic);
-    const childNames = directories(absoluteRoot);
+    const topicEntries = parseTopics(readArtifact(designFile), designPath, addDiagnostic);
+    const childNames = childDirectories(absoluteRoot, rootPath);
     const isParent = topicEntries !== null || childNames.length > 0;
 
     topics.push({
@@ -520,7 +726,7 @@ export function inspectWorkTree(projectRoot) {
         kind: 'nested',
         dependencies: entry?.dependencies || [],
       });
-      for (const nested of directories(childRoot)) {
+      for (const nested of childDirectories(childRoot, childPath)) {
         addDiagnostic(
           'UNSUPPORTED_NESTING',
           `${childPath}/${nested}`,
@@ -531,9 +737,15 @@ export function inspectWorkTree(projectRoot) {
   }
 
   for (const topic of topics.filter((candidate) => candidate.kind !== 'parent')) {
-    topic.status = deriveLeafStatus(topic, resolvedProjectRoot, addDiagnostic);
+    topic.status = deriveLeafStatus(
+      topic,
+      resolvedProjectRoot,
+      addDiagnostic,
+      readArtifact,
+      unsafePaths,
+    );
   }
-  addDuplicateDiagnostics(topics, resolvedProjectRoot, addDiagnostic);
+  addDuplicateDiagnostics(topics, resolvedProjectRoot, addDiagnostic, readArtifact);
   deriveParentStatuses(topics, diagnostics, addDiagnostic);
 
   diagnostics.sort((left, right) => (

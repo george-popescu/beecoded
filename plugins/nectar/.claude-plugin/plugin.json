@@ -1,7 +1,7 @@
 {
   "name": "nectar",
-  "version": "3.1.0",
-  "description": "The essence of spec-driven development distilled into 10 skills and 4 agents — including compact, freshness-aware project context for Claude Code and Codex.",
+  "version": "3.2.0",
+  "description": "The essence of spec-driven development distilled into 11 skills and five agents, with technical Solution Fit and approval-before-write for Claude Code and Codex.",
   "author": {
     "name": "Beecoded",
     "email": "george.popescu@beecoded.ro",

@@ -1,0 +1,30 @@
+{
+  "id": "suite-consolidation",
+  "skill": "nectar-review",
+  "tags": [
+    "quality-lifecycle"
+  ],
+  "fixture": {
+    "files": {
+      "src/orders/service.js": "export function canCancel(order) { return order.status === 'pending'; }\n",
+      "test/order-service.test.js": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { canCancel } from '../src/orders/service.js';\ntest('pending orders can cancel', () => assert.equal(canCancel({ status: 'pending' }), true));\n",
+      "test/order-api.test.js": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { canCancel } from '../src/orders/service.js';\ntest('cancel endpoint accepts pending orders', () => assert.equal(canCancel({ status: 'pending' }), true));\n"
+    }
+  },
+  "prompt": "Review src/orders/service.js, test/order-service.test.js, and test/order-api.test.js read-only; both tests assert the same business rule.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Identifies duplicate ownership without deleting tests during Review.",
+    "Keeps one valuable independent owner and a read-only recommendation."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

@@ -46,6 +46,30 @@ Lens definitions:
 
 Each lens receives only the frozen scope and its lens definition. Named Nectar agents use `nectar:lens`; on hosts without named agent types, load `../../agents/lens.md` as the general agent's role instructions. A lens reports findings only and never edits.
 
+## Test Value review adapter
+
+Read the [Test Value contract](../../references/test-value.md). For a tests lens,
+pass both the exact frozen review scope and the contract; native and fallback
+lenses receive the same Test Value requirements. Every proposed coverage gap or
+existing-test concern records **Protected behavior**, **Credible failure**,
+**Impact**, **Unique existing coverage**, **Owning layer**,
+**Implementation independence**, **Runtime class and cost**, **Test decision**,
+and separate **Completion evidence**.
+
+A coverage gap is confirmable only when the complete map supports
+`ADD_PRODUCT_TEST`. Keep the existing finding class —
+`TEST_OR_COVERAGE_GAP` or `TEST_DEFECT` — and add a separate **Suite
+disposition** for existing tests: `KEEP`, `REMOVE`, `CONSOLIDATE`, `MOVE`, or
+`REWRITE`. Apply it only inside the frozen review scope or an explicit
+suite-review/test-health scope. It is a recommendation and does not authorize
+Review, a lens, or a validator to edit or delete any test.
+
+- `KEEP`: unique valuable independent ownership.
+- `REMOVE`: no protected behavior or safely redundant framework/label noise.
+- `CONSOLIDATE`: duplicate ownership of the same rule.
+- `MOVE`: valuable behavior at the wrong layer.
+- `REWRITE`: valuable but stale, flaky, or implementation-coupled coverage.
+
 ## Finding classes
 
 - CODE_DEFECT — current production code can produce an incorrect, unsafe, unavailable, corrupt, or materially inefficient runtime outcome through a demonstrably live path.
@@ -129,6 +153,15 @@ Only `CONFIRMED` `CODE_DEFECT` findings at `MEDIUM`, `HIGH`, or `CRITICAL` are `
 
 Review performs the classification pipeline exactly once and stops after reporting. It does not repair findings, modify production or test files, repeat itself, or decide whether the caller should request a later pass. `FIX_NOW`, `ASK_USER`, `DEFER`, and `DISCARD` communicate proportional next actions; the caller owns every follow-up.
 
+## Repair hand-off
+
+`FIX_NOW` does not authorize code, an edit, or a repair by Review. A caller that
+chooses a blocker first routes it through Debug for read-only cause confirmation,
+then independent Solution Fit, a written Plan revision, and explicit approval.
+Honey may repair without another stop only when the finding remains inside the
+already approved solution, task, criteria, and file scope; otherwise it is
+material drift and needs a new approval.
+
 ## Report
 
 Group validated findings first by Class and then by severity. Each record includes the complete adjusted risk record, verdict, validation note, convergence, disposition, and resolution. End every report with this parseable summary shape:
@@ -148,6 +181,14 @@ Choose one recommended caller action from the validated dispositions: `accept` w
 When `Blocking: 0`, append this exact final line after every other report line: `Clean pass: zero blocking code defects remain.` Never emit that clean marker when Blocking is nonzero.
 
 Feature/project work writes `review.md` in the resolved leaf topic and records the frozen scope, available verification evidence, and the summary. Writing that report is the only allowed mutation; reviewed production and test files remain untouched. Quick/trivial work reports inline. Never commit.
+
+For a feature/project report, run `node "../../scripts/run-close.mjs" discover`
+after the write and select the exact `displayPath`. The helper's shared
+completion parser is the only authority for `done`: claim a clean completed pass
+only when that entry reports `done`. A canonical-looking suffix, legacy heading,
+or remembered blocker count is not a substitute. When the entry is done, hand
+the accepted topic to `nectar-close`; Review never prepares, finalizes, or
+removes it.
 
 ## Atlas context profile
 

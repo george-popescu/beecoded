@@ -177,8 +177,8 @@ try {
   const install = run(nectar, ['install', '--all'], { env: runnerEnv });
   assert.match(install.stdout, /updated for Claude Code|installed for Claude Code/);
   assert.match(install.stdout, /updated for Codex|installed for Codex/);
-  assert.equal(managedSkillNames(path.join(claudeHome, 'skills')).length, 10);
-  assert.equal(managedSkillNames(path.join(codexHome, 'skills')).length, 10);
+  assert.equal(managedSkillNames(path.join(claudeHome, 'skills')).length, 11);
+  assert.equal(managedSkillNames(path.join(codexHome, 'skills')).length, 11);
 
   const claudePlugins = run('claude', ['plugin', 'list', '--json'], {
     env: runnerEnv,

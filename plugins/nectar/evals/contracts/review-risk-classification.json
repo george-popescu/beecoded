@@ -4,39 +4,27 @@
   "tags": ["review", "risk", "convergence", "semantic"],
   "fixture": {
     "files": {
-      "package.json": "{\n  \"name\": \"review-risk-fixture\",\n  \"type\": \"module\",\n  \"scripts\": { \"test\": \"node --test\" },\n  \"exports\": \"./src/app.js\"\n}\n",
-      "src/app.js": "import { updateSessionRoute } from './routes/session.js';\nimport { normalizeProfile } from './profile.js';\nimport { clientHeaders } from './headers.js';\n\nexport { updateSessionRoute, normalizeProfile, clientHeaders };\n",
-      "src/session-store.js": "const sessions = new Map();\n\nexport function seedSession(id, value) {\n  sessions.set(id, { ...value });\n}\n\nexport function readSession(id) {\n  return sessions.get(id);\n}\n\nexport async function updateSession(id, patch, release = Promise.resolve()) {\n  const current = sessions.get(id) ?? {};\n  await release;\n  sessions.set(id, { ...current, ...patch });\n  return sessions.get(id);\n}\n",
-      "src/routes/session.js": "import { updateSession } from '../session-store.js';\n\nexport async function updateSessionRoute(request) {\n  return updateSession(request.sessionId, request.body, request.release);\n}\n",
-      "src/profile.js": "export function normalizeProfile(input) {\n  const displayName = String(input.displayName ?? '').trim();\n  return { displayName: displayName || 'Anonymous' };\n}\n",
-      "src/headers.js": "export function clientHeaders() {\n  return { 'x-client-version': 'v2' };\n}\n",
-      "src/legacy/admin-debug.js": "export function evaluateAdminExpression(source) {\n  return eval(source);\n}\n",
-      "src/format.js": "export function formatGreeting(name) {\n  const x = String(name).trim();\n  return `Hello, ${x}`;\n}\n",
-      "test/session-store.test.js": "import assert from 'node:assert/strict';\nimport test from 'node:test';\nimport { readSession, seedSession, updateSession } from '../src/session-store.js';\n\nfunction deferred() {\n  let resolve;\n  const promise = new Promise((done) => { resolve = done; });\n  return { promise, resolve };\n}\n\ntest('preserves independent concurrent session patches', async () => {\n  seedSession('s1', { theme: 'light', locale: 'en' });\n  const first = deferred();\n  const second = deferred();\n  const theme = updateSession('s1', { theme: 'dark' }, first.promise);\n  const locale = updateSession('s1', { locale: 'ro' }, second.promise);\n  first.resolve();\n  second.resolve();\n  await Promise.all([theme, locale]);\n  assert.deepEqual(readSession('s1'), { theme: 'dark', locale: 'ro' });\n});\n",
-      "test/profile.test.js": "import assert from 'node:assert/strict';\nimport test from 'node:test';\nimport { normalizeProfile } from '../src/profile.js';\n\ntest('trims a supplied display name', () => {\n  assert.deepEqual(normalizeProfile({ displayName: ' Ada ' }), { displayName: 'Ada' });\n});\n",
-      "test/headers.test.js": "import assert from 'node:assert/strict';\nimport test from 'node:test';\nimport { clientHeaders } from '../src/headers.js';\n\ntest('sends the current client version', () => {\n  assert.equal(clientHeaders()['x-client-version'], 'v1');\n});\n",
-      "README.md": "# Review fixture\n\nThe public entry point is `src/app.js`. Client integrations use header version `v2`. Files below `src/legacy/` are retained as disconnected archival examples and are not imported, exported, routed, or packaged. Empty display names intentionally fall back to `Anonymous`.\n",
-      "review-candidates.md": "# Provisional review notes\n\nThese labels are unvalidated reviewer guesses. Trace the real code and reclassify or refute them.\n\n- `src/session-store.js`: CODE_DEFECT/HIGH — two concurrent patches may overwrite each other.\n- `src/profile.js`: CODE_DEFECT/HIGH — fallback behavior lacks a regression assertion.\n- `test/headers.test.js`: CODE_DEFECT/HIGH — expected client version differs from implementation.\n- `src/legacy/admin-debug.js`: CODE_DEFECT/CRITICAL — eval appears dangerous.\n- `src/format.js`: CODE_DEFECT/MEDIUM — local variable is named `x`.\n"
+      "src/app.mjs": "const sessions = new Map();\n\nexport function seedSession(id, value) { sessions.set(id, { ...value }); }\nexport function readSession(id) { return sessions.get(id); }\nexport async function updateSession(id, patch, release = Promise.resolve()) {\n  const current = sessions.get(id) ?? {};\n  await release;\n  sessions.set(id, { ...current, ...patch });\n  return sessions.get(id);\n}\n\nexport function normalizeProfile(input) {\n  const displayName = String(input.displayName ?? '').trim();\n  return { displayName: displayName || 'Anonymous' };\n}\n\nexport function clientHeaders() { return { 'x-client-version': 'v2' }; }\nexport function formatGreeting(name) { const x = String(name).trim(); return `Hello, ${x}`; }\n\n// Disconnected archival example: not exported and never called.\nfunction evaluateAdminExpression(source) { return eval(source); }\n",
+      "test/app.test.mjs": "import assert from 'node:assert/strict';\nimport test from 'node:test';\nimport { clientHeaders, normalizeProfile, readSession, seedSession, updateSession } from '../src/app.mjs';\n\nfunction deferred() { let resolve; const promise = new Promise((done) => { resolve = done; }); return { promise, resolve }; }\n\ntest('preserves independent concurrent session patches', async () => {\n  seedSession('s1', { theme: 'light', locale: 'en' });\n  const first = deferred();\n  const second = deferred();\n  const theme = updateSession('s1', { theme: 'dark' }, first.promise);\n  const locale = updateSession('s1', { locale: 'ro' }, second.promise);\n  first.resolve();\n  second.resolve();\n  await Promise.all([theme, locale]);\n  assert.deepEqual(readSession('s1'), { theme: 'dark', locale: 'ro' });\n});\n\ntest('trims a supplied display name', () => {\n  assert.deepEqual(normalizeProfile({ displayName: ' Ada ' }), { displayName: 'Ada' });\n});\n\ntest('sends the current client version', () => {\n  assert.equal(clientHeaders()['x-client-version'], 'v1');\n});\n",
+      "review-candidates.md": "# Provisional review notes\n\nThese labels are unvalidated reviewer guesses. The public API is the exports of `src/app.mjs`; empty display names intentionally fall back to `Anonymous`. Trace the code and tests, then reclassify or refute each note.\n\n- `src/app.mjs` updateSession: CODE_DEFECT/HIGH — two concurrent patches may overwrite each other.\n- `src/app.mjs` normalizeProfile: CODE_DEFECT/HIGH — fallback behavior lacks a regression assertion.\n- `test/app.test.mjs` client version: CODE_DEFECT/HIGH — expected version differs from the implementation contract `v2`.\n- `src/app.mjs` evaluateAdminExpression: CODE_DEFECT/CRITICAL — eval appears dangerous.\n- `src/app.mjs` formatGreeting: CODE_DEFECT/MEDIUM — local variable is named `x`.\n"
     }
   },
   "prompt": "Validate every provisional note in review-candidates.md against the actual entry points, tests, and documented contracts. Treat every provisional label and severity as untrusted. Run one read-only Nectar review pass, return one structured classified record per note, and do not edit files or create review.md. End with the exact parseable Nectar summary and recommended caller action.",
   "checks": [
-    { "type": "findingMatches", "where": "src/session-store.js", "class": "CODE_DEFECT", "severityIn": ["MEDIUM", "HIGH", "CRITICAL"], "convergence": "BLOCKING", "requiredFields": ["Runtime path", "Reachability", "Exposure/preconditions", "Likelihood", "Exploitability", "Impact", "Solution opportunity", "Confidence", "Disposition"] },
-    { "type": "findingMatches", "where": "src/profile.js", "class": "TEST_OR_COVERAGE_GAP", "severityIn": ["LOW", "MEDIUM"], "convergence": "NON_BLOCKING", "requiredFields": ["Reachability", "Likelihood", "Exploitability", "Impact", "Solution opportunity", "Confidence", "Disposition"] },
-    { "type": "findingMatches", "where": "test/headers.test.js", "class": "TEST_DEFECT", "severityIn": ["LOW", "MEDIUM"], "convergence": "NON_BLOCKING", "requiredFields": ["Reachability", "Likelihood", "Exploitability", "Impact", "Solution opportunity", "Confidence", "Disposition"] },
-    { "type": "findingMatches", "where": "src/legacy/admin-debug.js", "class": "HARDENING_IDEA", "severityIn": ["LOW", "MEDIUM"], "convergence": "NON_BLOCKING", "requiredFields": ["Reachability", "Likelihood", "Exploitability", "Impact", "Solution opportunity", "Confidence", "Disposition"] },
-    { "type": "findingMatches", "where": "src/format.js", "class": "STYLISTIC", "severityIn": ["LOW"], "convergence": "NON_BLOCKING", "requiredFields": ["Reachability", "Likelihood", "Exploitability", "Impact", "Solution opportunity", "Confidence", "Disposition"] },
-    { "type": "summaryCount", "label": "Blocking", "value": 1 },
     { "type": "fixtureUnchanged" },
-    { "type": "pathAbsent", "path": "review.md" },
-    { "type": "fileIncludes", "path": "src/session-store.js", "value": "sessions.set(id, { ...current, ...patch });" },
-    { "type": "fileIncludes", "path": "test/headers.test.js", "value": "'v1'" }
+    { "type": "pathAbsent", "path": "review.md" }
   ],
   "graderCriteria": [
     "Associates each provisional note with its own structured finding instead of merely listing class tokens.",
     "Keeps the reproducible live lost-update race as the only blocking code defect and separates likelihood from impact.",
     "Reclassifies the profile note as coverage, the stale assertion as a test defect, the disconnected eval as hardening, and the naming preference as stylistic.",
     "Includes the complete risk record for the medium-or-higher defect and preserves the required compact risk fields for low findings.",
-    "Performs one read-only pass with no fixes, review artifact, or internal repetition."
-  ]
+    "Performs one read-only classification pass with no fixes or review artifact and does not run a second classification pass; required Test Value fields are not internal repetition."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
 }

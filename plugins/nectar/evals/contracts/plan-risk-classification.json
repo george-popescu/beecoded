@@ -10,17 +10,18 @@
   },
   "prompt": "Run only the Plan self-review section against the existing order-api draft. Do not revise plan.md, do not create another plan, and do not run a second review pass. Classify the concrete risks of following the draft as written, group findings by plan class and severity, and end with the parseable plan summary.",
   "checks": [
-    { "type": "findingMatches", "where": "T1", "class": "PLAN_COVERAGE_GAP", "severityIn": ["MEDIUM", "HIGH", "CRITICAL"], "convergence": "BLOCKING", "requiredFields": ["Evidence", "Preconditions", "Probability", "Impact", "Solution opportunity", "Confidence"] },
-    { "type": "findingMatches", "where": "T2", "class": "PLAN_DEPENDENCY_DEFECT", "severityIn": ["MEDIUM", "HIGH", "CRITICAL"], "convergence": "BLOCKING", "requiredFields": ["Evidence", "Preconditions", "Probability", "Impact", "Solution opportunity", "Confidence"] },
-    { "type": "findingMatches", "where": "T1", "class": "PLAN_VERIFICATION_GAP", "severityIn": ["LOW", "MEDIUM", "HIGH"], "convergence": "BLOCKING", "requiredFields": ["Evidence", "Preconditions", "Probability", "Impact", "Solution opportunity", "Confidence"] },
-    { "type": "findingMatches", "where": "T3", "class": "PLAN_SCOPE_DEFECT", "severityIn": ["MEDIUM", "HIGH", "CRITICAL"], "convergence": "BLOCKING", "requiredFields": ["Evidence", "Preconditions", "Probability", "Impact", "Solution opportunity", "Confidence"] },
-    { "type": "fixtureUnchanged" },
-    { "type": "fileIncludes", "path": "docs/work/2026-07-21-order-api/plan.md", "value": "the implementation looks good in a manual glance" }
+    { "type": "fixtureUnchanged" }
   ],
   "graderCriteria": [
     "Uses plan-specific classes rather than runtime CODE_DEFECT labels.",
     "Associates missing duplicate-key coverage, unsafe same-wave dependency, weak evidence, and unauthorized auth rewrite with their own structured plan findings.",
     "Includes explicit preconditions, probability, impact, solution opportunity, confidence, and convergence for every reported issue.",
     "Performs one read-only plan classification pass and leaves revision or another pass to the caller."
-  ]
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
 }

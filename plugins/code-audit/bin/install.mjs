@@ -347,14 +347,26 @@ function replaceActiveInvocationNames(content, targetProduct) {
     .replaceAll(`$${targetProduct}:`, `$${targetProduct}-`);
 }
 
+function installedSkillReference(
+  relative,
+  sourceDirectory,
+  sourcePackageRoot,
+  installedPackageRoot,
+) {
+  const sourceTarget = path.resolve(sourceDirectory, relative);
+  return path.join(
+    installedPackageRoot,
+    path.relative(sourcePackageRoot, sourceTarget),
+  );
+}
+
 function absoluteSkillReferences(content, sourceDirectory, sourcePackageRoot, installedPackageRoot) {
-  const installedReference = (relative) => {
-    const sourceTarget = path.resolve(sourceDirectory, relative);
-    return path.join(
-      installedPackageRoot,
-      path.relative(sourcePackageRoot, sourceTarget),
-    );
-  };
+  const installedReference = (relative) => installedSkillReference(
+    relative,
+    sourceDirectory,
+    sourcePackageRoot,
+    installedPackageRoot,
+  );
 
   return content
     .replace(
@@ -377,6 +389,60 @@ function absoluteSkillReferences(content, sourceDirectory, sourcePackageRoot, in
     );
 }
 
+const APPROVAL_LAUNCHER_SOURCE = [
+  "const{spawnSync}=require('node:child_process');",
+  "const decode=(value)=>Buffer.from(value,'base64url').toString('utf8');",
+  'const helper=decode(process.argv[2]);',
+  'const child=spawnSync(process.execPath,[helper,...process.argv.slice(3)],',
+  '{cwd:process.cwd(),shell:false,stdio:[0,1,2]});',
+  "if(child.error){process.stderr.write(`${child.error.message}\\n`);process.exitCode=1;}",
+  'else if(child.signal){try{process.kill(process.pid,child.signal);}catch{process.exitCode=1;}}',
+  'else{process.exitCode=child.status??1;}',
+].join('');
+
+function nodeScriptLauncherCommand(script) {
+  const bootstrap = "eval(Buffer.from(process.argv[1],'base64url').toString('utf8'))";
+  return [
+    'node',
+    '-e',
+    `"${bootstrap}"`,
+    Buffer.from(APPROVAL_LAUNCHER_SOURCE, 'utf8').toString('base64url'),
+    Buffer.from(script, 'utf8').toString('base64url'),
+  ].join(' ');
+}
+
+function renderExecutableNodeReferences(
+  content,
+  sourceDirectory,
+  sourcePackageRoot,
+  installedPackageRoot,
+) {
+  return content.replace(
+    /\bnode\s+(["'])((?:\.\.\/)+[^"'\s#]+\.mjs)\1/g,
+    (_match, _quote, relative) => nodeScriptLauncherCommand(installedSkillReference(
+      relative,
+      sourceDirectory,
+      sourcePackageRoot,
+      installedPackageRoot,
+    )),
+  );
+}
+
+function approvalLauncherCommand(installedPackageRoot) {
+  return nodeScriptLauncherCommand(
+    path.join(installedPackageRoot, 'scripts', 'approval-receipt.mjs'),
+  );
+}
+
+function renderApprovalLauncher(content, targetProduct, installedPackageRoot) {
+  const placeholder = '{{NECTAR_APPROVAL_LAUNCHER}}';
+  if (!content.includes(placeholder)) return content;
+  if (targetProduct !== 'nectar') {
+    throw new Error(`approval launcher placeholder is invalid for ${targetProduct}`);
+  }
+  return content.replaceAll(placeholder, approvalLauncherCommand(installedPackageRoot));
+}
+
 export function renderManagedSkill({
   sourceDirectory,
   entryName,
@@ -390,12 +456,19 @@ export function renderManagedSkill({
   let skill = source.match(/^name:/m)
     ? source.replace(/^name:\s*.+$/m, `name: ${entryName}`)
     : source.replace(/^---\n/, `---\nname: ${entryName}\n`);
-  skill = absoluteSkillReferences(
+  skill = renderExecutableNodeReferences(
     replaceActiveInvocationNames(skill, targetProduct),
     sourceDirectory,
     sourcePackageRoot,
     installedPackageRoot,
   );
+  skill = absoluteSkillReferences(
+    skill,
+    sourceDirectory,
+    sourcePackageRoot,
+    installedPackageRoot,
+  );
+  skill = renderApprovalLauncher(skill, targetProduct, installedPackageRoot);
 
   if (targetProduct === 'bee') {
     const preamble = `\n## Installed package location\n\n`

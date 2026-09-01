@@ -5,7 +5,10 @@ description: Use when the user starts a NEW piece of work to act on now — "let
 
 # Shape
 
-Turn a raw request into work at the right scale. Clarify what the user actually wants, detect how big it is, and create a design only when the size justifies one.
+Turn a raw request into investigated, fitted work at the right scale. Clarify
+the requested outcome, map the current system read-only, validate the candidate
+solution independently, and prepare the proportional plan gate before any
+implementation hand-off.
 
 ## Project context
 
@@ -21,17 +24,29 @@ evidence link only when the current question requires it. Native `AGENTS.md` and
 
 ## Hard gate
 
-Do NOT write implementation code, scaffold projects, or create files until you have detected the scale. At feature or project scale, additionally do not implement until the user has approved a design. The only artifact shape creates is `docs/work/YYYY-MM-DD-<feature-slug>/design.md`, and only when scale detection says feature or project. Implementation files are allowed only after the gate clears: at trivial and quick scale, proceed directly once scale is stated.
+Do not create or modify source, tests, configuration, dependencies, or
+repository instrumentation during Shape. For work that will mutate any of
+those surfaces, read the [Solution Fit contract](../../references/solution-fit.md)
+and keep the implementation gate closed until all five stages are complete:
+read-only investigation, candidate solution, independent `FIT`, written plan,
+and explicit approval of that presented plan revision.
+
+Shape may write only its bounded lifecycle artifact: a feature/project
+`docs/work/YYYY-MM-DD-<feature-slug>/design.md` after scale detection. Trivial
+and quick work stays inline. Design approval permits planning; it is not plan
+approval and never permits implementation by itself.
 
 These thoughts mean the gate is about to be violated:
 
 | Thought | Reality |
 |---------|---------|
-| "It's obvious, let me just start coding" | State the scale first — one line. Then code. |
+| "It's obvious, let me just start coding" | Obviousness is not investigation, fit, a written plan, or approval. Keep the gate closed. |
 | "The user seems in a hurry, skip the questions" | One grounded question beats an hour of building the wrong thing. |
 | "It's big, but I'll design as I go" | Feature scale without an approved design.md builds unexamined scope. |
 
-If you notice code already written with no scale stated, stop and classify now — retroactively stating the scale is cheaper than continuing unclassified.
+If you discover implementation already started without this gate, stop. Do not
+retroactively manufacture approval; preserve the evidence and ask whether to
+revert or investigate the current state.
 
 ## Backlog and existing-topic check
 
@@ -39,7 +54,15 @@ Before asking anything:
 
 - Read `docs/work/backlog.md` if it exists. If any line relates to the current topic, surface it: quote the line and ask whether to fold it into this work.
 - **Duplicate check:** recursively inspect topic directories exactly two levels below `docs/work/`. Compare the requested feature against dated roots (`YYYY-MM-DD-<feature-slug>/`), nested child topics (`NN-<topic-slug>/`), and legacy flat `docs/work/<topic>/` directories. Normalize candidate slugs to lowercase hyphen-case with any date or numeric child prefix removed, and also compare the first heading of each `design.md`. A matching normalized slug or clearly related design title is a likely duplicate.
-- When a likely duplicate exists, surface its exact path and current artifact set before creating anything. Ask one question with: `Continue existing work (recommended)`, `Create a distinct feature`, `Cancel`. On Continue, hand off to the orient skill; distinct asks for or recommends a genuinely different slug, then reruns the duplicate check. Silence never creates a second directory.
+- Run `node "../../scripts/run-close.mjs" discover` before deciding a likely
+  duplicate's route. When the matching entry is a completed duplicate with
+  status `done`, hand it to `nectar-close` instead of creating or resuming work.
+  For an active duplicate, surface its exact path and current artifact set and
+  ask: `Continue existing work (recommended)`, `Create a distinct feature`,
+  `Cancel`; Continue hands off to `nectar-orient`. A legacy-needing-adjudication
+  duplicate is active/ambiguous, never complete. Distinct asks for a genuinely
+  different slug, then reruns discovery. Silence never creates a second
+  directory.
 
 If neither exists or nothing matches, say nothing and continue.
 
@@ -59,24 +82,71 @@ Ask questions until the intent is unambiguous — then stop, even if that takes 
 - **Take the recommended path on micro-decisions.** When one option is clearly better — naming, file placement, an obvious convention — state your choice and move on. Reserve questions for decisions that change scope, behavior, or architecture.
 - **Cut scope actively.** If the request includes something not needed for the stated goal, ask: "Do we need X, or is Y enough?" Prefer the smaller version.
 
+## Investigation and Solution Fit
+
+This section applies whenever the requested outcome would change source, tests,
+configuration, dependencies, or repository instrumentation.
+
+1. Dispatch `nectar:investigator` in read-only investigation mode with the
+   exact repository scope and reported behavior. On Codex, load
+   `../../agents/investigator.md` as the role instructions for a general
+   subagent. If no subagent capability exists, perform the same read-only map
+   inline; never weaken the evidence contract.
+2. Explore two to three candidate solutions from the confirmed evidence. Give
+   each its exact boundary, callers, reuse, failure modes, rollback,
+   verification, and tradeoffs. Let the user choose when alternatives change
+   the outcome; otherwise select the clearly proportional recommendation.
+3. Use a fresh `nectar:investigator` invocation for independent fit validation
+   of the selected candidate. Give it the candidate, raw evidence, current
+   affected source, and material API/version documentation, but not an intended
+   verdict or prior praise.
+4. Only `FIT` may proceed to scale detection and a written plan. `PARTIAL`,
+   `UNFIT`, and `BLOCKED` stop before an implementation hand-off and report the
+   exact missing evidence or candidate defect.
+
+Investigation and fit are mandatory at every scale. Scale changes the size and
+storage of the plan, not whether the gate exists.
+
+## Test Value before planning
+
+Read the [Test Value contract](../../references/test-value.md) before presenting
+any plan that will change behavior, source, tests, configuration, or data. Map
+each affected behavior independently; do not infer test value from change size or
+file type. The compact map carries: **Protected behavior**, **Credible failure**,
+**Impact**, **Unique existing coverage**, **Owning layer**,
+**Implementation independence**, **Runtime class and cost**, exactly one **Test
+decision**, and a separate non-empty **Completion evidence** route.
+
+Trivial and quick work keeps this Test Value map inline beside the proportional
+plan. Feature/project work names observable behaviors in the design and hands the
+complete map to Plan. A decision of `NO_NEW_TEST` is valid and still requires
+concrete completion evidence; never invent a permanent surrogate test to make an
+inline plan look more rigorous.
+
 ## Scale detection
 
 Once intent is clear, classify the work. This table is the authoritative definition of scale:
 
 | Scale | Signal | Output |
 |---|---|---|
-| trivial | one obvious edit | just do it, no artifacts |
-| quick | single task, fits one session | proceed inline, no artifacts |
+| trivial | one bounded edit | one inline plan step, compact Test Value map, verification, and explicit approval; no lifecycle file |
+| quick | single task, fits one session | short inline ordered plan with Test Value maps, verification, and explicit approval; no lifecycle file |
 | feature | multi-task, needs design choices | `docs/work/YYYY-MM-DD-<feature-slug>/design.md` |
 | project | multiple independent features | dated parent design.md + ordered nested topics |
 
 When in doubt between two scales, pick the smaller — escalating later is cheap, ceremony is not.
 
-State your classification in one line ("This is quick scale: single task, one session") and act on it. Do not ask the user to confirm trivial or quick; just proceed. At feature or project scale, the design approval below is the confirmation.
+State the classification in one line. For trivial work, present one inline plan
+step, its Test Value map, and verification, then ask for explicit approval. For
+quick work, present the short inline plan, maps, and verification, then ask for explicit approval. At
+feature/project scale, design approval confirms the outcome and moves to Plan;
+it is not plan approval.
 
 ## Design doc
 
-Feature and project scale only. Before writing, explore 2–3 approaches in conversation: name each, give one-line pros and cons, lead with your recommendation. Let the user pick or combine.
+Feature and project scale only. Use the selected, independently fitted candidate
+from the preceding section; never introduce another unvalidated approach while
+writing the artifact.
 
 Choose a concise lowercase hyphen-case `<feature-slug>` from the user-visible outcome and use the local current date. Then write `docs/work/YYYY-MM-DD-<feature-slug>/design.md` with exactly these sections:
 
@@ -85,6 +155,14 @@ Choose a concise lowercase hyphen-case `<feature-slug>` from the user-visible ou
 
 ## Problem
 What is wrong or missing today, and for whom. 2–5 sentences.
+
+## Investigation and fit
+- **Investigation scope:** <entry points, callers, guards, nearby paths>
+- **Confirmed current behavior:** <observed behavior or root cause>
+- **Selected candidate:** <chosen solution and rejected alternatives>
+- **Evidence:** <project-relative file:line and runtime/documentation evidence>
+- **Solution fit:** FIT
+- **Remaining uncertainty:** <non-material assumptions, or none>
 
 ## Approach
 The chosen approach and how it works. Name the alternatives
@@ -118,9 +196,14 @@ After writing, present the design and ask explicitly: "Does this design look rig
 
 ## Hand-off
 
-- **Trivial:** just do it — no artifacts, no test ceremony.
-- **Quick:** proceed directly with the work. If it involves code, apply the build skill's test-first discipline; no plan file, no design file.
-- **Feature or project:** after design approval, continue with the plan skill. It either produces a plan directly in the dated feature root or proposes and, after approval, materializes ordered child topics.
+- **Trivial:** after `FIT`, present one inline plan step, its compact Test Value
+  map, and its verification;
+  invoke Build only after explicit approval. Write no lifecycle file.
+- **Quick:** after `FIT`, present the short inline plan with one map per behavior
+  and verification; invoke
+  Build only after explicit approval. Write no lifecycle file.
+- **Feature or project:** after design approval, continue with Plan. Plan writes
+  the exact revision and obtains separate explicit approval before Build.
 
 Never commit anything yourself. When the work produces a design.md, suggest a commit message and let the user decide.
 

@@ -2,9 +2,14 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { normalizeResult } from './results.mjs';
+import {
+  actorResponseArtifacts,
+  normalizeResult,
+  redactExcludedValues,
+} from './results.mjs';
 import { writeFixture } from './contracts.mjs';
 import { evalEnvironment, runCommand } from './process.mjs';
+import { evaluateContractChecks } from './checks.mjs';
 
 function copyPlugin(source, destination) {
   fs.cpSync(source, destination, {
@@ -144,6 +149,7 @@ export async function runClaudeCase({
   keepTemp = false,
 }) {
   const workspace = createClaudeEvalWorkspace({ contract, pluginRoot });
+  const startedAt = Date.now();
 
   try {
     const args = [
@@ -157,13 +163,18 @@ export async function runClaudeCase({
       'none',
       '--runs',
       '1',
+      '--no-publish',
     ];
+    if (contract.budgets?.claudeMaxCostUsd) {
+      args.push('--max-cost-usd', String(contract.budgets.claudeMaxCostUsd));
+    }
     let result;
     try {
       result = await Promise.resolve(execute(command, args, {
         encoding: 'utf8',
         env: evalEnvironment(),
         maxBuffer: 10 * 1024 * 1024,
+        timeout: contract.budgets?.timeoutMs,
       }));
     } catch (error) {
       return normalizeResult({
@@ -172,13 +183,16 @@ export async function runClaudeCase({
         passed: false,
         score: 0,
         status: 'unavailable',
-        evidence: [`Claude CLI could not be executed: ${error.message}`],
+        evidence: [redactExcludedValues(
+          contract,
+          `Claude CLI could not be executed: ${error.message}`,
+        )],
       });
     }
 
     const stdout = String(result.stdout || '').trim();
     const stderr = String(result.stderr || '').trim();
-    const combined = [stderr, stdout].filter(Boolean).join('\n');
+    const combinedOutput = [stderr, stdout].filter(Boolean).join('\n');
     if (result.error) {
       const unavailable = result.error.code === 'ENOENT' || /\bENOENT\b/.test(result.error.message);
       return normalizeResult({
@@ -187,7 +201,10 @@ export async function runClaudeCase({
         passed: false,
         score: 0,
         status: unavailable ? 'unavailable' : 'failed',
-        evidence: [`Claude CLI could not be executed: ${result.error.message}`],
+        evidence: [redactExcludedValues(
+          contract,
+          `Claude CLI could not be executed: ${result.error.message}`,
+        )],
       });
     }
 
@@ -200,35 +217,102 @@ export async function runClaudeCase({
 
     const nativeCase = payload && findCaseResult(payload, contract.id);
     const score = nativeCase?.score ?? payload?.score;
-    if (typeof score === 'number') {
-      const normalizedScore = Math.max(0, Math.min(1, score));
+    if (result.status === 2
+      && contract.budgets?.claudeMaxCostUsd
+      && (typeof score === 'number' || /(?:maximum|max).*cost|cost.*(?:ceiling|limit|reached)/i.test(stderr))) {
       return normalizeResult({
         host: 'claude',
         caseId: contract.id,
-        passed: normalizedScore >= 1,
-        score: normalizedScore,
-        evidence: nativeEvidence(nativeCase, payload),
+        passed: false,
+        score: 0,
+        evidence: ['Claude plugin eval reached the configured cost ceiling; partial numeric scores are not accepted.'],
       });
     }
-
     if (result.status !== 0
-      && /early access|not available|unknown command|command not found/i.test(combined)) {
+      && typeof score !== 'number'
+      && /early access|not available|unknown command|command not found/i.test(stderr)) {
       return normalizeResult({
         host: 'claude',
         caseId: contract.id,
         passed: false,
         score: 0,
         status: 'unavailable',
-        evidence: [combined || 'Claude plugin eval is unavailable.'],
+        evidence: [redactExcludedValues(
+          contract,
+          stderr || 'Claude plugin eval is unavailable.',
+        )],
       });
     }
+    if (typeof score === 'number') {
+      const normalizedScore = Math.max(0, Math.min(1, score));
+      const response = nativeCase?.response || nativeCase?.output || nativeCase?.assistantResponse || '';
+      const artifacts = response ? actorResponseArtifacts(contract, response) : undefined;
+      if (result.status !== 0 && result.status !== 1) {
+        return normalizeResult({
+          artifacts,
+          host: 'claude',
+          caseId: contract.id,
+          passed: false,
+          score: normalizedScore,
+          evidence: [redactExcludedValues(
+            contract,
+            combinedOutput || `Claude plugin eval exited ${result.status} with a partial score.`,
+          )],
+        });
+      }
+      if (contract.requireLocalChecks) {
+        return normalizeResult({
+          artifacts,
+          host: 'claude',
+          caseId: contract.id,
+          passed: false,
+          score: 0,
+          status: 'unavailable',
+          evidence: ['Claude native eval final workspace is not exposed authoritatively; required local final-state checks cannot be graded.'],
+        });
+      }
+      const deterministic = contract.requireLocalChecks
+        ? evaluateContractChecks({ contract, response, root: workspace.fixtureRoot })
+        : { score: 1, evidence: [] };
+      const combinedScore = Math.min(normalizedScore, deterministic.score);
+      return normalizeResult({
+        artifacts,
+        host: 'claude',
+        caseId: contract.id,
+        passed: combinedScore >= 1,
+        score: combinedScore,
+        evidence: [
+          ...nativeEvidence(nativeCase, payload).map((entry) => redactExcludedValues(contract, entry)),
+          ...deterministic.evidence.map((entry) => redactExcludedValues(contract, entry)),
+        ],
+        ...(contract.requireLocalChecks || contract.budgets ? { metadata: {
+          actorHost: 'claude', actorModel: nativeCase?.model || null,
+          actorTimeoutMs: contract.budgets?.timeoutMs ?? null,
+          costLimitEnforced: Boolean(contract.budgets?.claudeMaxCostUsd),
+          costLimitUsd: contract.budgets?.claudeMaxCostUsd ?? null,
+          deterministicScore: deterministic.score, elapsedMs: Date.now() - startedAt,
+          judgeHost: 'claude-native', judgeModel: nativeCase?.graderModel || null,
+          judgeModelSource: nativeCase?.graderModel ? 'claude-native-result' : null,
+          judgeTimeoutMs: null,
+          promptCharacters: fs.readFileSync(workspace.promptPath, 'utf8').length,
+          responseCharacters: artifacts?.actorResponse.length ?? 0, runCount: 1,
+          semanticScore: normalizedScore,
+          turnLimit: Number.isInteger(nativeCase?.maxTurns) ? nativeCase.maxTurns : null,
+          turnLimitEnforced: Number.isInteger(nativeCase?.maxTurns),
+        } } : {}),
+      });
+    }
+
     if (result.status !== 0) {
       return normalizeResult({
         host: 'claude',
         caseId: contract.id,
         passed: false,
         score: 0,
-        evidence: [combined || `Claude plugin eval exited ${result.status}.`],
+        evidence: [redactExcludedValues(
+          contract,
+          combinedOutput || `Claude plugin eval exited ${result.status}.`,
+        )],
       });
     }
     return normalizeResult({
@@ -238,7 +322,10 @@ export async function runClaudeCase({
       score: 0,
       evidence: [
         stdout
-          ? `Claude plugin eval returned invalid JSON or an unscored result: ${stdout}`
+          ? redactExcludedValues(
+            contract,
+            `Claude plugin eval returned invalid JSON or an unscored result: ${stdout}`,
+          )
           : 'Claude plugin eval returned no JSON result.',
       ],
     });

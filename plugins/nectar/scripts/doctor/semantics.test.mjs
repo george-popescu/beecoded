@@ -25,7 +25,7 @@ function codes(report) {
   return report.diagnostics.map((diagnostic) => diagnostic.code);
 }
 
-const cleanReview = '# Review\n\n## Clean pass\n\nClean pass: zero blocking code defects remain.\n\nBlocking: 0\nDeferred: 3\n';
+const cleanReview = '# Review\n\n## Clean pass\n\nBlocking: 0\nDeferred: 3\nClean pass: zero blocking code defects remain.\n';
 
 test('detects duplicate normalized slugs across dated, child, and legacy topics', (t) => {
   const root = fixture(t, {
@@ -126,30 +126,33 @@ test('does not treat a review that merely says not a clean pass as done', (t) =>
   );
 });
 
-test('accepts the exact stronger legacy zero-confirmed clean marker', (t) => {
+test('warns for completed historical dependency chains but blocks active premature progress', (t) => {
+  const legacyReview = '# Review\n\n## Clean pass\n\nNo CONFIRMED findings remain.\n';
+  const canonicalReview = '# Review\n\nBlocking: 0\nClean pass: zero blocking code defects remain.\n';
   const root = fixture(t, {
-    'docs/work/2026-07-16-search/design.md': '# Search — Design\n',
-    'docs/work/2026-07-16-search/plan.md': '## Wave 1\n- [x] T1: Search — done when: green.\n',
-    'docs/work/2026-07-16-search/review.md': '# Review\n\n## Clean pass\n\nCorrectness and tests were rechecked. No CONFIRMED findings remain.\n',
+    'docs/work/2026-07-16-checkout/design.md': '# Checkout — Design\n\n## Topics\n1. `01-domain/` — domain; depends on: none\n2. `02-api/` — API; depends on: `01-domain/`\n3. `03-ui/` — UI; depends on: `01-domain/`\n',
+    'docs/work/2026-07-16-checkout/01-domain/design.md': '# Domain — Design\n',
+    'docs/work/2026-07-16-checkout/01-domain/plan.md': '## Wave 1\n- [x] T1: Domain — done when: green.\n',
+    'docs/work/2026-07-16-checkout/01-domain/review.md': legacyReview,
+    'docs/work/2026-07-16-checkout/02-api/design.md': '# API — Design\n',
+    'docs/work/2026-07-16-checkout/02-api/plan.md': '## Wave 1\n- [x] T1: API — done when: green.\n',
+    'docs/work/2026-07-16-checkout/02-api/review.md': canonicalReview,
+    'docs/work/2026-07-16-checkout/03-ui/design.md': '# UI — Design\n',
+    'docs/work/2026-07-16-checkout/03-ui/plan.md': '## Wave 1\n- [x] T1: Started — done when: green.\n- [ ] T2: Finish — done when: green.\n',
   });
 
-  assert.equal(
-    topic(inspectWorkTree(root), 'docs/work/2026-07-16-search').status,
-    'done',
-  );
-});
+  const report = inspectWorkTree(root);
+  const historical = report.diagnostics.find((diagnostic) => (
+    diagnostic.code === 'LEGACY_DEPENDENCY_HISTORY'
+  ));
+  const active = report.diagnostics.find((diagnostic) => (
+    diagnostic.code === 'DEPENDENCY_PROGRESS_STARTED'
+    && diagnostic.path.endsWith('/03-ui')
+  ));
 
-test('uses the final blocking count when a resumed review retains older summaries', (t) => {
-  const root = fixture(t, {
-    'docs/work/2026-07-16-search/design.md': '# Search — Design\n',
-    'docs/work/2026-07-16-search/plan.md': '## Wave 1\n- [x] T1: Search — done when: green.\n',
-    'docs/work/2026-07-16-search/review.md': '# Review\n\n## Clean pass\n\nClean pass: zero blocking code defects remain.\n\nBlocking: 0\n\n## Resumed review\n\nBlocking: 1\n',
-  });
-
-  assert.equal(
-    topic(inspectWorkTree(root), 'docs/work/2026-07-16-search').status,
-    'in review',
-  );
+  assert.equal(historical?.severity, 'warning');
+  assert.ok(historical?.path.endsWith('/02-api'));
+  assert.equal(active?.severity, 'error');
 });
 
 test('gives a structurally invalid parent no actionable aggregate status', (t) => {
@@ -181,4 +184,72 @@ test('reports progress started before dependencies are done', (t) => {
   assert.ok(diagnostic);
   assert.match(diagnostic.path, /02-api/);
   assert.match(diagnostic.evidence, /01-domain/);
+});
+
+test('rejects symlinked design, plan, and review artifacts without disclosing targets', (t) => {
+  const root = fixture(t, {
+    'docs/work/2026-07-16-design-link/plan.md': '## Wave 1\n- [x] T1: Complete.\n',
+    'docs/work/2026-07-16-plan-link/design.md': '# Plan Link — Design\n',
+    'docs/work/2026-07-16-review-link/design.md': '# Review Link — Design\n',
+    'docs/work/2026-07-16-review-link/plan.md': '## Wave 1\n- [x] T1: Complete.\n',
+  });
+  const external = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-doctor-external-artifacts-'));
+  t.after(() => fs.rmSync(external, { recursive: true, force: true }));
+  const externalFiles = {
+    'design.md': '# External\n\n## Topics\nEXTERNAL_DESIGN_CONTENT_DO_NOT_DISCLOSE\n',
+    'plan.md': 'EXTERNAL_PLAN_CONTENT_DO_NOT_DISCLOSE\n',
+    'review.md': 'Blocking: 0\nClean pass: zero blocking code defects remain.\nEXTERNAL_REVIEW_CONTENT_DO_NOT_DISCLOSE\n',
+  };
+  for (const [name, content] of Object.entries(externalFiles)) {
+    fs.writeFileSync(path.join(external, name), content);
+  }
+  fs.symlinkSync(
+    path.join(external, 'design.md'),
+    path.join(root, 'docs/work/2026-07-16-design-link/design.md'),
+  );
+  fs.symlinkSync(
+    path.join(external, 'plan.md'),
+    path.join(root, 'docs/work/2026-07-16-plan-link/plan.md'),
+  );
+  fs.symlinkSync(
+    path.join(external, 'review.md'),
+    path.join(root, 'docs/work/2026-07-16-review-link/review.md'),
+  );
+
+  const report = inspectWorkTree(root);
+  const unsafePaths = report.diagnostics
+    .filter((diagnostic) => diagnostic.code === 'UNSAFE_ARTIFACT')
+    .map((diagnostic) => diagnostic.path)
+    .sort();
+  const serialized = JSON.stringify(report);
+
+  assert.deepEqual(unsafePaths, [
+    'docs/work/2026-07-16-design-link/design.md',
+    'docs/work/2026-07-16-plan-link/plan.md',
+    'docs/work/2026-07-16-review-link/review.md',
+  ]);
+  assert.doesNotMatch(serialized, /EXTERNAL_(?:DESIGN|PLAN|REVIEW)_CONTENT_DO_NOT_DISCLOSE/);
+  assert.equal(serialized.includes(external), false);
+  for (const topicPath of [
+    'docs/work/2026-07-16-design-link',
+    'docs/work/2026-07-16-plan-link',
+    'docs/work/2026-07-16-review-link',
+  ]) {
+    assert.equal(topic(report, topicPath).status, null);
+  }
+});
+
+test('rejects oversized artifacts before an unbounded Doctor read', (t) => {
+  const root = fixture(t, {
+    'docs/work/2026-07-16-oversized/design.md': Buffer.alloc(256 * 1024 + 1, 0x58),
+  });
+
+  const report = inspectWorkTree(root);
+  const diagnostic = report.diagnostics.find((candidate) => (
+    candidate.code === 'ARTIFACT_TOO_LARGE'
+  ));
+
+  assert.equal(diagnostic?.path, 'docs/work/2026-07-16-oversized/design.md');
+  assert.equal(Object.hasOwn(diagnostic || {}, 'evidence'), false);
+  assert.equal(topic(report, 'docs/work/2026-07-16-oversized').status, null);
 });

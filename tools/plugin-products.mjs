@@ -140,6 +140,7 @@ const productRegistry = defineProductRegistry([
       'nectar-audit',
       'nectar-build',
       'nectar-capture',
+      'nectar-close',
       'nectar-context',
       'nectar-debug',
       'nectar-honey',

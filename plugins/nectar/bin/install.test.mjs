@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -12,7 +13,6 @@ import {
   collectInstalledVersions,
   compareSemver,
   evaluateDowngrade,
-  formatProvenance,
   installManagedSkills,
   parseArguments,
   preflightManagedSkills,
@@ -111,18 +111,6 @@ test('parses the explicit downgrade override', () => {
   assert.equal(options.allowDowngrade, true);
   assert.equal(options.dryRun, true);
   assert.deepEqual([...options.requestedHosts], ['claude', 'codex']);
-});
-
-test('formats package provenance with name, version, and source path', () => {
-  const line = formatProvenance({
-    name: '@beecoded/nectar',
-    version: '1.3.0',
-    packageRoot: path.resolve(currentDirectory, '..'),
-  });
-
-  assert.match(line, /@beecoded\/nectar@1\.3\.0/);
-  assert.match(line, /source=/);
-  assert.match(line, /plugins\/nectar/);
 });
 
 test('keeps Nectar project state in the effective global Git excludes file', () => {
@@ -362,51 +350,292 @@ Read [lens](../../agents/lens.md) and load \`../../agents/lens.md\`.
   }
 });
 
-test('renders executable nectar-context commands for either host with durable references', () => {
+test('renders executable nectar-context commands without interpreting the installed root', () => {
   const packageRoot = path.resolve(currentDirectory, '..');
   const sourceDirectory = path.join(
     packageRoot,
     'internal-skills/nectar-context',
   );
-  const installedPackageRoot = packageRoot;
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-context-token-consumer-'));
+  const installedPackageRoot = path.join(
+    root,
+    'installed $(touch${IFS}sentinel-context) `tick` "quote" ü root',
+  );
+  fs.cpSync(packageRoot, installedPackageRoot, { recursive: true });
 
-  for (const host of ['claude', 'codex']) {
+  try {
+    for (const host of ['claude', 'codex']) {
+      const rendered = renderManagedSkill({
+        sourceDirectory,
+        entryName: 'nectar-context',
+        packageName: '@beecoded/nectar',
+        packageVersion: '2.2.0',
+        packageRoot,
+        installedPackageRoot,
+      });
+
+      assert.match(rendered.skill, /^name: nectar-context$/m, host);
+      assert.ok(
+        rendered.skill.includes(path.join(installedPackageRoot, 'agents/context-builder.md')),
+        host,
+      );
+      assert.doesNotMatch(rendered.skill, /\.\.\/\.\.\/(?:scripts|agents)\//, host);
+      assert.doesNotMatch(rendered.skill, /node\s+`[^`]*run-context\.mjs`/, host);
+
+      const statusCommand = rendered.skill.match(/```bash\n([^\n]*status "\$PWD"[^\n]*)\n```/);
+      assert.ok(statusCommand, `missing rendered status command for ${host}`);
+      assert.equal(statusCommand[1].includes(installedPackageRoot), false, host);
+      const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-rendered-command-'));
+      try {
+        const executed = spawnSync('/bin/sh', ['-c', statusCommand[1]], {
+          cwd: projectRoot,
+          encoding: 'utf8',
+        });
+        assert.equal(executed.status, 0, `${host}: ${executed.stderr}`);
+        assert.match(executed.stdout, /state: missing/);
+        assert.equal(fs.existsSync(path.join(projectRoot, 'sentinel-context')), false);
+      } finally {
+        fs.rmSync(projectRoot, { recursive: true, force: true });
+      }
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('executes an installed nectar-close command without interpreting its package path', () => {
+  const packageRoot = path.resolve(currentDirectory, '..');
+  const sourceDirectory = path.join(packageRoot, 'internal-skills/nectar-close');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-close-token-consumer-'));
+  const installedPackageRoot = path.join(
+    root,
+    'installed $(touch${IFS}sentinel-close) `tick` "quote" ü root',
+  );
+  fs.cpSync(packageRoot, installedPackageRoot, { recursive: true });
+
+  try {
     const rendered = renderManagedSkill({
       sourceDirectory,
-      entryName: 'nectar-context',
+      entryName: 'nectar-close',
       packageName: '@beecoded/nectar',
-      packageVersion: '2.2.0',
+      packageVersion: '3.1.0',
       packageRoot,
       installedPackageRoot,
     });
+    const commandMatch = rendered.skill.match(/```bash\n([^\n]+) discover\n/);
+    assert.ok(commandMatch, 'rendered Close must expose its discover command');
 
-    assert.match(rendered.skill, /^name: nectar-context$/m, host);
-    assert.match(
-      rendered.skill,
-      new RegExp(path.join(installedPackageRoot, 'scripts/run-context.mjs')),
-      host,
-    );
-    assert.match(
-      rendered.skill,
-      new RegExp(path.join(installedPackageRoot, 'agents/context-builder.md')),
-      host,
-    );
-    assert.doesNotMatch(rendered.skill, /\.\.\/\.\.\/(?:scripts|agents)\//, host);
-    assert.doesNotMatch(rendered.skill, /node\s+`[^`]*run-context\.mjs`/, host);
+    const projectRoot = path.join(root, 'project');
+    fs.mkdirSync(projectRoot);
+    const executed = spawnSync('/bin/sh', ['-c', `${commandMatch[1]} discover`], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    assert.equal(executed.status, 0, executed.stderr);
+    assert.deepEqual(JSON.parse(executed.stdout).entries, []);
+    assert.equal(fs.existsSync(path.join(root, 'sentinel-close')), false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
 
-    const statusCommand = rendered.skill.match(/```bash\n([^\n]*run-context\.mjs[^\n]*status[^\n]*)\n```/);
-    assert.ok(statusCommand, `missing rendered status command for ${host}`);
-    const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-rendered-command-'));
-    try {
-      const executed = spawnSync('/bin/sh', ['-c', statusCommand[1]], {
-        cwd: projectRoot,
-        encoding: 'utf8',
-      });
-      assert.equal(executed.status, 0, `${host}: ${executed.stderr}`);
-      assert.match(executed.stdout, /state: missing/);
-    } finally {
-      fs.rmSync(projectRoot, { recursive: true, force: true });
+test('renders one opaque launcher that cannot interpret installed or topic paths as shell source', () => {
+  const packageRoot = path.resolve(currentDirectory, '..');
+  const sourceDirectory = path.join(packageRoot, 'internal-skills/nectar-build');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-build-token-consumer-'));
+  const installedPackageRoot = path.join(
+    root,
+    'installed $(touch${IFS}sentinel-installed) `tick` "quote" ü\nroot',
+  );
+  fs.mkdirSync(path.join(installedPackageRoot, 'scripts'), { recursive: true });
+  const installedHelper = path.join(installedPackageRoot, 'scripts/approval-receipt.mjs');
+  fs.copyFileSync(path.join(packageRoot, 'scripts/approval-receipt.mjs'), installedHelper);
+  const rendered = renderManagedSkill({
+    sourceDirectory,
+    entryName: 'nectar-build',
+    packageName: '@beecoded/nectar',
+    packageVersion: '3.1.0',
+    packageRoot,
+    installedPackageRoot,
+  });
+
+  try {
+    const topic = 'docs/work/2026-08-29-$(touch${IFS}sentinel-topic) `tick` "quote" ü\nleaf';
+    const topicRoot = path.join(root, topic);
+    fs.mkdirSync(topicRoot, { recursive: true });
+    fs.writeFileSync(path.join(topicRoot, 'design.md'), `# Consumer — Design
+
+## Investigation and fit
+- **Solution fit:** FIT
+`);
+    fs.writeFileSync(path.join(topicRoot, 'plan.md'), `## Gate
+- Solution fit: FIT
+- Plan revision: 1
+- Plan approval: PENDING
+
+## Wave 1
+- [ ] T1: Verify installed dispatch — done when: the receipt command runs.
+  - files: \`src/consumer.js\`
+`);
+    const launcherMatch = rendered.skill.match(/^APPROVAL_LAUNCHER = (.+)$/m);
+    assert.ok(launcherMatch, 'rendered Build must contain the opaque approval launcher');
+    const launcher = launcherMatch[1];
+    assert.equal(rendered.skill.includes('{{NECTAR_APPROVAL_LAUNCHER}}'), false);
+    assert.equal(launcher.includes(installedPackageRoot), false);
+    const launcherParts = launcher.match(
+      /^node -e "([^"]+)" ([A-Za-z0-9_-]+) ([A-Za-z0-9_-]+)$/,
+    );
+    assert.ok(launcherParts, 'launcher shell grammar must contain only static code and base64url fields');
+    assert.doesNotMatch(launcherParts[1], /\$\(|`|;|&|\||>|</);
+    assert.equal(Buffer.from(launcherParts[3], 'base64url').toString('utf8'), installedHelper);
+
+    const discover = spawnSync('/bin/sh', ['-c', `${launcher} discover`], {
+      cwd: root,
+      encoding: 'utf8',
+    });
+    assert.equal(discover.status, 0, discover.stderr);
+    const discovered = JSON.parse(discover.stdout);
+    assert.equal(discovered.entries[0].displayPath, topic);
+    assert.match(discovered.entries[0].token, /^[A-Za-z0-9_-]+$/);
+    assert.equal(fs.existsSync(path.join(root, 'sentinel-installed')), false);
+    assert.equal(fs.existsSync(path.join(root, 'sentinel-topic')), false);
+
+    const snapshot = spawnSync('/bin/sh', [
+      '-c',
+      `${launcher} snapshot-token ${discovered.entries[0].token}`,
+    ], { cwd: root, encoding: 'utf8' });
+    assert.equal(snapshot.status, 0, snapshot.stderr);
+    assert.equal(JSON.parse(snapshot.stdout).kind, 'CURRENT_RUN');
+    assert.equal(fs.existsSync(path.join(root, 'sentinel-topic')), false);
+
+    const originalHelper = fs.readFileSync(installedHelper);
+    fs.writeFileSync(installedHelper, `#!/usr/bin/env node
+process.stdout.write('stdout-byte\\n');
+process.stderr.write('stderr-byte\\n');
+process.exitCode = 7;
+`);
+    const failed = spawnSync('/bin/sh', ['-c', `${launcher} probe`], {
+      cwd: root,
+      encoding: 'utf8',
+    });
+    assert.equal(failed.status, 7);
+    assert.equal(failed.stdout, 'stdout-byte\n');
+    assert.equal(failed.stderr, 'stderr-byte\n');
+    fs.writeFileSync(installedHelper, originalHelper);
+
+    const powershell = spawnSync('pwsh', ['-NoProfile', '-Command', `${launcher} discover`], {
+      cwd: root,
+      encoding: 'utf8',
+    });
+    if (!powershell.error || powershell.error.code !== 'ENOENT') {
+      assert.equal(powershell.status, 0, powershell.stderr);
+      assert.equal(JSON.parse(powershell.stdout).entries[0].displayPath, topic);
     }
+
+    assert.match(rendered.skill, /APPROVAL_LAUNCHER/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('renders Debug promotion with only opaque source and design-stage tokens', () => {
+  const packageRoot = path.resolve(currentDirectory, '..');
+  const sourceDirectory = path.join(packageRoot, 'internal-skills/nectar-debug');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-debug-token-consumer-'));
+  const installedPackageRoot = path.join(
+    root,
+    'installed $(touch${IFS}sentinel-debug) `tick` "quote" ü\nroot',
+  );
+  fs.cpSync(packageRoot, installedPackageRoot, { recursive: true });
+
+  try {
+    const rendered = renderManagedSkill({
+      sourceDirectory,
+      entryName: 'nectar-debug',
+      packageName: '@beecoded/nectar',
+      packageVersion: '3.1.0',
+      packageRoot,
+      installedPackageRoot,
+    });
+    const launcherMatch = rendered.skill.match(/^DEBUG_PROMOTION_LAUNCHER = (.+)$/m);
+    assert.ok(launcherMatch, 'rendered Debug must contain its opaque promotion launcher');
+    const launcher = launcherMatch[1];
+    assert.equal(launcher.includes(installedPackageRoot), false);
+    const launcherParts = launcher.match(
+      /^node -e "([^"]+)" ([A-Za-z0-9_-]+) ([A-Za-z0-9_-]+)$/,
+    );
+    assert.ok(launcherParts, 'Debug launcher must contain static code and base64url fields only');
+    assert.equal(
+      Buffer.from(launcherParts[3], 'base64url').toString('utf8'),
+      path.join(installedPackageRoot, 'scripts/debug-promotion.mjs'),
+    );
+    assert.doesNotMatch(rendered.skill, /--project-root|--source|--destination|--design-file/);
+
+    const projectRoot = path.join(root, 'project');
+    const debugDirectory = path.join(projectRoot, 'docs/work/debug');
+    fs.mkdirSync(debugDirectory, { recursive: true });
+    const evidence = '# Debug hunt\n\nRoot cause: token transport.\n';
+    fs.writeFileSync(path.join(debugDirectory, 'token-transport.md'), evidence);
+    const evidenceDigest = crypto.createHash('sha256').update(evidence).digest('hex');
+
+    const run = (suffix) => spawnSync('/bin/sh', ['-c', `${launcher} ${suffix}`], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    const discover = run('discover');
+    assert.equal(discover.status, 0, discover.stderr);
+    const sourceToken = JSON.parse(discover.stdout).entries[0].token;
+    const createdResult = run(`create-design-stage ${sourceToken}`);
+    assert.equal(createdResult.status, 0, createdResult.stderr);
+    const created = JSON.parse(createdResult.stdout);
+    const design = `# Token transport — Design
+
+## Problem
+Shell source interpreted paths.
+
+## Investigation and fit
+- **Investigation scope:** Debug promotion transport
+- **Confirmed current behavior:** raw paths reached shell source
+- **Selected candidate:** opaque helper-issued tokens
+- **Evidence:**
+
+Investigation evidence SHA-256: ${evidenceDigest}
+
+${evidence}
+- **Solution fit:** FIT
+- **Remaining uncertainty:** none
+
+## Approach
+Use opaque tokens.
+
+## Acceptance criteria
+- [ ] Paths remain data.
+
+## Out of scope
+- Model evals.
+`;
+    fs.writeFileSync(created.designDisplayPath, design);
+    const sealedResult = run(`seal-design-stage ${created.stageToken}`);
+    assert.equal(sealedResult.status, 0, sealedResult.stderr);
+    const sealed = JSON.parse(sealedResult.stdout);
+    const promotedResult = run(`promote-token ${sourceToken} ${sealed.stageToken}`);
+    assert.equal(promotedResult.status, 0, promotedResult.stderr);
+    const promoted = JSON.parse(promotedResult.stdout);
+    assert.equal(promoted.committed, true);
+    assert.equal(promoted.stageCleanup.disposed, true);
+    assert.equal(fs.existsSync(path.join(root, 'sentinel-debug')), false);
+    assert.equal(fs.existsSync(path.join(projectRoot, 'sentinel-debug')), false);
+    assert.equal(fs.existsSync(path.join(projectRoot, promoted.destinationRelative, 'design.md')), true);
+
+    const powershell = spawnSync('pwsh', ['-NoProfile', '-Command', `${launcher} discover`], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    });
+    if (!powershell.error || powershell.error.code !== 'ENOENT') {
+      assert.equal(powershell.status, 0, powershell.stderr);
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
   }
 });
 

@@ -6,9 +6,19 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { normalizeResult } from './evals/results.mjs';
-import { evalExitCode, parseEvalArguments, runPluginEvals } from './run-plugin-evals.mjs';
+import {
+  evalExitCode,
+  parseEvalArguments,
+  runPluginEvals,
+  runnerFamilyFor,
+} from './run-plugin-evals.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+test('routes Nectar to its native eval owner and audit products to the generic owner', () => {
+  assert.equal(runnerFamilyFor({ kind: 'nectar' }), 'nectar');
+  assert.equal(runnerFamilyFor({ kind: 'skills-only' }), 'generic');
+});
 
 test('parses host, product, case, output, concurrency, and dry-run options', () => {
   assert.deepEqual(parseEvalArguments([
@@ -67,6 +77,41 @@ test('runs selected jobs and persists one normalized aggregate', async (t) => {
   const files = fs.readdirSync(outputDir);
   assert.equal(files.length, 1);
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(outputDir, files[0]), 'utf8')).passed, 2);
+});
+
+test('executes Nectar through the native family when no explicit runner override exists', async () => {
+  const calls = [];
+  const outcome = await runPluginEvals({
+    repoRoot,
+    options: parseEvalArguments([
+      '--codex', '--product', 'nectar', '--case', 'split-approval',
+    ]),
+    runnerFamilies: {
+      generic: {
+        codex: async () => {
+          calls.push('generic');
+          throw new Error('generic runner must not own Nectar');
+        },
+      },
+      nectar: {
+        codex: async ({ product, contract }) => {
+          calls.push(`native:${product}:${contract.id}`);
+          return normalizeResult({
+            product,
+            host: 'codex',
+            caseId: contract.id,
+            passed: true,
+            score: 1,
+            evidence: 'native Nectar route',
+          });
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(calls, ['native:nectar:split-approval']);
+  assert.equal(outcome.aggregate.passed, 1);
+  assert.equal(outcome.aggregate.results[0].product, 'nectar');
 });
 
 test('uses a distinct nonzero exit when any requested host is unavailable', () => {

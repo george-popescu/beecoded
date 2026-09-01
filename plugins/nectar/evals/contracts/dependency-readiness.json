@@ -7,7 +7,7 @@
       "docs/work/2026-07-16-checkout/design.md": "# Checkout — Design\n\n## Problem\nCheckout is split into dependent work.\n\n## Approach\nComplete children in dependency order.\n\n## Acceptance criteria\n- [ ] Checkout ships safely.\n\n## Out of scope\n- None.\n\n## Topics\n1. `01-domain/` — domain rules; depends on: none\n2. `02-api/` — checkout API; depends on: `01-domain/`\n3. `03-ui/` — checkout UI; depends on: `02-api/`\n",
       "docs/work/2026-07-16-checkout/01-domain/design.md": "# Domain — Design\n",
       "docs/work/2026-07-16-checkout/01-domain/plan.md": "## Wave 1\n- [x] T1: Define rules — done when: tests pass.\n  - files: `src/domain.js`\n",
-      "docs/work/2026-07-16-checkout/01-domain/review.md": "# Review\n\nClean pass confirmation: tests passed, zero confirmed findings.\n",
+      "docs/work/2026-07-16-checkout/01-domain/review.md": "# Review\n\nBlocking: 0\nNon-blocking: 0\nClean pass: zero blocking code defects remain.\n",
       "docs/work/2026-07-16-checkout/02-api/design.md": "# API — Design\n",
       "docs/work/2026-07-16-checkout/03-ui/design.md": "# UI — Design\n"
     }
@@ -15,17 +15,18 @@
   "prompt": "Continue with the next checkout topic.",
   "checks": [
     {
-      "type": "responseIncludes",
-      "value": "02-api"
-    },
-    {
-      "type": "responseExcludes",
-      "value": "plan 03-ui"
+      "type": "fixtureUnchanged"
     }
   ],
   "graderCriteria": [
     "Selects 02-api as the single next dependency-ready child.",
     "Reports 03-ui as blocked by 02-api.",
     "Does not propose starting 03-ui."
-  ]
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
 }

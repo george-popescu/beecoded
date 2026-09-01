@@ -140,14 +140,29 @@ test('runs model jobs with bounded concurrency and preserves deterministic resul
   let active = 0;
   let maximumActive = 0;
   const expected = [
+    'active-close-refusal',
+    'approval-before-write',
     'artifact-recovery',
     'atlas-workflow-discipline',
+    'completed-duplicate-close',
+    'context-freshness-boundary',
     'contiguous-numbering',
+    'custom-backfill',
     'dependency-readiness',
     'duplicate-detection',
+    'framework-registration',
+    'label-only-no-test',
+    'layer-ownership',
+    'plan-drift-reapproval',
     'plan-risk-classification',
     'review-risk-classification',
+    'secret-redaction',
+    'solution-before-plan',
     'split-approval',
+    'standard-migration',
+    'static-copy',
+    'suite-consolidation',
+    'tenant-isolation',
   ];
   const outcome = await runEvalSuite({
     pluginRoot,

@@ -4,24 +4,25 @@
   "tags": ["recovery", "compaction"],
   "fixture": {
     "files": {
-      "docs/work/2026-07-16-search/design.md": "# Search — Design\n\n## Problem\nSearch results need ranking.\n\n## Approach\nAdd deterministic scoring.\n\n## Acceptance criteria\n- [ ] Relevant results rank first.\n\n## Out of scope\n- Semantic embeddings.\n",
-      "docs/work/2026-07-16-search/plan.md": "## Wave 1\n- [x] T1: Add scoring tests — done when: tests pass.\n  - files: `src/search.js`, `test/search.test.js`\n## Wave 2 (depends on Wave 1)\n- [ ] T2: Implement ranking — done when: tests pass.\n  - files: `src/search.js`, `test/search.test.js`\n"
+      "docs/work/2026-07-16-search/design.md": "# Search — Design\n\n## Problem\nSearch results need ranking.\n\n## Investigation and fit\n- **Investigation scope:** search entry point and ranking tests\n- **Confirmed current behavior:** results preserve insertion order\n- **Selected candidate:** deterministic scoring at the search owner\n- **Evidence:** src/search.js:1 and test/search.test.js:1\n- **Solution fit:** FIT\n- **Remaining uncertainty:** none\n\n## Approach\nAdd deterministic scoring.\n\n## Acceptance criteria\n- [ ] Relevant results rank first.\n\n## Out of scope\n- Semantic embeddings.\n",
+      "docs/work/2026-07-16-search/plan.md": "## Gate\n- Solution fit: FIT\n- Plan revision: 1\n- Plan approval: APPROVED 2026-07-16\n\n## Wave 1\n- [x] T1: Add scoring tests — done when: tests pass.\n  - files: `src/search.js`, `test/search.test.js`\n  - **Protected behavior:** relevant results rank before less relevant results\n  - **Credible failure:** insertion order wins despite different scores\n  - **Impact:** users receive less relevant results first\n  - **Unique existing coverage:** test/search.test.js\n  - **Owning layer:** search service in src/search.js\n  - **Implementation independence:** asserts public result order\n  - **Runtime class and cost:** focused unit test, cheap\n  - **Test decision:** ADD_PRODUCT_TEST because ranking has no current owner\n  - **Completion evidence:** node --test test/search.test.js\n\n## Wave 2 (depends on Wave 1)\n- [ ] T2: Implement ranking — done when: tests pass.\n  - files: `src/search.js`, `test/search.test.js`\n  - **Protected behavior:** the approved ranking test passes through the search API\n  - **Credible failure:** implementation ignores the tested score order\n  - **Impact:** search relevance remains unchanged\n  - **Unique existing coverage:** test/search.test.js from T1\n  - **Owning layer:** search service in src/search.js\n  - **Implementation independence:** reuses the public result-order assertion\n  - **Runtime class and cost:** focused unit test, cheap\n  - **Test decision:** REUSE_EXISTING_TEST because T1 owns the behavior\n  - **Completion evidence:** node --test test/search.test.js\n\nPlan blocking: 0\n"
     }
   },
   "prompt": "The context was compacted. Recover from the project artifacts and tell me exactly what comes next.",
   "checks": [
     {
-      "type": "responseIncludes",
-      "value": "Wave 2"
-    },
-    {
-      "type": "responseIncludes",
-      "value": "T2"
+      "type": "fixtureUnchanged"
     }
   ],
   "graderCriteria": [
     "Uses design.md and plan.md as the source of truth instead of relying on conversation memory.",
-    "Reports the topic as building in wave 2 of 2.",
-    "Proposes executing T2 through the build skill as the single next action."
-  ]
+    "Reports the topic as awaiting approval refresh and explains semantically that persisted approval or markers cannot authorize the new run, so fresh approval is required; no literal CURRENT_RUN phrase is mandatory.",
+    "Uses the unchanged plan revision and proposes re-presenting the exact derived surfaces and digest for fresh approval as the single next action."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
 }

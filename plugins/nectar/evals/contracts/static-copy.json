@@ -1,0 +1,28 @@
+{
+  "id": "static-copy",
+  "skill": "nectar-shape",
+  "tags": [
+    "quality-lifecycle"
+  ],
+  "fixture": {
+    "files": {
+      "src/components/SaveButton.js": "export function SaveButton() { return '<button title=\"Saves your draft\">Save</button>'; }\n"
+    }
+  },
+  "prompt": "Inspect src/components/SaveButton.js, change the title from Saves your draft to Stores your draft, and choose the appropriate completion evidence.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Rejects a permanent implementation-coupled exact-copy test.",
+    "Selects render, browser, or diff evidence; a bounded one-off invocation of the render function and inspection of its returned markup is valid render evidence."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

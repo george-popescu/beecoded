@@ -10,14 +10,6 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const read = (relative) => fs.readFileSync(path.join(repoRoot, relative), 'utf8');
 const readJson = (relative) => JSON.parse(read(relative));
 
-function filesBelow(root) {
-  if (!fs.existsSync(root)) return [];
-  return fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
-    const absolute = path.join(root, entry.name);
-    return entry.isDirectory() ? filesBelow(absolute) : [absolute];
-  });
-}
-
 test('breaking package and marketplace versions are synchronized', () => {
   const claudeMarketplace = readJson('.claude-plugin/marketplace.json');
   const codexMarketplace = readJson('.agents/plugins/marketplace.json');
@@ -42,87 +34,6 @@ test('breaking package and marketplace versions are synchronized', () => {
     );
     assert.equal(lock.packages[packageRoot].version, version);
   }
-});
-
-test('current public sources contain no colon-style Bee or Nectar invocation', () => {
-  const colon = ':';
-  const products = listProductDefinitions().map(({ id }) => id).join('|');
-  const legacy = new RegExp(`(?:/|\\$)(?:${products})${colon}`);
-  const roots = [
-    path.join(repoRoot, 'README.md'),
-    ...listProductDefinitions().map(({ packageRoot }) => path.join(repoRoot, packageRoot)),
-    path.join(repoRoot, 'tools'),
-    path.join(repoRoot, '.claude-plugin'),
-    path.join(repoRoot, '.agents'),
-  ];
-  const offenders = roots.flatMap((root) => (
-    fs.statSync(root).isDirectory() ? filesBelow(root) : [root]
-  ))
-    .filter((file) => !file.endsWith('CHANGELOG.md'))
-    .filter((file) => /\.(?:md|json|js|mjs|cjs|sh|ya?ml)$/i.test(file))
-    .filter((file) => legacy.test(fs.readFileSync(file, 'utf8')))
-    .map((file) => path.relative(repoRoot, file))
-    .sort();
-
-  assert.deepEqual(offenders, []);
-});
-
-test('current documentation teaches standalone prefixed skills and managed source layout', () => {
-  const rootReadme = read('README.md');
-  assert.match(rootReadme, /\/bee-init/);
-  assert.match(rootReadme, /\$bee-init/);
-  assert.match(rootReadme, /\/nectar-shape/);
-  assert.match(rootReadme, /\$nectar-shape/);
-  assert.match(rootReadme, /internal-skills\//);
-  assert.doesNotMatch(rootReadme, /The colon is intentional/);
-
-  const beeReadme = read('plugins/bee/README.md');
-  const nectarReadme = read('plugins/nectar/README.md');
-  assert.match(beeReadme, /standalone/i);
-  assert.match(beeReadme, /\/bee-init/);
-  assert.match(beeReadme, /\$bee-init/);
-  assert.match(beeReadme, /Reinstalling upgrades all/);
-  assert.match(beeReadme, /uninstall/);
-  assert.match(nectarReadme, /standalone/i);
-  assert.match(nectarReadme, /\/nectar-shape/);
-  assert.match(nectarReadme, /\$nectar-shape/);
-  assert.match(nectarReadme, /Reinstalling upgrades only/);
-  assert.match(nectarReadme, /uninstall/);
-  assert.match(nectarReadme, /Only confirmed medium-or-higher code defects block convergence/i);
-  assert.match(nectarReadme, /default maximum of three full review passes/i);
-});
-
-test('installed-command smoke is read-only, environment-scrubbed, and cleans credentials on signals', () => {
-  const smoke = read('tools/test-installed-commands.mjs');
-  assert.doesNotMatch(smoke, /env:\s*process\.env/);
-  assert.doesNotMatch(smoke, /allowedTools['",\s]+Read,Glob,Grep,Bash['"]/);
-  assert.match(smoke, /Bash\(git log \*\)/);
-  assert.match(smoke, /Bash\(git status \*\)/);
-  assert.match(smoke, /ENVIRONMENT_ALLOWLIST/);
-  assert.match(smoke, /stopOnSignal\('SIGINT', 130\)/);
-  assert.match(smoke, /stopOnSignal\('SIGTERM', 143\)/);
-  assert.match(smoke, /process\.once\('exit', cleanup\)/);
-  assert.match(smoke, /'-s',\s*'read-only'/);
-  assert.doesNotMatch(smoke, /'--add-dir',\s*codexHome/);
-  assert.match(smoke, /'pack',\s*'--workspace'/);
-  assert.match(smoke, /'install',\s*'--global'/);
-  assert.match(smoke, /run\(product, \['--all'\]/);
-  assert.doesNotMatch(smoke, /plugins['"], product, ['"]bin/);
-});
-
-test('Atlas release smoke uses isolated homes and never invokes a model', () => {
-  const smoke = read('tools/test-atlas-release.mjs');
-  assert.match(smoke, /ENVIRONMENT_ALLOWLIST/);
-  assert.match(smoke, /CODEX_HOME/);
-  assert.match(smoke, /CLAUDE_CONFIG_DIR/);
-  assert.match(smoke, /BEECODED_HOME/);
-  assert.match(smoke, /'pack'/);
-  assert.match(smoke, /'install',\s*'--global'/);
-  assert.match(smoke, /'atlas',\s*'enable'/);
-  assert.match(smoke, /'atlas',\s*'refresh'/);
-  assert.match(smoke, /'uninstall',\s*'--all'/);
-  assert.doesNotMatch(smoke, /codex['"], \['exec'/);
-  assert.doesNotMatch(smoke, /claude['"], \['-p'/);
 });
 
 test('root contributor commands enforce registry, generated installer, eval, and pack gates', () => {

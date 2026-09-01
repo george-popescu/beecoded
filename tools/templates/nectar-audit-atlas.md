@@ -1,3 +1,8 @@
+`FIX_NOW` does not authorize code, an edit, or a repair by Audit. A selected
+blocking defect routes through Debug for read-only cause confirmation,
+independent Solution Fit, a written Plan revision, and explicit approval before
+any implementation workflow begins.
+
 ## Atlas context profile
 
 Before the first Atlas request, run `nectar atlas status --path "$PWD" --json`.

@@ -1,0 +1,32 @@
+{
+  "id": "context-freshness-boundary",
+  "skill": "nectar-orient",
+  "tags": [
+    "quality-lifecycle",
+    "context"
+  ],
+  "fixture": {
+    "files": {
+      "docs/work/2026-08-30-profile/design.md": "# Profile — Design\n\n## Problem\nThe profile flow needs one approved change.\n",
+      "docs/work/2026-08-30-profile/plan.md": "## Wave 1\n- [ ] T1: Update the profile flow — done when: the approved behavior works.\n  - files: `src/profile.js`\n",
+      "src/profile.js": "export const profile = 'current';\n"
+    }
+  },
+  "prompt": "Continue the existing profile work. At lifecycle entry, the read-only Nectar context status returned state=stale. I have not said whether to refresh it. Explain the immediate next step and do not edit files or claim that a refresh or build already happened.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Asks the user once whether to refresh the stale project context before relying on it.",
+    "Does not claim that refresh, implementation, or file mutation already happened.",
+    "Keeps the current fixture unchanged while waiting for the context choice."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

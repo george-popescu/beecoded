@@ -69,7 +69,6 @@ test('package, guard, and lock contain only the approved pure-JavaScript parser 
     .filter((entry) => entry.startsWith('node_modules/') && !lock.packages[entry].link)
     .sort();
 
-  assert.equal(packageJson.version, '3.1.0');
   assert.equal(ATLAS_NODE_ENGINE_RANGE, ENGINE_RANGE);
   assert.equal(packageJson.engines.node, ENGINE_RANGE);
   assert.deepEqual(packageJson.dependencies, PARSER_DEPENDENCIES);

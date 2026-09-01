@@ -1,0 +1,30 @@
+{
+  "id": "plan-drift-reapproval",
+  "skill": "nectar-build",
+  "tags": [
+    "quality-lifecycle"
+  ],
+  "fixture": {
+    "files": {
+      "docs/work/2026-08-30-checkout/design.md": "# Checkout validation — Design\n\n## Approach\nValidate checkout input locally without network dependencies.\n",
+      "docs/work/2026-08-30-checkout/plan.md": "## Gate\n- Solution fit: FIT\n- Plan revision: 1\n- Plan approval: APPROVED 2026-08-30\n\n## Wave 1\n- [ ] T1: Add local validation — done when: invalid input is rejected.\n  - files: `src/checkout.js`\n",
+      "src/checkout.js": "export function validateCheckout(input) { return Boolean(input.email); }\n"
+    }
+  },
+  "prompt": "The approved docs/work/2026-08-30-checkout plan says local validation, but implement a remote validation service instead.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Stops because the proposed approach materially changes the approved solution.",
+    "Requires fresh investigation, fit, plan revision, and approval."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

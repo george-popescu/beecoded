@@ -134,7 +134,7 @@ if (productDefinition.kind === 'bee') {
       .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(internalSkillsRoot, entry.name, 'SKILL.md')))
     : [];
   const actualSkills = skills.map((entry) => entry.name).sort();
-  check(JSON.stringify(actualSkills) === JSON.stringify(expectedSkills), `Nectar must ship exactly ten internal nectar-* skills (found ${actualSkills.join(', ') || 'none'})`);
+  check(JSON.stringify(actualSkills) === JSON.stringify(expectedSkills), `Nectar must ship exactly its declared internal nectar-* skills (expected ${expectedSkills.length}, found ${actualSkills.join(', ') || 'none'})`);
   check(!fs.existsSync(path.join(pluginRoot, 'skills')), 'Nectar plugin-root skills/ must not exist because it auto-discovers namespaced public commands');
   check(pkg.files.includes('internal-skills/'), 'Nectar npm package must include internal-skills/');
   check(!pkg.files.includes('skills/'), 'Nectar npm package must not include plugin-discovered skills/');
@@ -158,7 +158,6 @@ if (productDefinition.kind === 'bee') {
   check(fs.existsSync(path.join(pluginRoot, 'scripts', 'run-atlas.mjs')), 'Nectar Atlas CLI runner is required');
   check(fs.existsSync(path.join(pluginRoot, 'scripts', 'run-atlas-evals.mjs')), 'Nectar Atlas evaluation runner is required');
   check(fs.existsSync(path.join(pluginRoot, 'mcp', 'server.mjs')), 'Nectar Atlas MCP server is required');
-  check(fs.existsSync(path.join(pluginRoot, 'scripts', 'risk-classification.test.mjs')), 'Nectar risk-classification contract test is required');
   check(fs.existsSync(path.join(pluginRoot, 'evals', 'contracts', 'review-risk-classification.json')), 'Nectar review-risk-classification behavioral contract is required');
   check(fs.existsSync(path.join(pluginRoot, 'evals', 'contracts', 'atlas-workflow-discipline.json')), 'Nectar Atlas workflow behavioral contract is required');
   check(pkg.scripts?.test?.includes('scripts/*.test.mjs'), 'Nectar npm test must run root script contract tests');

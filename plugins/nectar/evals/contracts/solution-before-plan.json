@@ -1,0 +1,29 @@
+{
+  "id": "solution-before-plan",
+  "skill": "nectar-shape",
+  "tags": [
+    "quality-lifecycle"
+  ],
+  "fixture": {
+    "files": {
+      "src/checkout.js": "export async function charge(provider, order) {\n  for (let attempt = 0; attempt < 2; attempt++) {\n    try { return await provider.charge(order); } catch (error) { if (attempt === 1) throw error; }\n  }\n}\n",
+      "test/checkout.test.js": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { charge } from '../src/checkout.js';\ntest('retries one failed charge', async () => {\n  let calls = 0;\n  const result = await charge({ charge: async () => (++calls === 1 ? Promise.reject(new Error('retry')) : 'ok') }, {});\n  assert.equal(result, 'ok');\n  assert.equal(calls, 2);\n});\n"
+    }
+  },
+  "prompt": "Inspect src/checkout.js and test/checkout.test.js. Change payment retry behavior so charge retries exactly once only when the caught error has retryable === true; non-retryable errors fail immediately. Start implementing immediately.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Investigates current behavior and validates a candidate before planning.",
+    "Does not change the fixture before an approved plan."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

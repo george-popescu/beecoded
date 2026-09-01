@@ -5,6 +5,7 @@ const VALID_SKILLS = new Set([
   'nectar-audit',
   'nectar-build',
   'nectar-capture',
+  'nectar-close',
   'nectar-debug',
   'nectar-honey',
   'nectar-orient',
@@ -19,6 +20,8 @@ const VALID_CHECKS = new Set([
   'findingMatches',
   'summaryCount',
   'fixtureUnchanged',
+  'fixtureFilesUnchanged',
+  'onlyDatedTopicDesignAdded',
   'pathExists',
   'pathAbsent',
   'childDirectoriesAbsent',
@@ -103,7 +106,7 @@ export function validateContract(contract, source = 'contract') {
         failures.push(`${source}.checks[${index}].type must be one of ${[...VALID_CHECKS].join(', ')}`);
         return;
       }
-      if (check.type === 'fixtureUnchanged') {
+      if (check.type === 'fixtureUnchanged' || check.type === 'fixtureFilesUnchanged') {
         // The fixture itself supplies the complete expected tree and contents.
       } else if (check.type === 'findingMatches') {
         const prefix = `${source}.checks[${index}]`;
@@ -134,6 +137,11 @@ export function validateContract(contract, source = 'contract') {
         if (!Number.isInteger(check.value) || check.value < 0) {
           failures.push(`${prefix}.value must be a non-negative integer`);
         }
+      } else if (check.type === 'onlyDatedTopicDesignAdded') {
+        if (typeof check.slug !== 'string'
+          || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(check.slug)) {
+          failures.push(`${source}.checks[${index}].slug must be lowercase hyphen-case`);
+        }
       } else if (check.type.startsWith('response')) {
         if (typeof check.value !== 'string' || !check.value) {
           failures.push(`${source}.checks[${index}].value must be a non-empty string`);
@@ -156,6 +164,29 @@ export function validateContract(contract, source = 'contract') {
   if (contract.tags !== undefined
     && (!Array.isArray(contract.tags) || contract.tags.some((tag) => typeof tag !== 'string' || !tag))) {
     failures.push(`${source}.tags must be an array of non-empty strings`);
+  }
+  for (const field of ['requireLocalChecks', 'semanticJudge']) {
+    if (contract[field] !== undefined && typeof contract[field] !== 'boolean') {
+      failures.push(`${source}.${field} must be boolean`);
+    }
+  }
+  if (contract.semanticJudge === true
+    && Array.isArray(contract.checks)
+    && contract.checks.some((check) => check?.type === 'responseIncludes')) {
+    failures.push(`${source}.checks cannot use positive response keywords when semanticJudge owns meaning`);
+  }
+  if (contract.budgets !== undefined) {
+    const budget = contract.budgets;
+    const keys = budget && typeof budget === 'object' && !Array.isArray(budget)
+      ? Object.keys(budget).sort()
+      : [];
+    if (!budget || typeof budget !== 'object' || Array.isArray(budget)
+      || JSON.stringify(keys) !== JSON.stringify(['claudeMaxCostUsd', 'timeoutMs'])
+      || !Number.isInteger(budget.timeoutMs) || budget.timeoutMs <= 0
+      || !(budget.claudeMaxCostUsd === null
+        || (typeof budget.claudeMaxCostUsd === 'number' && budget.claudeMaxCostUsd > 0))) {
+      failures.push(`${source}.budgets must contain exactly positive timeoutMs and positive-or-null claudeMaxCostUsd; unsupported budget fields are forbidden`);
+    }
   }
 
   if (failures.length) throw new Error(failures.join('\n'));

@@ -1,0 +1,30 @@
+{
+  "id": "completed-duplicate-close",
+  "skill": "nectar-shape",
+  "tags": [
+    "quality-lifecycle"
+  ],
+  "fixture": {
+    "files": {
+      "docs/work/2026-08-30-checkout/design.md": "# Checkout — Design\n\n## Problem\nCheckout needed a safer retry.\n",
+      "docs/work/2026-08-30-checkout/plan.md": "## Wave 1\n- [x] T1: Repair retries — done when: verified.\n  - files: `src/checkout.js`\n",
+      "docs/work/2026-08-30-checkout/review.md": "# Review\n\nBlocking: 0\nClean pass: zero blocking code defects remain.\n"
+    }
+  },
+  "prompt": "Build Checkout again. Inspect existing docs/work artifacts before creating anything.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Routes the completed duplicate to Close instead of creating a second topic.",
+    "Leaves the fixture unchanged."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

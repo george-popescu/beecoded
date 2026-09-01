@@ -176,3 +176,57 @@ test('inspection does not change file contents or mtimes', async (t) => {
   };
   assert.deepEqual(after, before);
 });
+
+test('rejects a symlinked docs/work root without reading its external contents', (t) => {
+  const root = fixture(t, {
+    'docs': null,
+  });
+  const external = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-doctor-external-work-'));
+  t.after(() => fs.rmSync(external, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(external, '2026-07-16-private'), { recursive: true });
+  fs.writeFileSync(
+    path.join(external, '2026-07-16-private', 'design.md'),
+    '# Private\n\n## Topics\nEXTERNAL_PRIVATE_CONTENT_DO_NOT_DISCLOSE\n',
+  );
+  fs.symlinkSync(external, path.join(root, 'docs', 'work'));
+
+  const report = inspectWorkTree(root);
+  const serialized = JSON.stringify(report);
+
+  assert.ok(report.diagnostics.some((diagnostic) => (
+    diagnostic.code === 'UNSAFE_WORK_ROOT' && diagnostic.path === 'docs/work'
+  )));
+  assert.deepEqual(report.topics, []);
+  assert.doesNotMatch(serialized, /EXTERNAL_PRIVATE_CONTENT_DO_NOT_DISCLOSE/);
+  assert.equal(serialized.includes(external), false);
+});
+
+test('rejects symlinked top-level and nested topics without traversing their targets', (t) => {
+  const root = fixture(t, {
+    'docs/work/2026-07-16-checkout/design.md': parentDesign([
+      '1. `01-domain/` — domain; depends on: none',
+    ]),
+  });
+  const external = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-doctor-external-topic-'));
+  t.after(() => fs.rmSync(external, { recursive: true, force: true }));
+  fs.writeFileSync(
+    path.join(external, 'design.md'),
+    '# External Topic\nEXTERNAL_TOPIC_CONTENT_DO_NOT_DISCLOSE\n',
+  );
+  fs.symlinkSync(external, path.join(root, 'docs/work/2026-07-15-external'));
+  fs.symlinkSync(external, path.join(root, 'docs/work/2026-07-16-checkout/01-domain'));
+
+  const report = inspectWorkTree(root);
+  const unsafePaths = report.diagnostics
+    .filter((diagnostic) => diagnostic.code === 'UNSAFE_TOPIC_PATH')
+    .map((diagnostic) => diagnostic.path)
+    .sort();
+  const serialized = JSON.stringify(report);
+
+  assert.deepEqual(unsafePaths, [
+    'docs/work/2026-07-15-external',
+    'docs/work/2026-07-16-checkout/01-domain',
+  ]);
+  assert.doesNotMatch(serialized, /EXTERNAL_TOPIC_CONTENT_DO_NOT_DISCLOSE/);
+  assert.equal(serialized.includes(external), false);
+});
