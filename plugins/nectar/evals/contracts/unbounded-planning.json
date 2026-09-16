@@ -1,0 +1,32 @@
+{
+  "id": "unbounded-planning",
+  "skill": "nectar-plan",
+  "tags": [
+    "slim",
+    "planning"
+  ],
+  "fixture": {
+    "files": {
+      "docs/work/2026-09-16-import/design.md": "# Import — Design\n\n## Outcome\nDeliver one importer with parsing, validation, normalization, persistence, resumability and a summary report. It is one owned delivery with a stable API. Do not split ownership or rollout.\n",
+      "draft-plan.md": "## Wave 1\n- [ ] T1: Implement independent format 1 for import stage 1.\n- [ ] T2: Implement independent format 2 for import stage 1.\n- [ ] T3: Implement independent format 3 for import stage 1.\n\n## Wave 2\n- [ ] T4: Implement independent format 1 for import stage 2.\n- [ ] T5: Implement independent format 2 for import stage 2.\n- [ ] T6: Implement independent format 3 for import stage 2.\n\n## Wave 3\n- [ ] T7: Implement independent format 1 for import stage 3.\n- [ ] T8: Implement independent format 2 for import stage 3.\n- [ ] T9: Implement independent format 3 for import stage 3.\n\n## Wave 4\n- [ ] T10: Implement independent format 1 for import stage 4.\n- [ ] T11: Implement independent format 2 for import stage 4.\n- [ ] T12: Implement independent format 3 for import stage 4.\n\n## Wave 5\n- [ ] T13: Implement independent format 1 for import stage 5.\n- [ ] T14: Implement independent format 2 for import stage 5.\n- [ ] T15: Implement independent format 3 for import stage 5.\n\n## Wave 6\n- [ ] T16: Implement independent format 1 for import stage 6.\n- [ ] T17: Implement independent format 2 for import stage 6.\n- [ ] T18: Implement independent format 3 for import stage 6.\n\n## Wave 7\n- [ ] T19: Implement independent format 1 for import stage 7.\n- [ ] T20: Implement independent format 2 for import stage 7.\n- [ ] T21: Implement independent format 3 for import stage 7.\n\n## Wave 8\n- [ ] T22: Implement independent format 1 for import stage 8.\n- [ ] T23: Implement independent format 2 for import stage 8.\n- [ ] T24: Implement independent format 3 for import stage 8.\n"
+    }
+  },
+  "prompt": "Review draft-plan.md as a sizing/scheduling proposal, not as an implementation. It has eight dependency waves and three tasks per wave for one owned importer delivery. Should the count force a split? Explain the completion and verification cadence. Do not edit files.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Does not require a split merely because the plan exceeds five waves or ten tasks.",
+    "Distinguishes total tasks from bounded simultaneous workers and respects actual output dependencies.",
+    "Recommends final integrated verification without full-suite reruns after every wave.",
+    "Leaves the fixture unchanged and does not pretend that implementation or verification ran."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

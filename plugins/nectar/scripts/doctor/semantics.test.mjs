@@ -27,6 +27,29 @@ function codes(report) {
 
 const cleanReview = '# Review\n\n## Clean pass\n\nBlocking: 0\nDeferred: 3\nClean pass: zero blocking code defects remain.\n';
 
+test('slim implementation and final verification are separate lifecycle states', (t) => {
+  const cases = [
+    ['partial', '- [x] T1: First.\n- [ ] T2: Second.', 'pending', '', 'building'],
+    ['pending', '- [x] T1: Complete.', 'pending', '', 'awaiting verification'],
+    ['failed', '- [x] T1: Complete.', 'failed', '1 test failed', 'verification failed'],
+    ['passed', '- [x] T1: Complete.', 'passed', 'node --test: 4 passed, 0 failed', 'done'],
+    ['invalid', '- [x] T1: Complete.', 'passed', '', null],
+  ];
+  const files = {};
+  for (const [slug, tasks, status, evidence] of cases) {
+    const directory = `docs/work/2026-09-16-${slug}`;
+    files[`${directory}/design.md`] = `# ${slug} — Design\n`;
+    files[`${directory}/plan.md`] = `Workflow: nectar-slim-v1\n\n## Wave 1\n${tasks}\n\n## Verification\nStatus: ${status}\nEvidence: ${evidence}\n`;
+    if (slug !== 'partial') files[`${directory}/review.md`] = cleanReview;
+  }
+  const root = fixture(t, files);
+  const report = inspectWorkTree(root);
+  for (const [slug, , , , expected] of cases) {
+    assert.equal(topic(report, `docs/work/2026-09-16-${slug}`).status, expected, slug);
+  }
+  assert.ok(codes(report).includes('INVALID_PLAN_STATE'));
+});
+
 test('detects duplicate normalized slugs across dated, child, and legacy topics', (t) => {
   const root = fixture(t, {
     'docs/work/2026-07-16-checkout/design.md': '# Checkout — Design\n',

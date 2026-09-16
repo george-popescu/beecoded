@@ -403,46 +403,59 @@ test('renders executable nectar-context commands without interpreting the instal
   }
 });
 
-test('executes an installed nectar-close command without interpreting its package path', () => {
+test('executes installed lifecycle and status helpers without interpreting their package paths', () => {
   const packageRoot = path.resolve(currentDirectory, '..');
-  const sourceDirectory = path.join(packageRoot, 'internal-skills/nectar-close');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-close-token-consumer-'));
   const installedPackageRoot = path.join(
     root,
     'installed $(touch${IFS}sentinel-close) `tick` "quote" ü root',
   );
-  fs.cpSync(packageRoot, installedPackageRoot, { recursive: true });
+  const payloadRoot = path.join(root, 'payload');
+  fs.cpSync(packageRoot, payloadRoot, { recursive: true });
+  fs.symlinkSync(payloadRoot, installedPackageRoot, 'dir');
 
   try {
-    const rendered = renderManagedSkill({
-      sourceDirectory,
-      entryName: 'nectar-close',
-      packageName: '@beecoded/nectar',
-      packageVersion: '3.1.0',
-      packageRoot,
-      installedPackageRoot,
-    });
-    const commandMatch = rendered.skill.match(/```bash\n([^\n]+) discover\n/);
-    assert.ok(commandMatch, 'rendered Close must expose its discover command');
-
     const projectRoot = path.join(root, 'project');
     fs.mkdirSync(projectRoot);
-    const executed = spawnSync('/bin/sh', ['-c', `${commandMatch[1]} discover`], {
-      cwd: projectRoot,
-      encoding: 'utf8',
-    });
-    assert.equal(executed.status, 0, executed.stderr);
-    assert.deepEqual(JSON.parse(executed.stdout).entries, []);
-    assert.equal(fs.existsSync(path.join(root, 'sentinel-close')), false);
+    for (const [skill, outputField] of [['nectar-close', 'entries'], ['nectar-orient', 'topics']]) {
+      const rendered = renderManagedSkill({
+        sourceDirectory: path.join(packageRoot, 'internal-skills', skill),
+        entryName: skill,
+        packageName: '@beecoded/nectar',
+        packageVersion: '3.1.0',
+        packageRoot,
+        installedPackageRoot,
+      });
+      const commandMatch = rendered.skill.match(/```bash\n([^\n]+)/);
+      assert.ok(commandMatch, `missing executable command for ${skill}`);
+
+      const executed = spawnSync('/bin/sh', ['-c', commandMatch[1]], {
+        cwd: projectRoot,
+        encoding: 'utf8',
+      });
+      assert.equal(executed.status, 0, executed.stderr);
+      assert.deepEqual(JSON.parse(executed.stdout)[outputField], []);
+      assert.deepEqual(fs.readdirSync(projectRoot), []);
+      assert.equal(fs.existsSync(path.join(root, 'sentinel-close')), false);
+    }
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
 
-test('renders one opaque launcher that cannot interpret installed or topic paths as shell source', () => {
+test('legacy receipt launchers preserve safe transport and child process results', () => {
   const packageRoot = path.resolve(currentDirectory, '..');
-  const sourceDirectory = path.join(packageRoot, 'internal-skills/nectar-build');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-build-token-consumer-'));
+  const sourceDirectory = path.join(root, 'legacy-source');
+  fs.mkdirSync(sourceDirectory);
+  fs.writeFileSync(path.join(sourceDirectory, 'SKILL.md'), [
+    '---',
+    'name: nectar-build',
+    'description: Retained legacy receipt workflow fixture.',
+    '---',
+    'APPROVAL_LAUNCHER = {{NECTAR_APPROVAL_LAUNCHER}}',
+    '',
+  ].join('\n'));
   const installedPackageRoot = path.join(
     root,
     'installed $(touch${IFS}sentinel-installed) `tick` "quote" ü\nroot',
@@ -478,16 +491,16 @@ test('renders one opaque launcher that cannot interpret installed or topic paths
   - files: \`src/consumer.js\`
 `);
     const launcherMatch = rendered.skill.match(/^APPROVAL_LAUNCHER = (.+)$/m);
-    assert.ok(launcherMatch, 'rendered Build must contain the opaque approval launcher');
+    assert.ok(launcherMatch, 'the retained legacy placeholder must render an executable launcher');
     const launcher = launcherMatch[1];
     assert.equal(rendered.skill.includes('{{NECTAR_APPROVAL_LAUNCHER}}'), false);
     assert.equal(launcher.includes(installedPackageRoot), false);
     const launcherParts = launcher.match(
-      /^node -e "([^"]+)" ([A-Za-z0-9_-]+) ([A-Za-z0-9_-]+)$/,
+      /^node -e "([^"]+)" ([A-Za-z0-9_-]+)$/,
     );
     assert.ok(launcherParts, 'launcher shell grammar must contain only static code and base64url fields');
-    assert.doesNotMatch(launcherParts[1], /\$\(|`|;|&|\||>|</);
-    assert.equal(Buffer.from(launcherParts[3], 'base64url').toString('utf8'), installedHelper);
+    assert.doesNotMatch(launcherParts[1], /[$`%!\r\n]/);
+    assert.equal(Buffer.from(launcherParts[2], 'base64url').toString('utf8'), installedHelper);
 
     const discover = spawnSync('/bin/sh', ['-c', `${launcher} discover`], {
       cwd: root,
@@ -562,11 +575,11 @@ test('renders Debug promotion with only opaque source and design-stage tokens', 
     const launcher = launcherMatch[1];
     assert.equal(launcher.includes(installedPackageRoot), false);
     const launcherParts = launcher.match(
-      /^node -e "([^"]+)" ([A-Za-z0-9_-]+) ([A-Za-z0-9_-]+)$/,
+      /^node -e "([^"]+)" ([A-Za-z0-9_-]+)$/,
     );
     assert.ok(launcherParts, 'Debug launcher must contain static code and base64url fields only');
     assert.equal(
-      Buffer.from(launcherParts[3], 'base64url').toString('utf8'),
+      Buffer.from(launcherParts[2], 'base64url').toString('utf8'),
       path.join(installedPackageRoot, 'scripts/debug-promotion.mjs'),
     );
     assert.doesNotMatch(rendered.skill, /--project-root|--source|--destination|--design-file/);

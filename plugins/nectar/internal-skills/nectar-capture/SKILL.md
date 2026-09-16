@@ -1,6 +1,6 @@
 ---
 name: nectar-capture
-description: Use when an idea, improvement, or "we should do this later" surfaces mid-work and must not derail the current task — "note this down", "idea for later", "add this to the backlog". Appends one line to docs/work/backlog.md and returns to work immediately. Not for ideas the user wants to act on now (shape).
+description: Save a deferred idea in the backlog and return to the active work.
 ---
 
 # Capture
@@ -21,4 +21,5 @@ If `docs/work/backlog.md` does not exist, create it with a `# Backlog` heading f
 
 ## Surfacing and cleanup
 
-The shape skill reads this file when new work starts and owns surfacing and cleanup — entries that become real work are deleted there, and stale entries get pruned.
+Read relevant backlog entries when shaping related work. Remove a satisfied entry
+only as part of authorized reconciliation; keep unrelated or ambiguous ideas.

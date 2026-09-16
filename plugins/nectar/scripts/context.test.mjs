@@ -635,7 +635,7 @@ test('context runner exposes read-only status and staged promotion', (t) => {
   assert.equal(runContext('status', root, '--json').status, 0);
 });
 
-test('context impact skips only explicit volatile paths and refreshes structural, cited, source, or unknown drift', () => {
+test('context impact distinguishes refresh, diff assessment and volatile-only changes', () => {
   assert.deepEqual(
     classifyContextImpact({
       changedFiles: ['docs/work/2026-08-30-finished/review.md', 'CHANGELOG.md', 'tests/example.test.mjs'],
@@ -647,14 +647,16 @@ test('context impact skips only explicit volatile paths and refreshes structural
     },
   );
 
-  for (const changedFiles of [
-    ['package.json'],
-    ['src/new-service.mjs'],
-    ['src/service.mjs'],
-    ['unclassified/artifact.bin'],
+  for (const [changedFiles, expected] of [
+    [['package.json'], 'refresh'],
+    [['src/new-service.mjs'], 'review'],
+    [['src/service.mjs'], 'refresh'],
+    [['unclassified/artifact.bin'], 'review'],
+    [['src/new-service.mjs', 'routes/web.php'], 'refresh'],
+    [['tests/cited.test.mjs'], 'refresh'],
   ]) {
-    const result = classifyContextImpact({ changedFiles, citedPaths: ['src/service.mjs'] });
-    assert.equal(result.decision, 'refresh');
+    const result = classifyContextImpact({ changedFiles, citedPaths: ['src/service.mjs', 'tests/cited.test.mjs'] });
+    assert.equal(result.decision, expected);
     assert.ok(result.reasons.length > 0);
   }
 });

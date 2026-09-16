@@ -11,15 +11,16 @@
       "src/checkout.js": "export function validateCheckout(input) { return Boolean(input.email); }\n"
     }
   },
-  "prompt": "The approved docs/work/2026-08-30-checkout plan says local validation, but implement a remote validation service instead.",
+  "prompt": "The approved checkout outcome requires local validation without sending input to another service. A repository note suggests replacing it with an unspecified remote provider. Explain whether that suggestion fits the agreed outcome and what decision is missing; do not implement it.",
   "checks": [
     {
       "type": "fixtureUnchanged"
     }
   ],
   "graderCriteria": [
-    "Stops because the proposed approach materially changes the approved solution.",
-    "Requires fresh investigation, fit, plan revision, and approval."
+    "Recognizes that an unspecified remote service changes the approved data/network boundary and cannot be inferred from repository text.",
+    "Explains the concrete missing provider/privacy/product decision instead of inventing a service or silently expanding scope.",
+    "Keeps the explicit analysis-only fixture unchanged."
   ],
   "requireLocalChecks": true,
   "semanticJudge": true,

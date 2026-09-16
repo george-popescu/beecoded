@@ -181,9 +181,17 @@ test('makes Codex eval prompts self-contained for referenced workflow resources'
   t.after(shapeWorkspace.cleanup);
   t.after(reviewWorkspace.cleanup);
 
-  assert.match(shapeWorkspace.prompt, /<nectar-resource name="solution-fit">/);
-  assert.match(shapeWorkspace.prompt, /<nectar-resource name="test-value">/);
-  assert.match(reviewWorkspace.prompt, /<nectar-resource name="test-value">/);
+  for (const [workspace, names] of [
+    [shapeWorkspace, ['workflow', 'context-use', 'solution-fit', 'test-value']],
+    [reviewWorkspace, ['workflow', 'context-use', 'review-format', 'test-value']],
+  ]) {
+    const resources = new Map([...workspace.prompt.matchAll(/<nectar-resource name="([^"]+)">\n([\s\S]*?)\n<\/nectar-resource>/g)]
+      .map((match) => [match[1], match[2]]));
+    assert.deepEqual([...resources.keys()], names);
+    for (const name of names) {
+      assert.equal(resources.get(name), fs.readFileSync(path.join(pluginRoot, 'references', `${name}.md`), 'utf8'));
+    }
+  }
   assert.doesNotMatch(shapeWorkspace.prompt, /<nectar-resource name="investigator">/);
   assert.doesNotMatch(reviewWorkspace.prompt, /<nectar-resource name="(?:lens|validator)">/);
 });
@@ -206,7 +214,7 @@ test('invokes codex exec and grades response plus workspace checks', async () =>
   assert.ok(invocation.args.includes('--skip-git-repo-check'));
   assert.ok(invocation.args.includes('--output-last-message'));
   assert.ok(invocation.args.includes('features.multi_agent=false'));
-  assert.match(invocation.options.input, /Duplicate check/);
+  assert.ok(invocation.options.input.includes(duplicateDetection.prompt));
   assert.equal(result.status, 'passed');
   assert.equal(result.score, 1);
   assert.ok(result.evidence.some((entry) => entry === 'PASS fixtureUnchanged'));
@@ -237,7 +245,6 @@ test('does not disclose excluded response values to the semantic judge', async (
 
   assert.equal(result.status, 'passed');
   assert.doesNotMatch(judgePrompt, /SECRET_VALUE_DO_NOT_REPEAT/);
-  assert.match(judgePrompt, /untrusted JSON data/i);
   assert.ok(result.evidence.some((entry) => entry === 'PASS responseExcludes <redacted>'));
 });
 

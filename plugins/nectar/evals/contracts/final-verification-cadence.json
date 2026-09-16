@@ -1,0 +1,34 @@
+{
+  "id": "final-verification-cadence",
+  "skill": "nectar-build",
+  "tags": [
+    "slim",
+    "verification"
+  ],
+  "fixture": {
+    "files": {
+      "docs/work/2026-09-16-search/design.md": "# Search — Design\n\n## Outcome\nFinish ranking and connect the existing results view.\n",
+      "docs/work/2026-09-16-search/plan.md": "Workflow: nectar-slim-v1\n\n## Wave 1\n- [x] T1: Implement score ordering.\n  - files: `src/ranking.js`\n- [ ] T2: Connect the results view.\n  - files: `src/results.js`\n\n## Verification\nStatus: pending\nCommands: node --test test/ranking.test.mjs; npm run build.\nEvidence:\n",
+      "src/ranking.js": "export const rank = rows => [...rows].sort((a, b) => b.score - a.score);\n",
+      "src/results.js": "export const results = rows => rows;\n"
+    }
+  },
+  "prompt": "Before continuing implementation, explain the execution cadence only. This outcome is already authorized. T1 is implemented, T2 remains in the same wave, and final verification is pending. Must we run the suite or obtain a receipt before implementing T2? What evidence is needed before delivery? Do not edit files or execute tests in this answer.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Accepts partial implementation progress within a wave and does not require whole-wave atomic tokens.",
+    "Continues within the existing authorized outcome without approval refresh or rerunning a suite solely for the wave boundary.",
+    "Keeps final verification pending and requires meaningful observed verification plus review before claiming delivery complete.",
+    "Keeps the explicit explanation-only request read-only and does not claim a test run."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 600000,
+    "claudeMaxCostUsd": 0.25
+  }
+}

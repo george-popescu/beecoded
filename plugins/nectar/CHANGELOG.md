@@ -1,6 +1,32 @@
 # Changelog
 
-## Unreleased
+## 3.3.0 — 2026-09-16
+
+- Added a slim workflow with no numerical wave/task limits, partial implementation
+  progress and one separate final verification result. Doctor and Close refuse
+  pending, failed or malformed verification even with a clean review marker.
+- Replaced repeated fit/approval/Test Value ceremonies with concise shared
+  guidance. Existing user authority covers routine in-scope implementation changes
+  and resumption; meaningful product and external-action decisions remain explicit.
+- Verification defaults to the integrated deliverable's end. Reuse current evidence
+  across workers and handoffs; run early or repeated checks only for concrete risk,
+  changed inputs or failures. Agent delegation and review depth follow the task.
+- New plans no longer carry whole task lists through approval tokens or create
+  staged duplicate plans. Legacy receipt helpers and historical completion remain
+  supported; Close and Debug evidence moves retain their recovery checks.
+- Shortened skill descriptions and moved conditional procedures into references.
+  Updated behavioral evaluations to cover the new workflow decisions.
+- Assigned final review to Honey during orchestration and to standalone Build
+  otherwise. Orient now reads Doctor status without archive-discovery overhead.
+- Ordinary source changes request a bounded context-impact assessment instead of
+  automatic regeneration; structural and cited-source changes still require refresh.
+- Added contributor release preparation that validates once, rejects package-input
+  drift and produces one integrity-recorded archive without publishing it.
+- Release gates now show compact results while retaining full diagnostic logs.
+  Installed helper commands avoid repeated encoded JavaScript, retaining encoded
+  path transport and real Node entrypoint/exit/stream behavior.
+- Added an opt-in isolated Codex routing/Honey smoke benchmark. Independent reads
+  can be batched, and delivery owners can keep doing useful work while workers run.
 
 ## 3.2.0 — 2026-08-30
 

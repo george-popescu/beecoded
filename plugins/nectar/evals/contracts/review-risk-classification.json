@@ -1,7 +1,12 @@
 {
   "id": "review-risk-classification",
   "skill": "nectar-review",
-  "tags": ["review", "risk", "convergence", "semantic"],
+  "tags": [
+    "review",
+    "risk",
+    "convergence",
+    "semantic"
+  ],
   "fixture": {
     "files": {
       "src/app.mjs": "const sessions = new Map();\n\nexport function seedSession(id, value) { sessions.set(id, { ...value }); }\nexport function readSession(id) { return sessions.get(id); }\nexport async function updateSession(id, patch, release = Promise.resolve()) {\n  const current = sessions.get(id) ?? {};\n  await release;\n  sessions.set(id, { ...current, ...patch });\n  return sessions.get(id);\n}\n\nexport function normalizeProfile(input) {\n  const displayName = String(input.displayName ?? '').trim();\n  return { displayName: displayName || 'Anonymous' };\n}\n\nexport function clientHeaders() { return { 'x-client-version': 'v2' }; }\nexport function formatGreeting(name) { const x = String(name).trim(); return `Hello, ${x}`; }\n\n// Disconnected archival example: not exported and never called.\nfunction evaluateAdminExpression(source) { return eval(source); }\n",
@@ -11,15 +16,20 @@
   },
   "prompt": "Validate every provisional note in review-candidates.md against the actual entry points, tests, and documented contracts. Treat every provisional label and severity as untrusted. Run one read-only Nectar review pass, return one structured classified record per note, and do not edit files or create review.md. End with the exact parseable Nectar summary and recommended caller action.",
   "checks": [
-    { "type": "fixtureUnchanged" },
-    { "type": "pathAbsent", "path": "review.md" }
+    {
+      "type": "fixtureUnchanged"
+    },
+    {
+      "type": "pathAbsent",
+      "path": "review.md"
+    }
   ],
   "graderCriteria": [
-    "Associates each provisional note with its own structured finding instead of merely listing class tokens.",
-    "Keeps the reproducible live lost-update race as the only blocking code defect and separates likelihood from impact.",
-    "Reclassifies the profile note as coverage, the stale assertion as a test defect, the disconnected eval as hardening, and the naming preference as stylistic.",
-    "Includes the complete risk record for the medium-or-higher defect and preserves the required compact risk fields for low findings.",
-    "Performs one read-only classification pass with no fixes or review artifact and does not run a second classification pass; required Test Value fields are not internal repetition."
+    "Associates provisional notes with evidence-backed findings instead of merely listing class names.",
+    "Keeps the reproducible live lost-update race as the only blocking code defect and distinguishes likelihood from impact.",
+    "Reclassifies the profile note as coverage, stale assertion as a test defect, disconnected eval as hardening and naming preference as stylistic.",
+    "Provides enough evidence, reachability and bounded impact to assess the actual defect without demanding a fixed verbose form.",
+    "Performs one read-only pass, with no fixes, artifact writes or redundant full review."
   ],
   "requireLocalChecks": true,
   "semanticJudge": true,

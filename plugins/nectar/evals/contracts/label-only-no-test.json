@@ -10,7 +10,7 @@
       "src/ui/render-status.js": "import { statusLabels } from './status-labels.js';\n\nexport function renderStatus(status) { return `<span data-status=\"${status}\">${statusLabels[status]}</span>`; }\n"
     }
   },
-  "prompt": "The UI renders status labels through src/ui/render-status.js. In src/ui/status-labels.js change the pending label from Waiting to Pending. What permanent test should we add, and what completion evidence should replace it if no permanent test is valuable?",
+  "prompt": "The UI renders status labels through src/ui/render-status.js. Assess the proposed pending-label change from Waiting to Pending in src/ui/status-labels.js. Should it need a permanent test, and what completion evidence is appropriate? Explain only; do not edit files.",
   "checks": [
     {
       "type": "fixtureUnchanged"

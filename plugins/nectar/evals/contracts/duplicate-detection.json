@@ -1,7 +1,10 @@
 {
   "id": "duplicate-detection",
   "skill": "nectar-shape",
-  "tags": ["duplicates", "safety"],
+  "tags": [
+    "duplicates",
+    "safety"
+  ],
   "fixture": {
     "files": {
       "docs/work/2026-07-15-checkout-rebuild/design.md": "# Checkout Rebuild — Design\n\n## Problem\nThe checkout needs a safer rebuild.\n\n## Approach\nReplace it incrementally.\n\n## Acceptance criteria\n- [ ] Checkout remains available.\n\n## Out of scope\n- Payments replacement.\n"
@@ -18,9 +21,9 @@
     }
   ],
   "graderCriteria": [
-    "Surfaces the exact existing topic path and its artifact set.",
-    "Offers Continue existing work, Create a distinct feature, and Cancel.",
-    "Does not create a second checkout-rebuild root before the user chooses."
+    "Surfaces the exact existing checkout-rebuild topic and relevant current artifacts.",
+    "Reuses or proposes continuing the related work instead of inventing a duplicate root.",
+    "Leaves the fixture unchanged while clarifying any materially distinct requested outcome; no fixed menu wording is required."
   ],
   "requireLocalChecks": true,
   "semanticJudge": true,

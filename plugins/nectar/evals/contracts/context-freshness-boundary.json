@@ -19,9 +19,9 @@
     }
   ],
   "graderCriteria": [
-    "Asks the user once whether to refresh the stale project context before relying on it.",
-    "Does not claim that refresh, implementation, or file mutation already happened.",
-    "Keeps the current fixture unchanged while waiting for the context choice."
+    "Uses current relevant source or proposes inspecting it instead of blocking on a stale-context refresh choice.",
+    "Does not claim that refresh, implementation or file mutation already happened.",
+    "Keeps the explicit read-only fixture unchanged."
   ],
   "requireLocalChecks": true,
   "semanticJudge": true,

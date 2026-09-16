@@ -10,7 +10,7 @@
       "src/orders/controller.js": "import { discountedTotal } from './service.js';\nexport function quote(request) { return { total: discountedTotal(request.total, request.customer) }; }\n"
     }
   },
-  "prompt": "Inspect src/orders/service.js and src/orders/controller.js. Add this exact rule: every order with total at least 100 receives a 5% minimum-order discount; the existing 10% VIP discount wins when applicable and the discounts do not stack. The request asks to test it through a browser journey only; shape the correct ownership and valuable test evidence.",
+  "prompt": "Inspect src/orders/service.js and src/orders/controller.js. Plan this rule: orders with total at least 100 receive a 5% discount; an existing 10% VIP discount wins and discounts do not stack. Assess a suggestion to test the rule only through a browser journey, and choose meaningful test ownership. This is planning only; do not edit files.",
   "checks": [
     {
       "type": "fixtureUnchanged"

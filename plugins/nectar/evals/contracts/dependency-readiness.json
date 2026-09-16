@@ -1,7 +1,10 @@
 {
   "id": "dependency-readiness",
   "skill": "nectar-orient",
-  "tags": ["dependencies", "recovery"],
+  "tags": [
+    "dependencies",
+    "recovery"
+  ],
   "fixture": {
     "files": {
       "docs/work/2026-07-16-checkout/design.md": "# Checkout — Design\n\n## Problem\nCheckout is split into dependent work.\n\n## Approach\nComplete children in dependency order.\n\n## Acceptance criteria\n- [ ] Checkout ships safely.\n\n## Out of scope\n- None.\n\n## Topics\n1. `01-domain/` — domain rules; depends on: none\n2. `02-api/` — checkout API; depends on: `01-domain/`\n3. `03-ui/` — checkout UI; depends on: `02-api/`\n",
@@ -12,7 +15,7 @@
       "docs/work/2026-07-16-checkout/03-ui/design.md": "# UI — Design\n"
     }
   },
-  "prompt": "Continue with the next checkout topic.",
+  "prompt": "Inspect the checkout topics and tell me which child can continue next and which remain blocked. This is a status question; do not implement or change files.",
   "checks": [
     {
       "type": "fixtureUnchanged"

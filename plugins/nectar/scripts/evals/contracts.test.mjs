@@ -31,6 +31,7 @@ test('loads the complete quality-lifecycle behavioral contract roster', () => {
       'custom-backfill',
       'dependency-readiness',
       'duplicate-detection',
+      'final-verification-cadence',
       'framework-registration',
       'label-only-no-test',
       'layer-ownership',
@@ -44,6 +45,7 @@ test('loads the complete quality-lifecycle behavioral contract roster', () => {
       'static-copy',
       'suite-consolidation',
       'tenant-isolation',
+      'unbounded-planning',
     ],
   );
 
@@ -151,7 +153,7 @@ test('tenant isolation starts from a non-executable acceptance sketch', () => {
 
 test('uses one honest finite host ceiling for the complete live roster', () => {
   const contracts = loadContracts(path.join(pluginRoot, 'evals', 'contracts'));
-  assert.equal(contracts.length, 23);
+  assert.equal(contracts.length, 25);
   assert.ok(contracts.every((contract) => contract.budgets.timeoutMs === 600000));
 });
 

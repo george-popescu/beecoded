@@ -1,13 +1,15 @@
 # Nectar
 
-Eleven skills, five agent roles. No workflow state machine. The methodology works
-in Claude Code and Codex, with read-only investigation and an independent
-technical fit check before any implementation approval.
+Nectar gives Claude Code and Codex a direction for planning, implementation and
+verification. Its slim workflow leaves task size, scheduling and useful depth of
+investigation to the model.
 
-| **Host** | Invocation example |
+Nectar 3.3 introduces this slim workflow while retaining compatibility with older plans.
+
+| Host | Example |
 |---|---|
 | Claude Code | `/nectar-shape` |
-| `Codex` | `$nectar-shape` |
+| Codex | `$nectar-shape` |
 
 ## Install
 
@@ -41,367 +43,174 @@ package unless the downgrade is explicit:
 nectar --allow-downgrade
 ```
 
-## Reliability commands
+## Workflows
 
-Inspect a project's `docs/work/` hierarchy without modifying it:
+| Skill | Purpose |
+|---|---|
+| nectar-shape | Clarify an outcome and choose a fitted solution. |
+| nectar-plan | Plan coherent tasks, dependencies and final verification. |
+| nectar-build | Implement the authorized outcome and verify the integrated result. |
+| nectar-honey | Carry planning, implementation, verification and review through to delivery. |
+| nectar-review | Review a specific change and report evidenced findings. |
+| nectar-debug | Diagnose a failure; continue to repair when requested. |
+| nectar-audit | Produce a whole-codebase health report. |
+| nectar-orient | Recover status or continue existing authorized work. |
+| nectar-context | Inspect or refresh reusable project context. |
+| nectar-capture | Save an idea without derailing the active task. |
+| nectar-close | Archive accepted completed work with recoverable evidence. |
 
-```bash
-nectar doctor
-nectar doctor /path/to/project
-nectar doctor --json
-```
+## Planning and autonomy
 
-Doctor checks hierarchy, numbering, dependencies, cycles, duplicate topics, and
-artifact-derived status. Clean projects exit `0`, blocking diagnostics exit `1`,
-and invalid usage exits `2`.
+There are no fixed limits on waves, total tasks or tasks per wave. Decompose by
+outcome and dependencies, and split topics only when independent delivery or
+practical context/resource limits justify it. A wave can queue many tasks while
+the host runs a smaller number of agents concurrently.
 
-Run the shared behavioral contracts against Claude Code, Codex, or both:
+User requests and existing approval define the objective and constraints. Routine
+file, task, scheduling and verification adjustments within that objective do not
+require a new approval. A new product choice, materially different result or
+consequential external action needs its own authority.
 
-```bash
-nectar eval --all
-nectar eval --codex --case duplicate-detection
-nectar eval --all --dry-run
-```
+Small work uses an inline plan. Durable work uses `docs/work/YYYY-MM-DD-<slug>/`
+with a concise design, plan and final review. The
+[plan format](references/plan-format.md) documents the runtime fields.
 
-The 23 shipped cases cover hierarchy and recovery, Solution Fit and approval,
-Test Value decisions, Close routing, stale-context handling, plan and review
-risk classification, and Atlas workflow discipline. Model
-evals are intentionally separate from the normal zero-credit test suite.
-Deterministic contracts and their tests do not prove model compliance; host
-behavioral evals provide that evidence, and dry-run proves discovery only.
-Claude's native `plugin eval` may report unavailable when the installed CLI or
-account does not expose that early-access capability; this is distinct from a
-failed Nectar behavior. Eval subprocesses receive a minimal environment rather
-than every ambient credential. Use a CLI login for authentication; if a CI
-environment requires specific variables, opt them in explicitly:
+## Implementation and final verification
 
-```bash
-NECTAR_EVAL_PASSTHROUGH_ENV=ANTHROPIC_API_KEY,OPENAI_API_KEY nectar eval --all
-```
+A new plan starts with `Workflow: nectar-slim-v1`. Its task checkboxes mean
+**implemented**. Partially completed waves are valid. The separate
+`## Verification` section records pending, passed or failed, plus observed evidence.
 
-## How it works
+The default is one coordinated verification phase after the integrated deliverable.
+Run relevant tests and required project gates then. An early focused check is
+useful when it resolves a bug or uncertain dependency. Do not rerun passing checks
+solely because a wave ended, a subagent handed off or a different role took over.
 
-| Skill | When it activates | What it produces |
-|-------|-------------------|-----------------|
-| nectar-shape | Starting any new work — "let's build X", "add Y", "I want to change how Z works" | Read-only investigation, candidate solution, independent `FIT`, and a design or proportional inline plan |
-| nectar-plan | When a fitted feature needs an execution plan | A reviewed plan revision with explicit approval, or an approved split into ordered `NN-<topic-slug>/` children |
-| nectar-build | Implementing an approved plan revision | Approval preflight followed by bounded execution and verified checkbox progress |
-| nectar-review | After implementation or on "review this" | A single read-only pass with risk-classified findings, a parseable summary, and one recommended caller action |
-| nectar-honey | "Drop the honey" — deliver end-to-end autonomously | Investigation, `FIT`, and the exact plan before one outcome/plan confirmation, then bounded delivery |
-| nectar-debug | Any bug, test failure, or unexpected behavior | Read-only root cause evidence, fitted candidate, and an approved-plan hand-off; persistent evidence only when needed |
-| nectar-audit | On "audit this", pre-release sweeps, unfamiliar codebases | Severity-grouped `docs/work/audit-YYYY-MM-DD.md` |
-| nectar-capture | When an idea surfaces mid-work | One line in `docs/work/backlog.md` |
-| nectar-close | After a complete topic is accepted, or a completed duplicate is found | Manifest-backed prepare, user-commit proof, recoverable archive, Doctor, and context hand-off |
-| nectar-context | When stable project knowledge should be reused or refreshed | Evidence-linked `.nectar/CONTEXT.md`, `.nectar/CONVENTIONS.md`, and freshness metadata |
-| nectar-orient | On "where were we", "what's next", new sessions on existing work, after context compaction | No artifact — status report and one proposed next action |
+After a repair, rerun affected checks and broaden only when changed dependencies
+or unresolved risk justify it. Mark previous verification and review stale when
+implementation changes. Review the final result proportionately; zero blockers
+does not compensate for missing verification. Honey owns the final review when
+orchestrating Build; standalone Build owns its own review. Neither repeats a
+current review just because ownership changes.
 
-## The lifecycle
+[Test Value](references/test-value.md) keeps automation focused on observable
+behavior. Reuse useful existing coverage; avoid exact-copy, label, boilerplate
+and implementation-mirroring tests. A concise reason and evidence route replace
+the former mandatory per-behavior dossier.
 
-Investigation → Solution Fit → plan → approval → implementation → review is the
-main path. Shape and Debug keep project code read-only through Fit. Plan presents
-the exact revision before approval, and Build refuses missing or stale approval.
-Honey performs the same preflight before its single combined outcome/plan
-confirmation, then runs without extra stops unless material drift invalidates
-that approval.
+## Compatibility and cleanup
 
-### Test Value and completion evidence
+Unversioned plans retain their old completion interpretation. Authorized resumed
+work can adopt the slim format without resetting tasks or repeating approval.
+Completed legacy artifacts and pending Close transactions are not silently migrated.
 
-Nectar maps each changed behavior before implementation: protected behavior,
-credible failure, impact, unique existing coverage, owning layer,
-implementation independence, runtime class/cost, one test decision, and a
-separate observed completion-evidence route.
+The 3.2 approval-receipt helper remains available for retained legacy workflows.
+New plans do not transport task lists through receipt tokens or stage duplicate
+plans. Close and Debug promotion keep their independent path, identity, hash and
+recovery checks for actual evidence moves.
 
-- `ADD_PRODUCT_TEST` adds valuable permanent coverage with red/green/refactor.
-- `REUSE_EXISTING_TEST` runs the existing owner without duplicating the rule.
-- `NO_NEW_TEST` adds zero test files and verifies through selected build, lint,
-  typecheck, render, browser, diff, boot, runtime, or bounded manual evidence.
-- `ISOLATED_REHEARSAL` proves a risky or one-off path in a disposable boundary,
-  including teardown and no-residue evidence.
+For slim topics, Doctor and Close require implemented tasks, passed final
+verification and a clean review. A pending or failed verification cannot authorize
+archiving even when `review.md` contains a clean marker.
 
-A standard framework/schema migration normally needs schema diff, migration
-dry-run, rollback/build, and runtime smoke rather than a permanent surrogate
-test. A custom backfill is different: data invariants, idempotency, batching,
-rollback, and production-like outcomes require valuable automation or an
-isolated rehearsal.
-
-Review and Nectar Audit retain `TEST_OR_COVERAGE_GAP`/`TEST_DEFECT` and add a
-separate, scoped suite recommendation: `KEEP`, `REMOVE`, `CONSOLIDATE`, `MOVE`,
-or `REWRITE`. These never authorize a read-only reviewer to edit tests.
-
-The contract is intentionally compact and outcome-first. Deterministic tests
-prove its schema and wiring; they cannot prove model compliance. Cross-host
-behavioral cases remain a separate release gate. Research basis:
-[Anthropic agent evals](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents)
-and [OpenAI model guidance](https://developers.openai.com/api/docs/guides/latest-model).
-
-### Content-bound approval
-
-For feature and project work, approval is bound to canonical SHA-256 input: the
-derived parent design when nested, the leaf design, and the leaf plan. The
-persisted `Plan approval` line and Honey mode marker are audit records only; they
-never grant write authority by themselves. Authority is an in-memory
-`CURRENT_RUN` receipt containing the digest, Plan revision, derived paths, task
-baseline, and frozen review progress. Build and each implementer recompute that
-receipt before writing.
-
-Installed callers share one installer-rendered `APPROVAL_LAUNCHER`. Its shell
-source is static: the installed helper path is base64url transport data, decoded
-inside Node, and the helper is invoked with structured arguments through
-`spawnSync(..., { shell: false })`. Inherited numeric descriptors preserve
-stdout/stderr bytes, while bootstrap errors, child errors, status, and signals
-remain failures. The shared managed-installer template owns this launcher and
-regenerates the Bee, Nectar, Code Audit, and UI/UX Audit installers.
-
-The same renderer converts every executable installed Node-script reference,
-including project-context and Debug promotion helpers, into that static encoded
-launcher form. Absolute installed roots remain display/link data where useful,
-but never executable shell source.
-
-Agents never place a repository, topic, installed-package, or staging path in
-shell source. From the live project cwd they ask the helper to `discover`
-eligible leaves, show its `displayPath` only as data, and pass the corresponding
-opaque selection token to `snapshot-token`. The versioned canonical base64url
-selection, receipt, task-advance, and review-advance tokens are checksummed and
-root-bound where applicable. This supports existing names containing spaces,
-Unicode, quotes, newlines, or shell metacharacters without renaming them. Raw
-agent-facing `--topic` and `--project-root` modes fail closed.
-
-Tokens are transport and integrity handles, not write authority. The helper
-rediscovers the current hierarchy, reopens the canonical files, and recomputes
-the receipt on every sensitive transition; only the explicitly approved
-current-run receipt grants authority. Old managed sessions lack this exact
-launcher/token protocol and therefore fail closed until the plugin is upgraded
-and the unchanged surfaces are presented for fresh approval.
-
-Ordinary task checkboxes and the one canonical review-count field may advance
-without changing the approved digest, but only through atomic helper-owned
-transitions. Skips, rewinds, duplicate transitions, partial waves, and review
-maximum changes are rejected without altering the artifact. Any other design,
-Decision, hierarchy, task, criteria, `files`, or `reads` change invalidates the
-receipt and returns through Investigation, Fit, Plan, and approval.
-
-Every fresh snapshot also validates persisted ordinary progress. Ordinary tasks
-inside one wave must be uniformly pending or complete, and completed ordinary
-waves must form one prefix. Partial waves and checked future-wave tasks are
-structural discrepancies that fresh approval cannot legitimize. Struck tasks
-remain digest-bound audit history but do not advance the ordinary-work frontier.
-
-Receipts are deliberately current-run only. After an interruption, context
-compaction, or new session, Nectar re-presents the exact parent/design/plan
-surfaces and digest for fresh approval. Already-completed topics need no receipt
-retrofit. Honey applies the same rule through a helper-owned mode-0700 staging
-root. It writes the final hierarchy outside the repository, seals an exact
-no-follow manifest of every descendant, and uses only sealed-stage discovery and
-snapshot tokens before confirmation. After confirmation it revalidates that
-manifest, materializes byte-equivalent content, rediscovers the live leaves, and
-requires matching derived paths and digests. Disposal removes only the sealed
-manifest; any extra, changed, missing, replaced, or symlinked entry makes cleanup
-fail closed and leaves the reported stage path intact for recovery.
-
-### Close and context lifecycle
-
-`nectar-close` is the only workflow that removes completed roots from live
-`docs/work/`. Doctor, Review, Orient, Shape, Honey, and Close share one exact
-completion parser: the final `Blocking:` count is zero and the canonical clean
-marker is the semantic tail, followed only by whitespace or one real closing
-code fence. Historical clean prose is `legacy-needing-adjudication`, not done.
-
-Close discovers only whole direct/legacy roots or a parent whose exact children
-are all done; it never removes one nested child. `prepare` records a no-follow
-manifest of topic bytes, tracking, delivery/support state, HEAD, ownership, and
-context impact before support edits. Selected changelog/backlog postimages are
-sealed after that durable preimage. The user then creates the necessary commit
-history; Close never commits automatically.
-
-`finalize` distinguishes `tracked-only`, ignored/untracked-only, and mixed
-topics. Tracked bytes require exact Git history and committed deletion. Ignored
-or untracked residue moves atomically to
-`.nectar/closures/archive/<id>/topic`; mixed roots archive only their exact
-residue. Built-in SQLite `BEGIN IMMEDIATE` serializes normal Close processes,
-while immutable pending/archive manifests remain recovery authority. Interrupted
-PRE/POST states resume through `recover-token`; safe PRE cancellation preserves
-its record instead of deleting it. Doctor reruns after cleanup. A conservative
-context decision refreshes commands, modules, entry points, architecture,
-conventions, or cited evidence and skips only explicit volatile uncited paths.
-
-This is a local evidence-safety mechanism, not a hostile same-user security
-boundary. Observed identity/hash drift fails closed and preserves the exact
-recovery path. No close operation pushes, tags, publishes, deploys, recursively
-deletes ignored evidence, or treats unrelated dirty roots as authority.
-
-### Plan access scopes
-
-Every task's `- files:` list is create/modify authority. Optional `- reads:`
-entries are read-only scheduling and navigation metadata, not write authority
-and not an exhaustive read sandbox. Write/write and either direction of
-write/read overlap serialize in plan order; read/read overlap may run in
-parallel. Implementers may still inspect necessary nearest neighbors, but may
-write only declared `- files:` paths.
-
-### Debug hand-off
-
-A standalone feature-scale Debug hunt promotes its complete evidence into the
-dated design before Plan through an opaque helper protocol. Discovery emits a
-root-bound token for a current normal topicless hunt. The helper then creates a
-private fixed-name design stage, seals its exact UTF-8 bytes and identity, and
-promotes only a paired source token plus sealed-stage token. Project, source,
-destination, temporary, and installed-package paths never enter shell source;
-legacy raw CLI flags fail closed. A committed result reports cleanup separately,
-so a retained-stage warning cannot turn success into an unsafe retry.
-
-The runner opens and fingerprints raw source bytes,
-rejects invalid UTF-8 in both evidence and staged design, and uses `O_NOFOLLOW`
-where the platform exposes it plus portable identity checks. It claims the exact
-hunt into an exclusive sibling recovery path before creating any destination.
-
-Success writes the approved `design.md` and preserves the exact original bytes
-beside it as `investigation-evidence.md`. If the source changes or reappears,
-the newer bytes remain untouched and the claimed original stays at the exact
-reported `docs/work/debug/recovery-<slug>-<token>.md` path. Rollback removes only
-objects whose recorded identity proves the runner created them; collisions,
-foreign replacements, and ambiguous cleanup preserve evidence instead of
-guessing which copy to delete.
-
-This is a local evidence-safety mechanism, not a security boundary against a
-hostile same-user process that continuously swaps path ancestors. Pure
-cross-platform Node does not expose one portable descriptor-relative operation
-for every mutation. Nectar rejects pre-existing symlinks, revalidates identities
-around mutations, stops on observed drift, and documents this narrow TOCTOU
-limit instead of claiming absolute race immunity.
-
-### Validation boundary
-
-Receipt durability/parser edge cases recorded as non-blocking remain deferred;
-this repair does not silently broaden into unrelated hardening. Prose-to-model
-compliance, final-workspace graders, and release-version reconciliation remain
-owned by the behavioral-evals/release topic. Deterministic tests prove helper,
-installer, and artifact invariants, not that a host model followed prose.
+Close prepares a durable manifest before support edits, requires the necessary Git
+history and archives exact ignored/untracked residue. It never silently finalizes
+a stale pending manifest. See the [Close skill](internal-skills/nectar-close/SKILL.md)
+for the operational protocol.
 
 ## Project context
 
-`nectar-context status` reports whether the compact project map is fresh, stale,
-expired, or missing without modifying the repository. `nectar-context refresh`
-builds a new evidence-linked snapshot in staging, validates it, then promotes it
-transactionally. A failed refresh keeps the previous valid snapshot.
+Context and Atlas are optional navigation aids. Use current source when they are
+stale, missing or unnecessary. Context refresh uses staged, validated promotion and
+preserves the previous snapshot on failure. Indexing must be enabled explicitly.
+Native project instructions remain authoritative.
 
-The generated `.nectar/CONTEXT.md` indexes stable commands, modules, entry
-points, definitions, relationships, and useful links.
-`.nectar/CONVENTIONS.md` records only repeated, evidence-backed patterns. Each
-document is capped at 6 KiB so later workflows can load only the relevant
-sections instead of rescanning the project.
+After Close, structural or cited-source changes require refresh. Ordinary source
+changes instead get a bounded assessment of the already-known diff: refresh when
+recorded project facts changed, otherwise explain why no update is needed. This
+does not relabel an old snapshot as fresh. Volatile-only changes skip refresh.
+Orient uses Doctor directly for status; it does not run archive discovery.
 
-Freshness defaults to stale after 14 days, 20 changed files, or structural
-changes, and expired after 30 days, 100 changed files, or an unavailable base
-commit. Existing `.bee/CONTEXT.md` and `.bee/CONVENTIONS.md` are reused
-read-only when native Nectar documents are absent. Native `AGENTS.md` and
-`CLAUDE.md` always remain authoritative.
+## Commands and validation
 
-## Risk-aware review convergence
-
-Review separates whether evidence confirms a finding from what kind of finding it
-is. Production defects, coverage gaps, stale tests, documentation gaps,
-maintainability concerns, style preferences, and hardening ideas keep distinct
-classes. Reachability, likelihood, bounded impact, solution opportunity, and
-confidence are recorded independently, so a frightening hypothetical does not
-inherit production-defect status merely from its worst imaginable outcome.
-
-Only confirmed medium-or-higher code defects block convergence. Non-code findings
-and low defects remain in the final report. A direct review is one classification
-pass: it never edits reviewed files and never starts another pass. It ends with
-the parseable totals and one recommended caller action.
-
-Honey is the autonomous caller that may repair and repeat. It freezes one delivery
-scope before its first review and uses that same scope throughout. Honey has a
-default maximum of three full review passes. Any explicit positive integer maximum
-chosen by the user replaces the default: 1, 2, 5, or any other positive value is
-valid. The maximum is always finite and is never silently changed.
-
-Between passes, Honey repairs only proportional `BLOCKING + FIX_NOW` root causes
-when another pass remains to verify the change. Non-blocking findings do not cause
-repairs or repetition, and architectural or scope-expanding blockers stop for user
-direction. The sequence ends at zero blocking code defects or at the chosen maximum, with
-remaining findings and the next recommended action reported plainly.
-
-## The agents
-
-Five agents carry the heavy discipline in their own system prompts, so orchestrating skills pass only the task-specific payload — and so the rules that matter cannot be dropped:
-
-| Agent | Role | Enforcement |
-|-------|------|-------------|
-| `nectar:investigator` | Maps current behavior and independently validates Solution Fit | Read-only tools, fresh validation context, evidence-linked `FIT`/`PARTIAL`/`UNFIT`/`BLOCKED` verdict |
-| `nectar:implementer` | Executes one approved Test Value branch and evidence route | Sees only the approved task payload and current receipt — no conversation to drift from |
-| `nectar:lens` | Reviews a scope through exactly one lens | Read-only tools: "findings only, no fixes" is physics, not instruction |
-| `nectar:validator` | Adversarially validates findings | A fresh context that did not author the finding — no ego, no blind spots inherited |
-| `nectar:context-builder` | Builds compact project context in staging | Treats repository content as untrusted data and cannot promote or overwrite active context |
-
-When the agent types are unavailable in a session, every dispatching skill has a spelled-out fallback: a general-purpose agent with the discipline written into the prompt in full.
-
-## State convention
-
-```
-docs/work/
-  backlog.md              # captured ideas, one line each
-  audit-YYYY-MM-DD.md     # audit snapshots — latest per day wins
-  debug/<slug>.md         # debug hunts with no topic folder
-  YYYY-MM-DD-<feature-slug>/
-    design.md             # parent outcome and, when split, the ordered Topics list
-    plan.md               # present only when the feature fits one plan
-    debug-<slug>.md       # direct-feature hunt only
-    review.md             # direct-feature review only
-    01-<topic-slug>/
-      design.md           # this child's share of the outcome and dependencies
-      plan.md             # tasks with checkboxes, grouped in waves
-      debug-<slug>.md     # child-specific persistent hunt
-      review.md           # latest review findings for this child
-    02-<topic-slug>/
-      ...
+```bash
+nectar doctor
+nectar doctor /path/to/project --json
+nectar eval --all --dry-run
+nectar eval --codex --case final-verification-cadence
+nectar uninstall --all
 ```
 
-New work always uses a dated feature root. Existing legacy flat
-`docs/work/<topic>/` directories remain readable. An unfinished legacy plan
-missing canonical investigation/candidate/`FIT` evidence takes the full gate
-migration: new investigation, candidate comparison, independent fit, revised
-plan, and approval. An already-fitted pre-digest plan keeps its revision but
-requires exact digest re-presentation and fresh approval. Completed legacy work
-needs no retrofit.
+Doctor is read-only. Behavioral evals assess decisions and final workspace state;
+they are separate from deterministic runtime tests and may consume model usage.
+A dry-run lists cases without invoking either host. Native Claude eval availability
+depends on the installed CLI/account and is reported separately from failure.
 
-Before creating a root, Shape checks for likely duplicate dated and legacy topics. Plan performs the full decomposition first. If it would exceed 5 waves or 10 tasks, Plan presents the complete ordered split with scope, size estimate, boundary reason, and exact `depends on` paths. It creates nothing until the user chooses `Approve split`; `Revise split` rebuilds the proposal and `Decline split` leaves the parent untouched.
+From the contributor checkout:
 
-If an unplanned legacy flat topic is oversized, Plan asks before doing anything: migrate it to a dated parent (recommended), keep one oversized legacy plan as an explicit compatibility exception, or cancel. Migration is never automatic.
-
-Child numbers are always contiguous `01..N`, without gaps or duplicates. Numeric order makes the tree readable; declared dependencies decide which child is ready. Orient derives child statuses and an aggregate parent status, then proposes only dependency-ready work.
-
-Checkboxes in each leaf `plan.md` are persisted progress evidence; the current
-receipt is the trusted progress state. Resuming starts by reading hierarchy and
-git history, recomputing the exact receipt, and obtaining fresh approval before
-the first actionable unchecked wave.
-
-## Principles
-
-1. **Scale the record, not the gate.** Trivial work uses a one-step inline plan;
-   larger work persists artifacts. Investigation, `FIT`, and approval remain.
-2. **Evidence over assertion.** Every finding, hypothesis, and claim carries file:line evidence; every "green" is a quoted runner output, not a feeling. Unverified findings die in validation.
-3. **Artifacts define content; the receipt carries authority.** Material drift
-   invalidates the current-run receipt and returns through Investigation, Fit,
-   Plan, and approval. Persisted approval text is audit history, not permission.
-4. **Never auto-commit.** Skills suggest commits with a message; the user approves. Autonomy covers building, never shipping.
-5. **Conversation owns the process.** Skills teach the coding agent how to think; they do not script orchestration.
-6. **Structure over willpower.** The rules that matter most are enforced by role separation and restricted tools — a lens that cannot edit, a validator that did not author the finding, an implementer that never saw the conversation — not by asking the model to be careful.
-
-## Consistency check
-
-`scripts/check-consistency.js` guards the plugin itself: the finding format, severity scale, and verdict definitions must stay byte-identical everywhere they appear, every skill description must state both its triggers and its "Not for" boundary, and the README table must match the skills on disk. Run it before committing changes to nectar:
-
-```
-node plugins/nectar/scripts/check-consistency.js
+```bash
+npm run test:nectar
+npm run validate
 ```
 
-## Distribution
+These are final validation gates, not a loop to run after every edit. Packaging and
+publication remain distinct steps. The published package includes executable
+helpers and internal skill sources; the installer owns host registration.
 
-The npm package is `@beecoded/nectar`. Its runner installs that same plugin
-payload through managed local marketplace catalogs for Claude Code and Codex,
-verifies every staged version before host installation, and prevents accidental
-downgrades from stale local or cached packages.
+### Prepare a release once
+
+After setting the intended release version and finishing source changes, run:
+
+```bash
+npm run release:prepare:nectar
+```
+
+This command runs the two gates above once, then packs with lifecycle scripts
+disabled. It rejects changed package inputs and writes a tarball plus `release.json`
+with its SHA-512 integrity and verification record to a unique temporary directory.
+Gate output is summarized: result, elapsed time, test totals and relevant failure
+details. Complete stdout/stderr logs remain beside the archive and are linked from
+the verification record. On failure, logs are retained but no release artifact is
+kept. The real command exit status remains authoritative.
+Keep the workspace unchanged while it runs; do not separately run `pack:check` or
+repeat the same gates as part of this release path.
+
+Publication is a separate authorized action on that exact archive, not a fresh
+pack of the workspace. Check its integrity against `release.json` before publishing:
+
+```bash
+npm publish "/absolute/path/from-the-result.tgz" --ignore-scripts --access public
+```
+
+Do not publish if the archive changed. A new source/version change needs a new
+preparation. The ordinary `prepack` gate remains for direct pack/publish workflows;
+the prepared-archive path avoids invoking it repeatedly. Preparing does not publish,
+change versions or claim that a version is available on npm.
+
+### Opt-in workflow benchmark
+
+```bash
+npm run benchmark:nectar
+# Or use an already-installed compatible Codex executable:
+npm run benchmark:nectar -- --codex /absolute/path/to/codex
+```
+
+This live Codex smoke benchmark consumes model usage. It uses disposable projects:
+one rounding fix with and without project-local Nectar skills, plus an explicitly
+requested Honey continuation. Each native run is capped at three minutes; an
+unavailable actor stops the batch without scoring untouched code as a product
+failure. Existing CLI model and effort settings are left unchanged.
+
+The output records independent behavioral checks, changes to fixture tests, observed
+skill-file reads, test-run counts, elapsed time and any exposed usage. Skill reads
+only reflect observed command traces, not hidden native selection. Test counts
+cover the fixture's instrumented command. A single trial is not a general speed or
+quality claim, and user-level configuration remains part of the environment.
+Legitimate test additions do not fail the benchmark: the immutable external
+behavior checks decide correctness, while test changes remain review evidence.
+Unknown model/usage metadata stays unknown. Artifacts and full traces remain in the
+reported temporary directory. This benchmark is separate from normal tests and
+release gates; it is not a native Claude evaluation.
 
 ## Atlas
 

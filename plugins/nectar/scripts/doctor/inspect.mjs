@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { parseReviewCompletion } from '../review-completion.mjs';
+import { parsePlanState } from '../plan-state.mjs';
 
 const DATED_ROOT = /^(\d{4})-(\d{2})-(\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 const CHILD_TOPIC = /^(\d+)-([a-z0-9]+(?:-[a-z0-9]+)*)$/;
@@ -393,6 +394,7 @@ function firstHeading(content) {
 function leafArtifacts(absoluteRoot, readArtifact) {
   const design = readArtifact(path.join(absoluteRoot, 'design.md'));
   const plan = readArtifact(path.join(absoluteRoot, 'plan.md'));
+  const planState = parsePlanState(plan);
   const review = readArtifact(path.join(absoluteRoot, 'review.md'));
   const debugFiles = fs.existsSync(absoluteRoot)
     ? fs.readdirSync(absoluteRoot)
@@ -400,16 +402,18 @@ function leafArtifacts(absoluteRoot, readArtifact) {
       .sort()
     : [];
   const checkboxes = plan ? [...plan.matchAll(/^- \[([ xX])\]/gm)] : [];
-  const checkedTasks = checkboxes.filter((match) => match[1].toLowerCase() === 'x').length;
-  const uncheckedTasks = checkboxes.length - checkedTasks;
+  const checkedTasks = planState.checkedTasks
+    ?? checkboxes.filter((match) => match[1].toLowerCase() === 'x').length;
+  const uncheckedTasks = planState.uncheckedTasks ?? (checkboxes.length - checkedTasks);
   return {
     design,
     plan,
+    planState,
     review,
     debugFiles,
     checkedTasks,
     uncheckedTasks,
-    checkboxCount: checkboxes.length,
+    checkboxCount: checkedTasks + uncheckedTasks,
   };
 }
 
@@ -430,6 +434,14 @@ function deriveLeafStatus(topic, projectRoot, addDiagnostic, readArtifact, unsaf
   if ([...unsafePaths].some((candidate) => (
     candidate === artifactPath || candidate.startsWith(`${artifactPath}/`)
   ))) return null;
+
+  if (artifacts.planState.error) {
+    addDiagnostic('INVALID_PLAN_STATE', `${artifactPath}/plan.md`, artifacts.planState.error);
+    return null;
+  }
+  if (artifacts.planState.workflow === 'slim') {
+    topic.artifacts.verification = artifacts.planState.verification.status;
+  }
 
   if (artifacts.plan !== null && artifacts.design === null) {
     addDiagnostic(
@@ -471,6 +483,10 @@ function deriveLeafStatus(topic, projectRoot, addDiagnostic, readArtifact, unsaf
   if (artifacts.design !== null && artifacts.plan === null) return 'designed, needs plan';
   if (artifacts.plan === null || artifacts.checkboxCount === 0 || artifacts.design === null) return null;
   if (artifacts.uncheckedTasks > 0) return 'building';
+  if (artifacts.planState.workflow === 'slim') {
+    if (artifacts.planState.verification.status === 'pending') return 'awaiting verification';
+    if (artifacts.planState.verification.status === 'failed') return 'verification failed';
+  }
   if (artifacts.review === null) return 'in review';
   return parseReviewCompletion(artifacts.review).state;
 }
@@ -511,6 +527,8 @@ function addDuplicateDiagnostics(topics, projectRoot, addDiagnostic, readArtifac
 function deriveParentStatuses(topics, diagnostics, addDiagnostic) {
   const byPath = new Map(topics.map((topic) => [topic.path, topic]));
   const priority = new Map([
+    ['verification failed', 5],
+    ['awaiting verification', 4],
     ['open debug hunt', 4],
     ['in review', 3],
     ['building', 2],

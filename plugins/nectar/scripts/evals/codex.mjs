@@ -13,16 +13,19 @@ import { renderManagedSkill } from '../../bin/install.mjs';
 
 const RESOURCE_PATHS = {
   'nectar-build': [
+    ['plan-format', 'references/plan-format.md'],
     ['test-value', 'references/test-value.md'],
-    ['implementer', 'agents/implementer.md'],
+    ['review-format', 'references/review-format.md'],
   ],
   'nectar-orient': [
-    ['test-value', 'references/test-value.md'],
+    ['plan-format', 'references/plan-format.md'],
   ],
   'nectar-plan': [
+    ['plan-format', 'references/plan-format.md'],
     ['test-value', 'references/test-value.md'],
   ],
   'nectar-review': [
+    ['review-format', 'references/review-format.md'],
     ['test-value', 'references/test-value.md'],
   ],
   'nectar-shape': [
@@ -32,7 +35,12 @@ const RESOURCE_PATHS = {
 };
 
 function bundledResources(pluginRoot, skillName) {
-  return (RESOURCE_PATHS[skillName] || []).map(([name, relative]) => {
+  const resources = [
+    ['workflow', 'references/workflow.md'],
+    ['context-use', 'references/context-use.md'],
+    ...(RESOURCE_PATHS[skillName] || []),
+  ];
+  return resources.map(([name, relative]) => {
     const content = fs.readFileSync(path.join(pluginRoot, relative), 'utf8');
     return `<nectar-resource name="${name}">\n${content}\n</nectar-resource>`;
   }).join('\n\n');

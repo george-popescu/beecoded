@@ -86,4 +86,4 @@ export function parseReviewCompletion(value) {
   };
 }
 
-export { CLEAN_MARKER };
+export { CLEAN_MARKER, semanticTail as markdownState };

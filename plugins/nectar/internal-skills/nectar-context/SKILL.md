@@ -1,6 +1,6 @@
 ---
 name: nectar-context
-description: Use when a project needs a compact reusable map of commands, modules, links, definitions, and observed conventions, or when that map may be stale — "context status", "refresh project context", "prepare context". Not for task progress or volatile decisions (orient), implementation (build), or replacing native AGENTS.md/CLAUDE.md instructions.
+description: Inspect or refresh a compact evidence-linked map of project commands and conventions.
 ---
 
 # Project Context

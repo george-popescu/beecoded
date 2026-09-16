@@ -154,6 +154,21 @@ if (productDefinition.kind === 'bee') {
   );
   check(fs.existsSync(path.join(pluginRoot, 'scripts', 'run-doctor.mjs')), 'Nectar doctor runner is required');
   check(fs.existsSync(path.join(pluginRoot, 'scripts', 'run-context.mjs')), 'Nectar context runner is required');
+  check(fs.existsSync(path.join(pluginRoot, 'scripts', 'plan-state.mjs')), 'Nectar slim plan state parser is required');
+  check(pkg.files.includes('references/'), 'Nectar npm package must include workflow references');
+  for (const relative of ['internal-skills', 'agents', 'references']) {
+    for (const file of walk(relative).filter((entry) => entry.endsWith('.md'))) {
+      const content = fs.readFileSync(file, 'utf8');
+      for (const match of content.matchAll(/\]\(([^)]+)\)/g)) {
+        const target = match[1].split('#')[0];
+        if (!target || /^[a-z][a-z0-9+.-]*:/i.test(target)) continue;
+        const resolved = path.resolve(path.dirname(file), target);
+        const relation = path.relative(pluginRoot, resolved);
+        check(!relation.startsWith('..') && !path.isAbsolute(relation)
+          && fs.existsSync(resolved), `${path.relative(pluginRoot, file)}: missing or outside-package resource ${target}`);
+      }
+    }
+  }
   check(fs.existsSync(path.join(pluginRoot, 'scripts', 'run-behavioral-evals.mjs')), 'Nectar eval runner is required');
   check(fs.existsSync(path.join(pluginRoot, 'scripts', 'run-atlas.mjs')), 'Nectar Atlas CLI runner is required');
   check(fs.existsSync(path.join(pluginRoot, 'scripts', 'run-atlas-evals.mjs')), 'Nectar Atlas evaluation runner is required');

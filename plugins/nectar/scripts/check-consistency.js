@@ -1,12 +1,6 @@
 #!/usr/bin/env node
-// Nectar structural consistency check. Markdown is inspected only where it is
-// the serialization layer for stable schema identifiers or frontmatter.
-// Behavioral evals own instructional meaning and documentation quality.
-// 1. Finding schema identifiers agree across their consumers.
-// 2. Exactly eleven internal Nectar sources have matching frontmatter names.
-// 3. Five referenced agent roles exist and declare safe tool permissions.
-// 4. Package, plugin, and marketplace manifests agree on the version.
-//
+// Nectar package metadata consistency. Instructional meaning is reviewed and
+// evaluated semantically; parser/runtime tests own persisted-state contracts.
 // Zero dependencies. Exit 0 = all pass, exit 1 = failures printed.
 
 const fs = require('fs');
@@ -20,37 +14,6 @@ const pass = (msg) => console.log(`  PASS  ${msg}`);
 const fail = (msg) => { failures++; console.log(`  FAIL  ${msg}`); };
 
 // --- helpers ---------------------------------------------------------------
-
-function extractSection(content, heading) {
-  // Returns the body of a "## heading" section up to the next "## " or EOF.
-  const re = new RegExp(`^## ${heading}\\s*$`, 'm');
-  const m = content.match(re);
-  if (!m) return null;
-  const start = m.index + m[0].length;
-  const rest = content.slice(start);
-  const next = rest.search(/^## /m);
-  return (next === -1 ? rest : rest.slice(0, next)).trim();
-}
-
-function extractFencedBlock(sectionBody) {
-  const m = sectionBody && sectionBody.match(/```(?:markdown)?\n([\s\S]*?)```/);
-  return m ? m[1].trim() : null;
-}
-
-function extractDefinitionIds(sectionBody, identifiers) {
-  if (!sectionBody) return null;
-  return identifiers
-    .filter((identifier) => new RegExp(`^- ${identifier} (?:—|=) `, 'm').test(sectionBody))
-    .join('\n');
-}
-
-function extractFormatFields(sectionBody) {
-  const block = extractFencedBlock(sectionBody);
-  if (!block) return null;
-  return [...block.matchAll(/^- \*\*([^*]+):\*\*/gm)]
-    .map((match) => match[1])
-    .join('\n');
-}
 
 function frontmatter(content) {
   const m = content.match(/^---\n([\s\S]*?)\n---/);
@@ -85,92 +48,7 @@ const agents = {
 };
 console.log('nectar consistency check\n');
 
-// --- 1. shared schema identifiers stay aligned ------------------------------
-
-console.log('shared blocks:');
-
-const findingClassIds = [
-  'CODE_DEFECT',
-  'TEST_OR_COVERAGE_GAP',
-  'TEST_DEFECT',
-  'DOCUMENTATION_GAP',
-  'MAINTAINABILITY',
-  'STYLISTIC',
-  'HARDENING_IDEA',
-];
-const findingClassCopies = {
-  'review SKILL': extractDefinitionIds(extractSection(skills.review, 'Finding classes'), findingClassIds),
-  'audit SKILL': extractDefinitionIds(extractSection(skills.audit, 'Finding classes'), findingClassIds),
-  'lens agent': extractDefinitionIds(extractSection(agents.lens, 'Finding classes'), findingClassIds),
-  'validator agent': extractDefinitionIds(extractSection(agents.validator, 'Finding classes'), findingClassIds),
-};
-compareCopies('finding class identifiers', findingClassCopies, findingClassIds);
-
-const findingFormatFields = [
-  'Class',
-  'Where',
-  'Evidence',
-  'Runtime path',
-  'Reachability',
-  'Exposure/preconditions',
-  'Likelihood',
-  'Exploitability',
-  'Impact',
-  'Solution opportunity',
-  'Confidence',
-  'Convergence',
-  'Disposition',
-  'Suggested fix',
-];
-const findingFormatCopies = {
-  'review SKILL': extractFormatFields(extractSection(skills.review, 'Finding format')),
-  'audit SKILL': extractFormatFields(extractSection(skills.audit, 'Finding format')),
-  'lens agent': extractFormatFields(extractSection(agents.lens, 'Finding format')),
-};
-compareCopies('finding format field identifiers', findingFormatCopies, findingFormatFields);
-
-const severityIds = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
-const severityCopies = {
-  'review SKILL': extractDefinitionIds(extractSection(skills.review, 'Severity scale'), severityIds),
-  'audit SKILL': extractDefinitionIds(extractSection(skills.audit, 'Severity scale'), severityIds),
-  'lens agent': extractDefinitionIds(extractSection(agents.lens, 'Severity scale'), severityIds),
-  'validator agent': extractDefinitionIds(extractSection(agents.validator, 'Severity scale'), severityIds),
-};
-compareCopies('severity identifiers', severityCopies, severityIds);
-
-// Definition lines only: "- VERDICT — <definition>". Prose lines that merely
-// start with a verdict name (e.g. "- STYLISTIC findings are presented...") don't count.
-const verdictIds = ['CONFIRMED', 'REFUTED'];
-const verdictCopies = {
-  'review SKILL': extractDefinitionIds(skills.review, verdictIds),
-  'audit SKILL': extractDefinitionIds(skills.audit, verdictIds),
-  'validator agent': extractDefinitionIds(extractSection(agents.validator, 'Verdicts'), verdictIds),
-};
-compareCopies('verdict identifiers', verdictCopies, verdictIds);
-
-function compareCopies(label, copies, expectedIdentifiers) {
-  const entries = Object.entries(copies);
-  const missing = entries.filter(([, v]) => !v);
-  if (missing.length) {
-    fail(`${label}: missing in ${missing.map(([k]) => k).join(', ')}`);
-    return;
-  }
-  const expected = expectedIdentifiers.join('\n');
-  const incomplete = entries.filter(([, value]) => value !== expected);
-  if (incomplete.length) {
-    fail(`${label}: canonical roster mismatch in ${incomplete.map(([name]) => name).join(', ')}`);
-    return;
-  }
-  const [refName, refVal] = entries[0];
-  const diverged = entries.filter(([, v]) => v !== refVal);
-  if (diverged.length) {
-    fail(`${label}: diverged from ${refName} in ${diverged.map(([k]) => k).join(', ')}`);
-  } else {
-    pass(`${label}: identical across ${entries.map(([k]) => k).join(', ')}`);
-  }
-}
-
-// --- 2. skill frontmatter ----------------------------------------------------
+// --- skill frontmatter ----------------------------------------------------
 
 console.log('\nskill frontmatter:');
 

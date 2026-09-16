@@ -1,22 +1,28 @@
 {
   "id": "plan-risk-classification",
   "skill": "nectar-plan",
-  "tags": ["plan", "risk", "semantic"],
+  "tags": [
+    "plan",
+    "risk",
+    "semantic"
+  ],
   "fixture": {
     "files": {
       "docs/work/2026-07-21-order-api/design.md": "# Order API — Design\n\n## Problem\nCreate orders safely and leave an audit trail.\n\n## Approach\nAdd one HTTP handler and an audit writer.\n\n## Acceptance criteria\n- [ ] Duplicate idempotency keys return HTTP 409 without creating another order.\n- [ ] Every created order writes one durable audit event.\n\n## Out of scope\n- Replacing authentication.\n",
       "docs/work/2026-07-21-order-api/plan.md": "## Wave 1\n- [ ] T1: Add the create-order success handler returning HTTP 201 — done when: the implementation looks good in a manual glance.\n  - files: `src/orders/create.js`\n- [ ] T2: Add the audit writer by importing the created order result from T1 — done when: one unit test checks the writer was called.\n  - files: `src/audit/write.js`, `test/audit.test.js`\n- [ ] T3: Replace the authentication subsystem while adding the endpoint — done when: all auth files have been rewritten.\n  - files: `src/auth/index.js`\n"
     }
   },
-  "prompt": "Run only the Plan self-review section against the existing order-api draft. Do not revise plan.md, do not create another plan, and do not run a second review pass. Classify the concrete risks of following the draft as written, group findings by plan class and severity, and end with the parseable plan summary.",
+  "prompt": "Review the existing order-api plan draft once, read-only. Classify the concrete correctness, coverage, dependency, verification and scope risks of following it. Explain evidence and impact and finish with Plan blocking: N. Do not revise files or run a second review pass.",
   "checks": [
-    { "type": "fixtureUnchanged" }
+    {
+      "type": "fixtureUnchanged"
+    }
   ],
   "graderCriteria": [
-    "Uses plan-specific classes rather than runtime CODE_DEFECT labels.",
-    "Associates missing duplicate-key coverage, unsafe same-wave dependency, weak evidence, and unauthorized auth rewrite with their own structured plan findings.",
-    "Includes explicit preconditions, probability, impact, solution opportunity, confidence, and convergence for every reported issue.",
-    "Performs one read-only plan classification pass and leaves revision or another pass to the caller."
+    "Uses planning risks rather than claiming that an unimplemented plan is a runtime CODE_DEFECT.",
+    "Finds the missing duplicate-key coverage, unsafe same-wave dependency, weak evidence and unauthorized authentication rewrite.",
+    "Explains concrete consequences and proportional corrections without requiring a fixed verbose risk form.",
+    "Performs one read-only plan review and leaves the fixture unchanged."
   ],
   "requireLocalChecks": true,
   "semanticJudge": true,

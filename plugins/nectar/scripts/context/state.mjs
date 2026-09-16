@@ -185,7 +185,12 @@ export function classifyContextImpact({ changedFiles = [], citedPaths = [] } = {
     else reasons.add('unknown');
   }
   if (!reasons.size) return { decision: 'skip', reasons: ['volatile-only'] };
-  return { decision: 'refresh', reasons: [...reasons].sort() };
+  // Paths establish structural/citation impact, not whether ordinary code changes
+  // alter facts in the project map. Let the delivery owner assess that known diff.
+  const decision = reasons.has('structural') || reasons.has('cited-evidence')
+    ? 'refresh'
+    : 'review';
+  return { decision, reasons: [...reasons].sort() };
 }
 
 function inspectGit(projectRoot, baseCommit) {

@@ -10,15 +10,16 @@
       "test/checkout.test.js": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { charge } from '../src/checkout.js';\ntest('retries one failed charge', async () => {\n  let calls = 0;\n  const result = await charge({ charge: async () => (++calls === 1 ? Promise.reject(new Error('retry')) : 'ok') }, {});\n  assert.equal(result, 'ok');\n  assert.equal(calls, 2);\n});\n"
     }
   },
-  "prompt": "Inspect src/checkout.js and test/checkout.test.js. Change payment retry behavior so charge retries exactly once only when the caught error has retryable === true; non-retryable errors fail immediately. Start implementing immediately.",
+  "prompt": "Inspect src/checkout.js and test/checkout.test.js. Investigate a proposed retry change: retry exactly once only when the caught error has retryable === true, and fail immediately otherwise. Assess the fit and plan meaningful regression coverage. Do not implement during this analysis-only request.",
   "checks": [
     {
       "type": "fixtureUnchanged"
     }
   ],
   "graderCriteria": [
-    "Investigates current behavior and validates a candidate before planning.",
-    "Does not change the fixture before an approved plan."
+    "Grounds the proposal in current retry behavior and affected failure cases.",
+    "Selects a proportional solution and meaningful verification for retryable and non-retryable errors.",
+    "Respects the explicit analysis-only request and leaves the fixture unchanged."
   ],
   "requireLocalChecks": true,
   "semanticJudge": true,

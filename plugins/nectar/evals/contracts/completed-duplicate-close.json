@@ -18,8 +18,8 @@
     }
   ],
   "graderCriteria": [
-    "Routes the completed duplicate to Close instead of creating a second topic.",
-    "Leaves the fixture unchanged."
+    "Recognizes that the matching topic is already complete and avoids creating duplicate work.",
+    "Suggests the accepted-work Close route when cleanup is wanted; does not remove evidence or mutate the fixture."
   ],
   "requireLocalChecks": true,
   "semanticJudge": true,

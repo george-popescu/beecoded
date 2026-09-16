@@ -9,7 +9,7 @@
       "src/components/SaveButton.js": "export function SaveButton() { return '<button title=\"Saves your draft\">Save</button>'; }\n"
     }
   },
-  "prompt": "Inspect src/components/SaveButton.js, change the title from Saves your draft to Stores your draft, and choose the appropriate completion evidence.",
+  "prompt": "Assess a proposed title change from Saves your draft to Stores your draft in src/components/SaveButton.js. Choose appropriate completion evidence and explain whether a permanent test is useful. Do not edit the fixture.",
   "checks": [
     {
       "type": "fixtureUnchanged"

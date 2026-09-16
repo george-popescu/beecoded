@@ -127,6 +127,23 @@ test('discovers only whole closeable roots and never independently authorizes a 
   assert.match(nested.reason, /parent-owned/);
 });
 
+test('Close grants slim work authority only after final verification and a clean review', (t) => {
+  const { root, topic } = directFixture(t);
+  const makePlan = (status) => `Workflow: nectar-slim-v1\n\n## Wave 1\n- [x] T1: Search.\n  - files: \`src/app.mjs\`\n\n## Verification\nStatus: ${status}\nEvidence: node --test test/search.mjs: 4 passed, 0 failed.\n`;
+  const entry = () => discoverCloseTopics({ projectRoot: root }).entries
+    .find((candidate) => candidate.displayPath === topic);
+  for (const status of ['pending', 'failed']) {
+    write(root, `${topic}/plan.md`, makePlan(status));
+    assert.equal(entry().closable, false, status);
+    assert.equal(entry().token, null, status);
+  }
+  write(root, `${topic}/plan.md`, makePlan('passed'));
+  assert.equal(entry().closable, true);
+  const prepared = prepareClosureFromToken({ projectRoot: root, topicToken: entry().token });
+  assert.equal(inspectPendingClosure({ projectRoot: root }).id, prepared.id);
+  cancelPendingClosure({ projectRoot: root, pendingToken: prepared.pendingToken });
+});
+
 test('prepare durably publishes exact ignored work and support evidence without changing project bytes', (t) => {
   const { root, topic } = directFixture(t);
   write(root, 'docs/work/backlog.md', '# Backlog\n- Search cleanup\n');
@@ -144,7 +161,7 @@ test('prepare durably publishes exact ignored work and support evidence without 
   assert.equal(treeDigest(root, topic), before);
   assert.equal(fs.existsSync(prepared.pendingPath), true);
   assert.equal(prepared.tracking, 'ignored-or-untracked-only');
-  assert.equal(prepared.contextImpact.decision, 'refresh');
+  assert.equal(prepared.contextImpact.decision, 'review');
   const pending = inspectPendingClosure({ projectRoot: root });
   assert.equal(pending.id, prepared.id);
   assert.equal(pending.manifestHash, prepared.manifestHash);
@@ -194,11 +211,11 @@ test('prepare and cancel recover filesystem publication when SQLite rolls back',
   assert.equal(inspectPendingClosure({ projectRoot: item.root }), null);
 });
 
-test('prepare includes clean committed plan-owned source in the conservative context decision', (t) => {
+test('prepare preserves clean committed source scope for a bounded context assessment', (t) => {
   const item = directFixture(t);
   commitDelivery(item.root, 'commit delivery before close');
   const prepared = prepareDirect(item);
-  assert.equal(prepared.contextImpact.decision, 'refresh');
+  assert.equal(prepared.contextImpact.decision, 'review');
   assert.match(prepared.contextImpact.reasons.join(','), /source-or-module/);
   cancelPendingClosure({ projectRoot: item.root, pendingToken: prepared.pendingToken });
 });

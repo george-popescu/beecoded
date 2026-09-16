@@ -389,24 +389,22 @@ function absoluteSkillReferences(content, sourceDirectory, sourcePackageRoot, in
     );
 }
 
-const APPROVAL_LAUNCHER_SOURCE = [
-  "const{spawnSync}=require('node:child_process');",
-  "const decode=(value)=>Buffer.from(value,'base64url').toString('utf8');",
-  'const helper=decode(process.argv[2]);',
-  'const child=spawnSync(process.execPath,[helper,...process.argv.slice(3)],',
-  '{cwd:process.cwd(),shell:false,stdio:[0,1,2]});',
-  "if(child.error){process.stderr.write(`${child.error.message}\\n`);process.exitCode=1;}",
+// Only this fixed, interpolation-free JavaScript enters shell quotes. The path
+// remains base64url data; the helper still runs as a real Node CLI entrypoint.
+const NODE_LAUNCHER_SOURCE = [
+  "const child=require('node:child_process').spawnSync(process.execPath,",
+  "[Buffer.from(process.argv[1],'base64url').toString('utf8'),...process.argv.slice(2)],",
+  "{shell:false,stdio:'inherit'});",
+  'if(child.error){console.error(child.error.message);process.exitCode=1;}',
   'else if(child.signal){try{process.kill(process.pid,child.signal);}catch{process.exitCode=1;}}',
   'else{process.exitCode=child.status??1;}',
 ].join('');
 
 function nodeScriptLauncherCommand(script) {
-  const bootstrap = "eval(Buffer.from(process.argv[1],'base64url').toString('utf8'))";
   return [
     'node',
     '-e',
-    `"${bootstrap}"`,
-    Buffer.from(APPROVAL_LAUNCHER_SOURCE, 'utf8').toString('base64url'),
+    `"${NODE_LAUNCHER_SOURCE}"`,
     Buffer.from(script, 'utf8').toString('base64url'),
   ].join(' ');
 }

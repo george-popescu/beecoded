@@ -1,7 +1,10 @@
 {
   "id": "artifact-recovery",
   "skill": "nectar-orient",
-  "tags": ["recovery", "compaction"],
+  "tags": [
+    "recovery",
+    "compaction"
+  ],
   "fixture": {
     "files": {
       "docs/work/2026-07-16-search/design.md": "# Search — Design\n\n## Problem\nSearch results need ranking.\n\n## Investigation and fit\n- **Investigation scope:** search entry point and ranking tests\n- **Confirmed current behavior:** results preserve insertion order\n- **Selected candidate:** deterministic scoring at the search owner\n- **Evidence:** src/search.js:1 and test/search.test.js:1\n- **Solution fit:** FIT\n- **Remaining uncertainty:** none\n\n## Approach\nAdd deterministic scoring.\n\n## Acceptance criteria\n- [ ] Relevant results rank first.\n\n## Out of scope\n- Semantic embeddings.\n",
@@ -15,9 +18,10 @@
     }
   ],
   "graderCriteria": [
-    "Uses design.md and plan.md as the source of truth instead of relying on conversation memory.",
-    "Reports the topic as awaiting approval refresh and explains semantically that persisted approval or markers cannot authorize the new run, so fresh approval is required; no literal CURRENT_RUN phrase is mandatory.",
-    "Uses the unchanged plan revision and proposes re-presenting the exact derived surfaces and digest for fresh approval as the single next action."
+    "Uses the current design, plan and source evidence to identify progress.",
+    "Identifies T2 ranking implementation as the next unfinished work and does not reset T1.",
+    "Does not require reapproval solely because context was compacted or a receipt is absent.",
+    "Keeps the status-only request read-only and distinguishes completed implementation from checks still needed on resumption."
   ],
   "requireLocalChecks": true,
   "semanticJudge": true,

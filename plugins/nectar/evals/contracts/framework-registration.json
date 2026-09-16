@@ -10,7 +10,7 @@
       "src/bootstrap.js": "export const providers = [];\n"
     }
   },
-  "prompt": "Inspect src/providers/report-provider.js and src/bootstrap.js. Register this ordinary provider and choose the appropriate completion evidence.",
+  "prompt": "Inspect src/providers/report-provider.js and src/bootstrap.js. Plan the ordinary provider registration and appropriate completion evidence. Do not implement it during this planning-only request.",
   "checks": [
     {
       "type": "fixtureUnchanged"

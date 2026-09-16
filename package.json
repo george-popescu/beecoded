@@ -19,6 +19,8 @@
     "test:installed-commands": "node tools/test-installed-commands.mjs",
     "test:atlas-release": "node tools/test-atlas-release.mjs",
     "test:nectar": "npm run test --workspace @beecoded/nectar",
+    "release:prepare:nectar": "node tools/prepare-nectar-release.mjs",
+    "benchmark:nectar": "node tools/benchmark-nectar.mjs",
     "eval:plugins": "node tools/run-plugin-evals.mjs",
     "pack:check": "node tools/validate-all-packages.mjs --pack"
   },

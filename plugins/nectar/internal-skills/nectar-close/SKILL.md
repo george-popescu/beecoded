@@ -1,9 +1,13 @@
 ---
 name: nectar-close
-description: Use after completed work is accepted, or when Shape/Orient finds an already-done topic, to reconcile delivery evidence and safely remove live docs/work residue through manifest-backed prepare and post-commit finalize. Not for implementation, review, automatic commits, publication, or cleaning active/ambiguous work.
+description: Archive accepted completed work with recoverable evidence and verified commit history.
 ---
 
 # Close
+
+For slim plans, discovery requires completed implementation, passed final
+verification and a clean review. Pending or failed verification is not closeable.
+Do not migrate or refresh an already-pending manifest as part of ordinary work.
 
 Close one complete work root without losing its evidence. The deterministic
 runner owns discovery, identities, hashes, tracking, Git provenance, archive
@@ -132,10 +136,20 @@ Finalize reruns Doctor and returns error/warning counts. Zero Doctor errors is
 required; legacy warnings may remain explicit. Never hide an active blocked
 topic behind unrelated cleanup.
 
-When `contextImpact.decision` is `refresh`, hand off to `nectar-context` refresh
-after finalize and report its new base commit/freshness. When it is `skip`, quote
-the helper's bounded volatile-only reason. Context status alone never proves a
-post-delivery snapshot current.
+After finalize, use `contextImpact.decision`:
+
+- `refresh`: structural instructions/commands or cited evidence changed. Use
+  `nectar-context` refresh and report the new base commit/freshness.
+- `review`: assess the already-known delivery diff against the existing project map.
+  Refresh only if commands, module relationships, entry points, conventions or other
+  recorded facts changed. Otherwise report why no context update is needed. This is
+  a bounded assessment by the delivery owner, not another review pass, agent dispatch
+  or approval gate. Missing context does not require creating it for an ordinary fix;
+  do not mark stale context fresh or advance its base commit without regeneration.
+- `skip`: report the helper's volatile-only reason.
+
+Keep the decision recorded in any existing pending manifest; do not reinterpret it.
+Context status alone never proves a post-delivery snapshot current.
 
 End with: closed root, commit proof, tracking result, support result, Doctor
 result, archive/recovery path, and context refresh/skip evidence. No publish and
