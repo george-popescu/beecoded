@@ -28,7 +28,9 @@ It also never commits, pushes, publishes, deploys, initializes Bee/Nectar state,
 
 Every candidate is adversarially validated and remains in one of seven classes: code defect, test/coverage gap, test defect, documentation gap, maintainability, stylistic, or hardening. Only confirmed reachable code defects at Medium, High, or Critical are blocking. A clean audit means zero blocking code defects, not zero observations.
 
-The report records selected and dropped lenses, validated findings, validation kill rate, reclassifications, top follow-up opportunities, and a stable parseable summary.
+The report records inspected scope, important coverage gaps, validated findings,
+useful next actions and a stable parseable summary. Inspection depth and delegation
+follow risk; no file-count or finding-count thresholds require additional agents.
 
 ## Development
 

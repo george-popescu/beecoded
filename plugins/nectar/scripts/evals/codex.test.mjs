@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
   createCodexEvalWorkspace,
+  evaluateCheck,
   runCodexCase,
 } from './codex.mjs';
 import { loadContracts } from './contracts.mjs';
@@ -25,6 +26,55 @@ const planRiskClassification = contracts.find((contract) => (
 const splitApproval = contracts.find((contract) => contract.id === 'split-approval');
 const secretRedaction = contracts.find((contract) => contract.id === 'secret-redaction');
 const customBackfill = contracts.find((contract) => contract.id === 'custom-backfill');
+
+test('report-only evaluation rejects extra writes, empty reports and unsafe report entries', (t) => {
+  const contract = contracts.find(({ id }) => id === 'audit-reachable-risk');
+  const w = createCodexEvalWorkspace({ contract, pluginRoot });
+  t.after(w.cleanup);
+  const report = path.join(w.root, 'audit.md');
+  const check = contract.checks[0];
+  const evaluate = () => evaluateCheck(check, '', w.root, contract.fixture.files).passed;
+  assert.equal(evaluate(), false);
+  fs.writeFileSync(report, 'Meaningful content is assessed separately by the semantic judge.');
+  assert.equal(evaluate(), true);
+  const extra = path.join(w.root, 'unexpected-source.mjs');
+  fs.writeFileSync(extra, 'export const mutation = true;');
+  assert.equal(evaluate(), false);
+  fs.unlinkSync(extra);
+  fs.mkdirSync(path.join(w.root, 'unexpected-directory'));
+  assert.equal(evaluate(), false);
+  fs.rmdirSync(path.join(w.root, 'unexpected-directory'));
+  fs.writeFileSync(report, '  \n');
+  assert.equal(evaluate(), false);
+  fs.unlinkSync(report);
+  fs.symlinkSync(path.join(w.root, 'src/server.js'), report);
+  assert.equal(evaluate(), false);
+  fs.unlinkSync(report);
+  fs.mkdirSync(report);
+  assert.equal(evaluate(), false);
+});
+
+test('semantic judge receives the actual saved report rather than trusting the actor summary', async () => {
+  const contract = contracts.find(({ id }) => id === 'audit-reachable-risk');
+  let savedReport;
+  const result = await runCodexCase({
+    contract, pluginRoot,
+    execute: async (_command, args, options) => {
+      if (args.includes('--json')) {
+        const root = args[args.indexOf('--cd') + 1];
+        fs.writeFileSync(path.join(root, 'audit.md'), 'Incomplete report.');
+        return completeCombinedCall(args, { actorResponse: 'I wrote a complete and accurate audit report.' });
+      }
+      const data = JSON.parse(options.input.split('Untrusted evaluation data:\n')[1]);
+      savedReport = data.reportArtifacts;
+      return completeCombinedCall(args, { judgeScore: 0, judgeEvidence: ['Saved report lacks the finding and coverage limits.'] });
+    },
+  });
+  assert.deepEqual(savedReport, [{ path: 'audit.md', content: 'Incomplete report.' }]);
+  assert.equal(result.metadata.deterministicScore, 1);
+  assert.equal(result.metadata.semanticScore, 0);
+  assert.equal(result.passed, false);
+});
 
 function completeCombinedCall(args, {
   actorResponse,

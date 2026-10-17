@@ -1,10 +1,13 @@
 import crypto from 'node:crypto';
+import { redactDiagnostic } from '../diagnostics.mjs';
 
 const VALID_HOSTS = new Set(['claude', 'codex']);
 const VALID_STATUSES = new Set(['passed', 'failed', 'unavailable']);
 
 export function redactExcludedValues(contract, value) {
-  let redacted = String(value ?? '');
+  let redacted = redactDiagnostic(value);
+  // Quotes may be truncated by a failed command: redact through the line end
+  // rather than leaving the remaining words of a secret in diagnostics.
   for (const check of contract?.checks || []) {
     if (check.type !== 'responseExcludes' || !check.value) continue;
     const escaped = check.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

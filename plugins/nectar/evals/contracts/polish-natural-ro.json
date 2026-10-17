@@ -1,0 +1,33 @@
+{
+  "id": "polish-natural-ro",
+  "skill": "nectar-polish",
+  "tags": [
+    "polish",
+    "language",
+    "semantic"
+  ],
+  "fixture": {
+    "files": {
+      "brief.md": "Public român, serviciu de montaj mobilier în București. Oferta se trimite în 2 zile lucrătoare. Fără alte promisiuni sau testimoniale aprobate. Butonul deschide formularul de solicitare a unei oferte. Voce calmă, directă, profesională.\n",
+      "copy.json": "{\n  \"heading\": \"O facem cum îți place.\",\n  \"body\": \"Deblochează un univers de soluții revoluționare. Montaj de mobilier în București. Primești oferta în 2 zile lucrătoare.\",\n  \"button\": \"Continuă\",\n  \"greeting\": \"Salut, {{firstName}}!\"\n}\n"
+    }
+  },
+  "prompt": "Rescrie în română textele din copy.json pentru website, folosind brief.md. Vreau formulări naturale și clare inclusiv când titlul este citit singur, fără insinuări sau promisiuni inventate. Păstrează placeholderul. Dă-mi varianta finală în răspuns; nu modifica fișiere.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Replaces the vague headline with a clear furniture-assembly message that works in isolation and avoids plausible unintended innuendo.",
+    "Removes generic inflated claims and makes the quote-request action clear while preserving Bucharest and the two-business-day quote timeline.",
+    "Uses natural Romanian with diacritics and preserves {{firstName}} exactly; does not fabricate availability, warranties, prices, social proof or human authorship.",
+    "Returns usable copy without editing fixtures, running tests or claiming browser verification."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 180000,
+    "claudeMaxCostUsd": 1
+  }
+}

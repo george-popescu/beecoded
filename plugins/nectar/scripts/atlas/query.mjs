@@ -104,6 +104,7 @@ function symbolEvidence(entry) {
 }
 
 function edgeEvidence(entry) {
+  const unresolved = entry.kind === 'calls';
   return {
     path: entry.path,
     line: entry.line || 1,
@@ -113,7 +114,8 @@ function edgeEvidence(entry) {
     ...(entry.sourceSymbol ? { name: entry.sourceSymbol } : {}),
     target: entry.target,
     reason: 'graph-relation',
-    confidence: 'high',
+    confidence: unresolved ? 'medium' : 'high',
+    ...(unresolved ? { targetResolution: 'unresolved', syntaxConfidence: 'high' } : {}),
     score: entry.kind === 'tests' ? 100 : 95,
   };
 }
@@ -245,7 +247,7 @@ function traceFlow(retrieval, query, limit) {
       upstreamTruncated ||= matches.truncated;
       for (const edge of matches.rows) {
         chosen.push(edgeEvidence(edge));
-        for (const word of words(`${edge.sourceSymbol || ''} ${edge.target}`)) {
+        for (const word of words(`${edge.sourceSymbol || ''} ${edge.kind === 'calls' && edge.target.includes('[') ? '' : edge.target}`)) {
           const normalized = word.toLocaleLowerCase();
           if (!visited.has(normalized)) next.push(word);
         }
@@ -297,13 +299,16 @@ function findTests(retrieval, query, limit) {
     upstreamTruncated ||= tests.truncated;
   }
   const lexical = boundedSource(
-    (sourceLimit) => retrieval.searchText(query, { limit: sourceLimit }),
+    (sourceLimit) => retrieval.searchText(query, { limit: sourceLimit, testsOnly: true }),
     limit,
   );
-  return mergeCollections(
-    collection(entries, upstreamTruncated),
-    collection(lexical.rows.map(lexicalEvidence), lexical.truncated),
-  );
+  const byPath = new Map();
+  for (const entry of [...entries, ...lexical.rows.map((row) => ({
+    ...lexicalEvidence(row), reason: 'test-text-fallback',
+  }))]) {
+    if (!byPath.has(entry.path)) byPath.set(entry.path, entry);
+  }
+  return collection([...byPath.values()], upstreamTruncated || lexical.truncated);
 }
 
 function contextForTask(retrieval, query, limit) {

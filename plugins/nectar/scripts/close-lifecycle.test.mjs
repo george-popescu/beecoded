@@ -364,6 +364,21 @@ function commitDelivery(root, message = 'deliver') {
   git(root, 'commit', '-qm', message);
 }
 
+test('Close rejects a never-existent delivery path while accepting a real deletion', (t) => {
+  const missing = directFixture(t);
+  const plan = path.join(missing.root, missing.topic, 'plan.md');
+  fs.writeFileSync(plan, fs.readFileSync(plan, 'utf8').replace('`src/app.mjs`', '`src/never-existed.mjs`'));
+  assert.throws(() => prepareDirect(missing), /absence.*history|never.*exist/i);
+
+  const deleted = directFixture(t);
+  fs.unlinkSync(path.join(deleted.root, 'src/app.mjs'));
+  const prepared = prepareDirect(deleted);
+  git(deleted.root, 'add', 'src/app.mjs');
+  git(deleted.root, 'commit', '-qm', 'delete actual delivery');
+  const result = finalizeClosureFromToken({ projectRoot: deleted.root, pendingToken: prepared.pendingToken });
+  assert.ok(result);
+});
+
 test('finalize refuses unchanged HEAD and mismatched committed delivery before topic mutation', (t) => {
   const unchanged = directFixture(t);
   const unchangedPrepared = prepareDirect(unchanged);

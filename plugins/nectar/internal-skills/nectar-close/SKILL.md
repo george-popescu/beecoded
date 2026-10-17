@@ -27,8 +27,9 @@ indivisible against a malicious process continuously swapping writable paths.
 The runner narrows that window, stops on every observed drift, and preserves
 recovery evidence. Do not claim stronger adversarial guarantees.
 
-Close never commits, tags, pushes, publishes, deploys, recursively deletes, or
-removes ignored/untracked evidence. It never closes one nested child: children
+Close commits only when the user's request already authorizes the relevant Git
+changes. It never tags, pushes, publishes, deploys, recursively deletes, or removes
+ignored/untracked evidence. It never closes one nested child: children
 remain parent-owned until the entire parent is done. Unrelated roots and dirty
 files do not block unless their active plan owns one of this topic's delivery
 paths. Opaque helper-issued tokens are identity handles, not authority beyond
@@ -57,6 +58,12 @@ include unrelated support merely because discovery listed it.
 
 ## 2. Prepare before support edits
 
+Before preparing, check whether this delivery superseded active documentation or
+context links. Reconcile only affected files under existing implementation authority
+and include actual delivery paths before taking the snapshot. If authority is
+archive-only, report required content changes separately. Do not sweep unrelated
+docs or delete history. Once prepared, preserve the runner's exact-state protocol.
+
 Pass each emitted token as its own quoted argument:
 
 ```bash
@@ -84,13 +91,17 @@ node "../../scripts/run-close.mjs" seal-support-token "<pending-token>"
 If support was not selected, omit sealing. If reconciliation or sealing fails,
 stop with the pending recovery path; never bypass the preimage.
 
-## 3. User-created commit gate
+## 3. Committed history
 
-Ask the user to create the required commit history. Do not create it yourself.
+Use the required history when it exists. If the user authorized committing this
+delivery or its cleanup, create the necessary ordinary Git commits after inspecting
+and staging only that scope. Preserve unrelated staged changes; do not include
+them to satisfy Close. Otherwise report the exact commit needed. Never request a
+second approval merely because the commit is being made by the agent.
 The gate differs by tracking branch:
 
 - **tracked-only:** the exact prepared topic bytes must exist in the prepared
-  HEAD or an intermediate user-created commit, and a later user-created cleanup
+  HEAD or an intermediate commit, and a later authorized cleanup
   commit must delete every tracked topic path.
 - **ignored/untracked-only:** the delivery/support changes must be committed
   where trackable; the exact ignored topic remains in place for archive rename.
@@ -105,7 +116,7 @@ preimage and sealed postimage. Silence, a marker, or unchanged HEAD never passes
 
 ## 4. Finalize or recover
 
-After the user says the commit(s) exist, run:
+After verifying the required commits exist, run:
 
 ```bash
 node "../../scripts/run-close.mjs" finalize-token "<pending-token>"
@@ -152,8 +163,8 @@ Keep the decision recorded in any existing pending manifest; do not reinterpret 
 Context status alone never proves a post-delivery snapshot current.
 
 End with: closed root, commit proof, tracking result, support result, Doctor
-result, archive/recovery path, and context refresh/skip evidence. No publish and
-no automatic commit are part of Close.
+result, archive/recovery path, and context refresh/skip evidence. Publication is
+separate; a Close request alone does not authorize a Git commit.
 
 ## Release-owned batch variant
 
@@ -167,7 +178,7 @@ After the user confirms that exact inventory, run
 `node "../../scripts/run-close.mjs" prepare-release-batch-token
 "<batch-token>" "<support-token>"`. The resulting single pending manifest owns
 all roots, selected support, combined delivery paths, and the immutable assets
-snapshot. Support sealing, the one user-created release commit, finalize,
+snapshot. Support sealing, the authorized release commit, finalize,
 recovery, Doctor, and context follow the ordinary steps using the one emitted
 pending token. Finalize moves every member monotonically beneath one
 `archive/<id>/topics/` directory and recovery completes a partially moved batch;

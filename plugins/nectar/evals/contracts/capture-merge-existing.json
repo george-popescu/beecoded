@@ -1,0 +1,33 @@
+{
+  "id": "capture-merge-existing",
+  "skill": "nectar-capture",
+  "fixture": {
+    "files": {
+      "docs/work/backlog.md": "# Backlog\n\n- 2026-10-01 Add CSV export for invoices (context: finance requests; revisit when: next reporting iteration)\n- 2026-10-02 Add keyboard navigation to the scheduler (context: accessibility; revisit when: anytime)\n"
+    }
+  },
+  "prompt": "Capture this for later: the invoice CSV export should include currency and respect the active tenant. It belongs to the existing invoice-export idea. Keep working on the current task afterward; do not implement export.",
+  "checks": [
+    {
+      "type": "workspaceChangesOnly",
+      "paths": [
+        "docs/work/backlog.md"
+      ]
+    }
+  ],
+  "graderCriteria": [
+    "The actual saved backlog retains one invoice-export idea, enriched with currency and active-tenant scope.",
+    "Preserves the unrelated scheduler entry and existing useful context.",
+    "Does not implement export or add planning/review artifacts; confirms briefly."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 180000,
+    "claudeMaxCostUsd": 1
+  },
+  "tags": [
+    "maintenance",
+    "execution"
+  ]
+}

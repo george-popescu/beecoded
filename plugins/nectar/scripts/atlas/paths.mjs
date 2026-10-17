@@ -5,6 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 import { MANDATORY_EXCLUDED_DIRECTORIES } from './constants.mjs';
+import { redactDiagnostic } from '../diagnostics.mjs';
 
 function git(projectRoot, args, options = {}) {
   const spawn = options.spawn || spawnSync;
@@ -23,7 +24,8 @@ function git(projectRoot, args, options = {}) {
 function successfulGit(projectRoot, args, options = {}) {
   const result = git(projectRoot, args, options);
   if (result.status === 0) return result.stdout;
-  const error = new Error(`Unable to read Git worktree state: git ${args[0]}`);
+  const detail = redactDiagnostic(result.stderr || result.error?.message).trim().slice(0, 240);
+  const error = new Error(`Unable to read Git worktree state: git ${args[0]}${detail ? `: ${detail}` : ''}`);
   error.code = 'ATLAS_GIT_STATE_UNAVAILABLE';
   throw error;
 }

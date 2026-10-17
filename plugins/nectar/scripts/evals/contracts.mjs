@@ -6,11 +6,16 @@ const VALID_SKILLS = new Set([
   'nectar-build',
   'nectar-capture',
   'nectar-close',
+  'nectar-context',
   'nectar-debug',
   'nectar-honey',
   'nectar-orient',
   'nectar-plan',
+  'nectar-polish',
+  'nectar-rehearse',
+  'nectar-release',
   'nectar-review',
+  'nectar-security',
   'nectar-shape',
 ]);
 
@@ -21,12 +26,16 @@ const VALID_CHECKS = new Set([
   'summaryCount',
   'fixtureUnchanged',
   'fixtureFilesUnchanged',
+  'onlyReportAdded',
+  'workspaceChangesOnly',
+  'contextSnapshotCurrent',
   'onlyDatedTopicDesignAdded',
   'pathExists',
   'pathAbsent',
   'childDirectoriesAbsent',
   'fileIncludes',
   'fileExcludes',
+  'fileEquals',
 ]);
 
 const FINDING_CLASSES = new Set([
@@ -106,8 +115,17 @@ export function validateContract(contract, source = 'contract') {
         failures.push(`${source}.checks[${index}].type must be one of ${[...VALID_CHECKS].join(', ')}`);
         return;
       }
-      if (check.type === 'fixtureUnchanged' || check.type === 'fixtureFilesUnchanged') {
+      if (check.type === 'fixtureUnchanged' || check.type === 'fixtureFilesUnchanged' || check.type === 'contextSnapshotCurrent') {
         // The fixture itself supplies the complete expected tree and contents.
+      } else if (check.type === 'workspaceChangesOnly') {
+        if (!Array.isArray(check.paths) || !check.paths.length || check.paths.some((entry) => !safeRelativePath(entry))) {
+          failures.push(`${source}.checks[${index}].paths must name safe writable files`);
+        }
+      } else if (check.type === 'onlyReportAdded') {
+        checkPathField(check, source, index, failures);
+        if (Object.hasOwn(files || {}, check.path)) {
+          failures.push(`${source}.checks[${index}].path must name a new report`);
+        }
       } else if (check.type === 'findingMatches') {
         const prefix = `${source}.checks[${index}]`;
         if (typeof check.where !== 'string' || !check.where.trim()) {

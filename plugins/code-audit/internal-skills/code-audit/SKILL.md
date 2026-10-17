@@ -11,103 +11,71 @@ This skill is self-contained. Read native `AGENTS.md`, `CLAUDE.md`, and equivale
 
 If the request is limited to a diff/change, one known failure, or rendered UI/UX, state that this whole-codebase audit is the wrong boundary and stop without writing a report.
 
-## Audit boundary and repository survey
+## Scope and inspection
 
-Resolve the actual repository root and instructions before selecting lenses. Inventory tracked source, manifests, entry points, routes, jobs, migrations, schemas, tests, build and deployment configuration, and generated-code boundaries. Trace framework registration and dynamic loading; grep alone never proves code is dead or reachable.
+Resolve the requested repository and its native instructions. Survey entry points
+and relevant configuration once, then prioritize exposed behavior and material
+risk. Consider security, error handling, persistence, API contracts, performance,
+UI state, architecture, dependencies, test health and cross-layer wiring where
+applicable. State inspected scope and important coverage gaps; a bounded sample
+does not establish whole-codebase safety.
 
-Use read-only inspection by default. Do not fetch, install, migrate, seed, build, format, or run commands that can create caches or artifacts. Explicit authorization for additional diagnostics never expands the report-only write boundary. Run a diagnostic only when it is demonstrably artifact-free inside the audited repository; otherwise run it in a disposable copy outside the repository or omit it and record the limitation.
+Use read-only inspection. Diagnostics that create artifacts belong in a disposable
+copy or an explicitly authorized diagnostic environment; otherwise record the
+limitation. The audited repository's report remains the only permitted write.
+Do not install dependencies or alter Git, source, configuration or workflow state.
 
-Survey entry points once. Give every lens an exact, non-overlapping scope and only the native instructions or evidence-linked context relevant to that scope. Generated context may guide navigation but is never finding evidence.
+Choose depth and delegation from risk, ambiguity and useful independent work.
+File counts and finding counts do not mandate agents. When delegation helps, use
+`code-audit:lens` or [lens instructions](../../agents/lens.md) with a bounded
+concern and relevant evidence. Overlapping concerns share evidence rather than
+repeat the repository survey. Current source, not a generated index, supports findings.
 
-## Lens library
+## Findings
 
-- **security:** OWASP categories, authentication, authorization, secrets, unsafe input, and trust boundaries
-- **error handling:** unhandled failure paths, swallowed exceptions, unsafe fallback, and recovery behavior
-- **database:** query shape, N+1 behavior, indexes, migrations, constraints, transactions, and persistence drift
-- **API:** input validation, response/error contracts, versioning, authorization, and integration boundaries
-- **performance:** demonstrably live hot paths, repeated work, caching, memory, query count, and bundle cost
-- **frontend:** loading, empty, error, concurrency, state ownership, data exposure, and code-level accessibility
-- **architecture:** module boundaries, dependency direction, duplication, lifecycle ownership, and reachable dead paths
-- **dependencies:** known advisories from available lockfile evidence, runtime support, abandonment, and supply-chain surface
-- **test health:** missing behavioral coverage, false-green tests, stale fixtures, wrong-layer assertions, and flakiness
-- **integration:** cross-layer wiring, events, jobs, routes, policies, callbacks, dynamic imports, and unreachable UI or APIs
+Distinguish current defects from useful engineering observations:
+- CODE_DEFECT: reachable incorrect, unsafe, unavailable or materially inefficient behavior.
+- TEST_OR_COVERAGE_GAP: meaningful behavior lacks adequate evidence.
+- TEST_DEFECT: misleading, stale, flaky or wrong-layer coverage.
+- DOCUMENTATION_GAP: documentation disagrees with behavior.
+- MAINTAINABILITY: demonstrated complexity without a current runtime defect.
+- STYLISTIC: a preference.
+- HARDENING_IDEA: extra protection without a demonstrated current failure.
 
-Select lenses from codebase shape. Always include security and error handling. Drop frontend, database, API, or other lenses only when the surveyed repository lacks that surface, and record every drop with its evidence. More than two selected lenses or more than 50 tracked source files means one parallel `code-audit:lens` role per lens. Otherwise run lenses inline. On hosts without named roles, load `../../agents/lens.md` as the general agent's role instructions.
+For each useful finding, give severity, class, file/line, actual evidence, trigger
+and bounded impact, and a proportional next action. Add exposure, exploitability,
+uncertainty or alternatives when they affect the decision. Avoid empty risk fields
+and speculative findings. Zero findings is valid.
 
-## Finding classes
+Severity reflects credible impact and exposure: CRITICAL is catastrophic loss,
+compromise or primary-path outage; HIGH is severe exposed harm; MEDIUM is bounded
+actionable runtime risk; LOW is minor harm or a non-code concern. Confidence is
+evidence strength, not likelihood. Only confirmed MEDIUM-or-higher CODE_DEFECT
+findings are BLOCKING; other observations are NON_BLOCKING. Required acceptance
+coverage can still remain incomplete independently of that defect count.
 
-- CODE_DEFECT — current production code can produce an incorrect, unsafe, unavailable, corrupt, or materially inefficient runtime outcome through a demonstrably live path.
-- TEST_OR_COVERAGE_GAP — production behavior may be correct, but meaningful behavior is unverified, tested at the wrong layer, or false-green.
-- TEST_DEFECT — a test is stale, flaky, misleading, over-specified, or asserts an implementation detail without proving a production defect.
-- DOCUMENTATION_GAP — documentation or a declared contract disagrees with implemented behavior, without evidence that runtime code is wrong.
-- MAINTAINABILITY — duplication, complexity, naming debt, or dead abstraction with no concrete current incorrect runtime outcome.
-- STYLISTIC — a defensible preference with no objective defect.
-- HARDENING_IDEA — defense-in-depth or resilience work whose triggering defect is absent, unreachable, or not demonstrated.
+Validate actionable candidates against real callers, guards, framework guarantees
+and simultaneously possible preconditions. Merge shared root causes. Reject or
+reclassify claims the evidence does not support; do not manufacture refutations or
+repeat reviews to hit a quota. A dependency advisory needs current installed or
+lockfile version evidence and an authoritative advisory when network is available.
 
-## Finding format
+Use an independent `code-audit:validator` or [validator instructions](../../agents/validator.md)
+when uncertainty or impact warrants another perspective. A validator reports
+CONFIRMED or REFUTED with corrected class/severity and what it checked, without
+edits. Preserve unresolved hypotheses as limitations rather than confirmed flaws.
 
-Every finding, from every lens, uses exactly this format:
+## Report
 
-```markdown
-### [SEVERITY] <one-line title>
-- **Class:** <CODE_DEFECT | TEST_OR_COVERAGE_GAP | TEST_DEFECT | DOCUMENTATION_GAP | MAINTAINABILITY | STYLISTIC | HARDENING_IDEA>
-- **Where:** path/to/file.ext:line
-- **Evidence:** <the actual code or reproduced behavior, quoted>
-- **Runtime path:** <live entry point → affected gate/API → outcome, or NOT_APPLICABLE>
-- **Reachability:** <REACHABLE | CONDITIONALLY_REACHABLE | UNREACHABLE | NOT_APPLICABLE> — <gating evidence>
-- **Exposure/preconditions:** <specific caller, permissions, state, data, or provider behavior>
-- **Likelihood:** <COMMON | OCCASIONAL | RARE | VERY_RARE | NOT_APPLICABLE> — <reasoning>
-- **Exploitability:** <NOT_APPLICABLE | ACCIDENTAL_ONLY | OPPORTUNISTIC | DELIBERATE> — <use NOT_APPLICABLE with a reason for non-security findings>
-- **Impact:** <credible bounded consequence, blast radius, duration, and recovery>
-- **Solution opportunity:** <HIGH | MEDIUM | LOW> — <locality, complexity, regression risk, architectural fit, and whether approved or planned work will replace, delete, or own this path>
-- **Confidence:** <HIGH | MEDIUM | LOW> — <evidence strength and remaining assumptions>
-- **Convergence:** <BLOCKING | NON_BLOCKING>
-- **Disposition:** <FIX_NOW | ASK_USER | DEFER | DISCARD>
-- **Suggested fix:** <specific proportional change, or none>
-```
+Write to the requested path, otherwise `code-audit-YYYY-MM-DD.md`. Inspect the destination
+and ancestors without following symlinks; keep writes within the repository and
+refuse unsafe paths. Replace only a verified normal report file, using an atomic
+write when supported. Stop and report the path if safe writing cannot be established.
+The report is the only audited-project write.
 
-Medium, High, and Critical findings, regardless of class, include every field in the format. Every finding always includes Exploitability; use `NOT_APPLICABLE` with a concise reason for non-security findings. Low findings may use a compact record, but still include Class, Reachability or applicability, Likelihood, Exploitability, Impact, Solution opportunity, Confidence, Convergence, and Disposition.
-
-Solution opportunity explicitly accounts for approved or planned work that will replace, delete, or own the affected path. Work already scheduled to remove the path normally lowers the opportunity for an independent fix.
-
-## Severity scale
-
-- CRITICAL = a reachable, credible catastrophic outcome: material data loss or corruption, broad security compromise, or sustained outage of a primary path.
-- HIGH = a reachable code defect with severe user, security, or operational impact and meaningful exposure, or likely broad incorrect behavior.
-- MEDIUM = a reachable code defect with bounded impact, uncommon preconditions, recoverability, or limited blast radius.
-- LOW = a minor bounded defect, very rare multi-condition failure, small inefficiency, or non-code engineering concern.
-
-Severity is a risk conclusion, not the opening label. Derive it from credible impact, exposure, and likelihood; do not use confidence as likelihood or worst-case possibility as credible impact.
-
-A dependency advisory requires current lockfile/package evidence and an authoritative advisory source when network access is available. Only confirmed CODE_DEFECT findings at MEDIUM, HIGH, or CRITICAL are BLOCKING. Low code defects and every non-code class are NON_BLOCKING.
-
-## Deduplication and adversarial validation
-
-Merge candidates with the same file, line, root cause, and proportional fix. Agreement between lenses raises confidence but never upgrades a non-code class into a code defect.
-
-Validate every candidate adversarially. Read the cited code, trace the real entry point and complete runtime path, inspect callers, guards, middleware, framework guarantees, configuration, and gating tests, and verify that all preconditions are simultaneously satisfiable. Try to refute or reclassify before calibrating risk. Reject fixes whose complexity is disproportionate to credible risk.
-
-For more than eight candidates, group by file or module and dispatch fresh parallel `code-audit:validator` roles. Otherwise validate inline. On hosts without named roles, load `../../agents/validator.md`. Validators report verdicts only and never edit.
-
-Verdicts:
-
-- CONFIRMED — evidence verifies the adjusted class and its stated risk; this does not imply the class is a code defect or a convergence blocker.
-- REFUTED — evidence or runtime wiring disproves the candidate; discard it.
-
-Every verdict records the adjusted class and severity, Runtime path, Reachability, Exposure/preconditions, Likelihood, Exploitability, Impact, Solution opportunity, Confidence, convergence, disposition, and a note naming what was checked. A finding without quotable evidence is `REFUTED`. Evidence for a useful concern without a production defect becomes a confirmed non-code class. Re-examine the two weakest findings when an entire batch survives without any refutation, reclassification, or severity adjustment.
-
-## Report contract
-
-Write the report to a path explicitly requested by the user, otherwise `code-audit-YYYY-MM-DD.md`. Before writing, verify with no-follow filesystem inspection that the destination remains inside the repository, every existing ancestor from the repository root is a normal directory, and the destination is absent or a normal file. If the report path or any existing ancestor is a symbolic link, the destination escapes the repository, or the destination is another entry type, stop without writing and report the blocked path to the user. Re-check immediately before replacement and use a normal temporary file in the verified destination directory plus atomic rename when the host supports it; if the host cannot guarantee a no-follow write, stop without writing. A later audit targeting the same default date replaces only that verified normal report. The report is the only write: do not edit source, tests, configuration, dependencies, Git state, Bee/Nectar state, or any other project artifact.
-
-The report contains:
-
-1. Repository boundary, point-in-time limitations, and the exact report path.
-2. Lens manifest with the reason and evidence for every selected or dropped lens.
-3. Validated findings grouped first by Class and then by severity.
-4. Validation kill rate and reclassification count.
-5. Top three follow-up opportunities ordered by credible risk, then Solution opportunity.
-6. The exact parseable summary:
+Record scope and material limitations, findings ordered by risk, and useful next
+actions. Distinguish findings from coverage gaps and optional improvements. End
+with the stable summary needed by callers:
 
 ```text
 Confirmed code defects: Critical N, High N, Medium N, Low N
@@ -118,4 +86,6 @@ Stylistic: N
 Refuted: N
 ```
 
-Clean audit means zero blocking code defects, not zero observations. Offer blocking defects for a separate debugging or delivery workflow and retain non-blockers as optional follow-up. Never apply fixes, commit, push, publish, or deploy during the audit.
+A clean audit means zero blocking defects in inspected scope, not complete coverage
+or zero observations. Hand findings to an authorized repair workflow. The audit
+itself never fixes, commits, pushes, publishes or deploys.

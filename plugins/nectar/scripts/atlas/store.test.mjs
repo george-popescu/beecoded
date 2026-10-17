@@ -7,7 +7,21 @@ import { DatabaseSync } from 'node:sqlite';
 import test from 'node:test';
 
 import { resolveRepositoryIdentity } from './paths.mjs';
-import { ATLAS_MIGRATIONS, ATLAS_SCHEMA_VERSION } from './schema.mjs';
+import { ATLAS_MIGRATIONS, ATLAS_SCHEMA_VERSION, migrateAtlasSchema } from './schema.mjs';
+
+test('v8 invalidates old parsed relationships while retaining manifest discovery', () => {
+  const database = new DatabaseSync(':memory:');
+  try {
+    database.exec('PRAGMA foreign_keys = ON');
+    for (const migration of ATLAS_MIGRATIONS.filter((m) => m.version <= 7)) database.exec(migration.sql);
+    database.exec("PRAGMA user_version = 7; INSERT INTO snapshots(worktree_id, dirty, updated_at) VALUES ('w', 0, 'now'); INSERT INTO parse_records(parse_key, content_hash, language, parser_identity, parsed_at) VALUES ('p', 'h', 'javascript', 'old', 'now'); INSERT INTO edges(parse_key, edge_index, kind, target) VALUES ('p', 0, 'calls', 'channels.order.channel');");
+    migrateAtlasSchema(database);
+    assert.equal(database.prepare('SELECT count(*) AS n FROM parse_records').get().n, 0);
+    assert.equal(database.prepare('SELECT count(*) AS n FROM edges').get().n, 0);
+    assert.equal(database.prepare('SELECT dirty FROM snapshots').get().dirty, 1);
+    assert.equal(database.prepare('PRAGMA user_version').get().user_version, 8);
+  } finally { database.close(); }
+});
 
 function git(root, ...args) {
   return execFileSync('git', args, {

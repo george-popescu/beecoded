@@ -17,6 +17,10 @@ test('outcome grading uses external behavior rather than requiring identical fix
   assert.equal(fs.existsSync(path.join(root, 'test-runs.log')), false);
   fs.writeFileSync(source, 'export const calculateTotal = () => 0;');
   assert.equal(evaluateBenchmarkOutcome(root, 'rounding').behaviorPassed, false);
+  fs.writeFileSync(source, 'process.exit(0); export const calculateTotal = () => 0;');
+  assert.equal(evaluateBenchmarkOutcome(root, 'rounding').behaviorPassed, false);
+  fs.writeFileSync(source, 'import fs from "node:fs"; export const calculateTotal = () => fs.readFileSync("/etc/hosts");');
+  assert.equal(evaluateBenchmarkOutcome(root, 'rounding').behaviorPassed, false);
 });
 
 test('an unavailable native actor stops the benchmark without grading untouched code as a product failure', async (t) => {
@@ -36,4 +40,30 @@ test('an unavailable native actor stops the benchmark without grading untouched 
   assert.equal(results[0].behaviorPassed, null);
   assert.equal(results[0].actorError, 'client upgrade required');
   assert.equal(fs.existsSync(path.join(results[0].artifacts, 'project/test-runs.log')), false);
+});
+
+test('Honey has a baseline and product correctness does not depend on Doctor formatting', async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-honey-comparator-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const prompts = [];
+  const homes = [];
+  const results = await benchmarkNectar({
+    temporaryRoot: root, scenarios: ['honey'], report: () => {},
+    execute: async (_binary, args, options) => {
+      prompts.push(args.at(-1));
+      homes.push(options.env.HOME);
+      fs.writeFileSync(path.join(options.cwd, 'src/cart.mjs'), `export function quote(items, vip = false) {
+        const subtotalCents = items.reduce((s, i) => s + i.priceCents * i.quantity, 0);
+        const discountCents = vip ? Math.round(subtotalCents * 0.1) : 0;
+        const shippingCents = items.length && subtotalCents - discountCents < 10000 ? 500 : 0;
+        return {subtotalCents,discountCents,shippingCents,totalCents:subtotalCents-discountCents+shippingCents};
+      }`);
+      return { status: 0, error: null, stdout: '', stderr: '' };
+    },
+  });
+  assert.deepEqual(results.map((r) => r.variant), ['baseline', 'nectar']);
+  assert.equal(prompts[0], prompts[1]);
+  assert.ok(results.every((r) => r.status === 'passed'));
+  assert.ok(results.every((r) => r.topicStatus !== 'done'));
+  assert.ok(homes.every((home) => !fs.existsSync(home)));
 });

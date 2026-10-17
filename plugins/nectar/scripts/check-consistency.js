@@ -62,13 +62,17 @@ const expectedSkillDirs = [
   'nectar-honey',
   'nectar-orient',
   'nectar-plan',
+  'nectar-polish',
+  'nectar-rehearse',
+  'nectar-release',
   'nectar-review',
+  'nectar-security',
   'nectar-shape',
 ];
 if (JSON.stringify(skillDirs) !== JSON.stringify(expectedSkillDirs)) {
   fail(`internal skill roster must be exactly: ${expectedSkillDirs.join(', ')}`);
 } else {
-  pass('internal skill roster contains exactly eleven nectar-* sources');
+  pass(`internal skill roster contains ${expectedSkillDirs.length} nectar-* sources`);
 }
 
 for (const directory of skillDirs) {

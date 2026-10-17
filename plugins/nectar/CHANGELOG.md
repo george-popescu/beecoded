@@ -1,5 +1,55 @@
 # Changelog
 
+## 3.4.1 — 2026-10-18
+
+- Preserve computed JavaScript callees in Atlas and label call targets as unresolved
+  syntax evidence. Test lookup filters lexical fallback to test sources before
+  limiting and deduplicates files. Schema 8 invalidates old derived relationships.
+- Isolate Codex evaluations from personal instructions, skills, plugins and MCP
+  configuration; remove temporary authentication state on completion or interruption.
+- Compare baseline and Nectar on both implementation and Honey tasks. Optional
+  published-package and repeated trials use independent outcome checks with
+  restricted execution and explicit completion evidence; Doctor is reported separately.
+- Give semantic judges the initial task data, completed command evidence and saved
+  artifacts. Add executable Capture/Context cases and fix Release evidence access.
+  Native Claude cases requiring inaccessible final state stop before model execution.
+- Reject never-existent Close delivery paths without deletion history. Preserve
+  archive/recovery formats. New Context snapshots bind to their project and detect
+  changed cited source; older snapshots retain legacy reads until refreshed.
+- Keep short Git failure causes while redacting complete or truncated quoted
+  credential values from diagnostics.
+- Clarify bounded review continuation, narrow Polish edits and larger design intent.
+  Capture enriches a matching backlog idea without duplicating it. Public skill
+  names and repository-local storage remain unchanged.
+
+## 3.4.0 — 2026-10-07
+
+- Simplified Honey and Build around one shared workflow, with proportionate
+  verification and no mandatory stage handoffs for small work.
+- Added `nectar-security` for focused source review of reachable authorization,
+  tenancy, input, secret-handling and data-exposure flaws. Active pentesting stays
+  a separate explicitly scoped activity.
+- Retain unaffected verification and review evidence after repairs; recheck changed
+  behavior and dependencies while preserving required project gates.
+- Reuse available native Codex/Claude and CI evidence without duplicate checks,
+  automatic hooks, model switches or mandatory context generation.
+- Simplified the shared Nectar/Code Audit methodology: risk-based delegation,
+  compact evidenced findings and honest coverage limits, with stable summaries.
+- Close can use agent-created Git commits under existing user authorization;
+  exact history, delivery-byte, archive and recovery checks remain in place.
+- Added `nectar-polish` for natural product language, contextual ambiguity checks
+  and purposeful visual refinement. It preserves facts, brand voice and accessibility.
+- Added `nectar-release` and `nectar-rehearse` for destination-verified delivery and
+  isolated data-operation rehearsals, available when the task needs them.
+- Reconcile affected documentation during delivery and reuse existing threat-model
+  context for focused security assessments.
+- Updated package descriptions and installation coverage for fifteen public skills.
+- Updated the Claude evaluation adapter for current grader metadata, isolated-plugin
+  trust and aggregate score output. Native scores still cannot substitute for
+  unavailable final-workspace evidence.
+- Audit evaluation now enforces report-only writes and judges the saved report's
+  actual content rather than relying on the agent's description of it.
+
 ## 3.3.0 — 2026-09-16
 
 - Added a slim workflow with no numerical wave/task limits, partial implementation

@@ -23,14 +23,15 @@
       "source": {
         "source": "npm",
         "package": "@beecoded/nectar",
-        "version": "3.3.0",
+        "version": "3.4.1",
         "registry": "https://registry.npmjs.org"
       },
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
       },
-      "category": "Productivity"
+      "category": "Productivity",
+      "description": "Adaptive software delivery, security review and product polish for Claude Code and Codex"
     },
     {
       "name": "code-audit",

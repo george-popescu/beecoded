@@ -9,7 +9,10 @@ Zero-friction idea capture. One line, then back to work.
 
 ## Protocol
 
-Append the line to `docs/work/backlog.md` and confirm in one sentence ("Captured. Back to [current task]."). No questions, no elaboration, no design discussion. If the idea is ambiguous, capture it ambiguous — shaping is for later. The whole interaction is under 30 seconds.
+Read relevant entries in `docs/work/backlog.md`. Append a concise idea or enrich
+the existing matching entry when it is clearly the same request; preserve unrelated
+entries. Confirm briefly and return to active work. Capture unresolved meaning
+without turning it into a design session. Do not promise a fixed execution time.
 
 ## Line format
 

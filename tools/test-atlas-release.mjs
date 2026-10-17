@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { getProductDefinition } from './plugin-products.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packageRoot = path.join(repoRoot, 'plugins', 'nectar');
@@ -177,8 +178,9 @@ try {
   const install = run(nectar, ['install', '--all'], { env: runnerEnv });
   assert.match(install.stdout, /updated for Claude Code|installed for Claude Code/);
   assert.match(install.stdout, /updated for Codex|installed for Codex/);
-  assert.equal(managedSkillNames(path.join(claudeHome, 'skills')).length, 11);
-  assert.equal(managedSkillNames(path.join(codexHome, 'skills')).length, 11);
+  const expectedSkills = [...getProductDefinition('nectar').publicSkills].sort();
+  assert.deepEqual(managedSkillNames(path.join(claudeHome, 'skills')), expectedSkills);
+  assert.deepEqual(managedSkillNames(path.join(codexHome, 'skills')), expectedSkills);
 
   const claudePlugins = run('claude', ['plugin', 'list', '--json'], {
     env: runnerEnv,

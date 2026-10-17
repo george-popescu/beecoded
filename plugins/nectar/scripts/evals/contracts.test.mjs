@@ -25,8 +25,11 @@ test('loads the complete quality-lifecycle behavioral contract roster', () => {
       'approval-before-write',
       'artifact-recovery',
       'atlas-workflow-discipline',
+      'audit-reachable-risk',
+      'capture-merge-existing',
       'completed-duplicate-close',
       'context-freshness-boundary',
+      'context-refresh-current-project',
       'contiguous-numbering',
       'custom-backfill',
       'dependency-readiness',
@@ -37,8 +40,15 @@ test('loads the complete quality-lifecycle behavioral contract roster', () => {
       'layer-ownership',
       'plan-drift-reapproval',
       'plan-risk-classification',
+      'polish-color-only',
+      'polish-natural-ro',
+      'polish-purposeful-design',
+      'rehearse-isolation-boundary',
+      'release-preparation-boundary',
       'review-risk-classification',
+      'scoped-evidence-reuse',
       'secret-redaction',
+      'security-reachable-boundary',
       'solution-before-plan',
       'split-approval',
       'standard-migration',
@@ -51,7 +61,7 @@ test('loads the complete quality-lifecycle behavioral contract roster', () => {
 
   for (const contract of contracts) {
     assert.match(contract.prompt, /\S/);
-    assert.match(contract.skill, /^nectar-(build|close|orient|plan|review|shape)$/);
+    assert.match(contract.skill, /^nectar-(audit|build|capture|close|context|orient|plan|polish|rehearse|release|review|security|shape)$/);
     assert.ok(Object.keys(contract.fixture.files).length > 0);
     assert.ok(contract.checks.length > 0);
     assert.ok(contract.graderCriteria.length > 0);
@@ -151,10 +161,10 @@ test('tenant isolation starts from a non-executable acceptance sketch', () => {
   assert.doesNotMatch(sketch, /\btest\s*\(/);
 });
 
-test('uses one honest finite host ceiling for the complete live roster', () => {
+test('bounds every live case by the maximum supported host ceiling', () => {
   const contracts = loadContracts(path.join(pluginRoot, 'evals', 'contracts'));
-  assert.equal(contracts.length, 25);
-  assert.ok(contracts.every((contract) => contract.budgets.timeoutMs === 600000));
+  assert.ok(contracts.every((contract) => contract.budgets.timeoutMs > 0
+    && contract.budgets.timeoutMs <= 600000));
 });
 
 test('feature-scale backfill permits only its design artifact while protecting source', () => {

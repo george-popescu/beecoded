@@ -21,6 +21,24 @@ function snapshotFingerprint(context, conventions) {
   return fingerprintDocuments(context, conventions);
 }
 
+test('a promoted context copied into another project is expired', (t) => {
+  const root = fixture(t, { 'src/app.js': 'export const value = 1;\n' });
+  initializeGit(root);
+  const staging = createContextStaging(root);
+  fs.writeFileSync(path.join(staging, 'CONTEXT.md'), '# Context\n- App. source: src/app.js:1\n');
+  fs.writeFileSync(path.join(staging, 'CONVENTIONS.md'), '# Conventions\n- ESM. source: src/app.js:1\n');
+  promoteContextSnapshot(root, staging);
+  assert.equal(inspectContext(root).projectMatches, true);
+  const other = fixture(t);
+  fs.cpSync(root, other, { recursive: true });
+  const result = inspectContext(other);
+  assert.equal(result.projectMatches, false);
+  assert.equal(result.state, 'expired');
+  fs.writeFileSync(path.join(root, 'src/app.js'), 'export const value = 2;\n');
+  assert.equal(inspectContext(root).state, 'stale');
+  assert.deepEqual(inspectContext(root).evidenceChanged, ['src/app.js']);
+});
+
 function fixture(t, files = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-context-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));

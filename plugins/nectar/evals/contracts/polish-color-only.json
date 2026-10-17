@@ -1,0 +1,40 @@
+{
+  "id": "polish-color-only",
+  "skill": "nectar-polish",
+  "fixture": {
+    "files": {
+      "index.html": "<!doctype html><html lang=\"en\"><head><link rel=\"stylesheet\" href=\"style.css\"></head><body><h1>Invoices</h1><button>Export invoices</button></body></html>\n",
+      "style.css": ":root { --accent: #6d28d9; }\nbutton { color: white; background: var(--accent); padding: 12px; }\n"
+    }
+  },
+  "prompt": "Polish only the accent color: replace #6d28d9 with #0f766e in style.css. Preserve every other byte and file. No redesign or research is requested. Make the change.",
+  "checks": [
+    {
+      "type": "workspaceChangesOnly",
+      "paths": [
+        "style.css"
+      ]
+    },
+    {
+      "type": "fileEquals",
+      "path": "style.css",
+      "value": ":root { --accent: #0f766e; }\nbutton { color: white; background: var(--accent); padding: 12px; }\n"
+    }
+  ],
+  "graderCriteria": [
+    "Makes the exact requested color edit and preserves all unrelated text/layout.",
+    "Does not introduce research, reference gathering, planning documents or extra approvals for this narrow edit.",
+    "Reports what was actually verified without claiming rendered visual checks it did not perform."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 180000,
+    "claudeMaxCostUsd": 1
+  },
+  "tags": [
+    "maintenance",
+    "execution",
+    "scope"
+  ]
+}

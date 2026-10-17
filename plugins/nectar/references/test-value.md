@@ -3,6 +3,11 @@
 Choose tests for observable product behavior and credible failures. A filename,
 label change or framework involvement does not decide test value.
 
+Choose effort by impact and uncertainty, not model branding. Editorial inspection
+can suffice for prose; a small visual change may need a rendered check. A behavior
+change should exercise the affected contract, reusing existing coverage where it
+already does so. The absence of a new automated test is not itself a defect.
+
 Protect business rules, security, tenancy, money, concurrency, recovery and public
 contracts at the lowest layer that exercises the real behavior. Reuse existing
 coverage. Do not add tests that merely mirror constants, copy, registration,

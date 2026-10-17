@@ -33,10 +33,10 @@ read-only fallback. Never modify `.bee/`.
 
 1. Run `node "../../scripts/run-context.mjs" stage "$PWD"` and capture the
    returned staging directory.
-2. Dispatch `nectar:context-builder` with only the absolute project root, the
-   absolute staging directory, and the generation contract below. If that
-   named agent is unavailable, use a general agent with the complete builder
-   contract from [`../../agents/context-builder.md`](../../agents/context-builder.md).
+2. Generate the staged documents using the contract below. Use a bounded
+   `nectar:context-builder` when independent exploration helps and delegation is
+   available; otherwise work inline. A delegated builder receives the project root,
+   staging directory and [`builder contract`](../../agents/context-builder.md).
 3. After the builder succeeds, run
    `node "../../scripts/run-context.mjs" promote "$PWD" "<staging-directory>"`.
    The runner validates both documents and promotes the complete snapshot
@@ -73,5 +73,8 @@ and report the exact failure. Do not retry by bypassing validation. Never modify
 Defaults are stale at 14 days or 20 changed files and expired at 30 days or 100
 changed files. Structural instructions, manifests, lockfiles, routes, or config
 make context stale immediately; an unavailable base commit makes it expired.
+New snapshots also become stale when cited source bytes change, and expired when
+copied to another project path. Older snapshots retain their legacy checks until
+an explicitly requested refresh records the additional identity and evidence.
 The four thresholds can be overridden during promotion with positive integers,
 and stale values must remain lower than expired values.

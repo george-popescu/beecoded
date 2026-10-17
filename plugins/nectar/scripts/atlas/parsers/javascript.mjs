@@ -9,7 +9,7 @@ function lineRange(node) {
   };
 }
 
-function identifierName(node) {
+function identifierName(node, source = '') {
   if (!node) return null;
   if (node.type === 'Identifier' || node.type === 'JSXIdentifier') return node.name;
   if (node.type === 'StringLiteral') return node.value;
@@ -25,8 +25,12 @@ function identifierName(node) {
     || node.type === 'OptionalMemberExpression'
     || node.type === 'JSXMemberExpression'
   ) {
-    const object = identifierName(node.object);
-    const property = identifierName(node.property);
+    const object = identifierName(node.object, source);
+    if (node.computed) {
+      const expression = source.slice(node.property.start, node.property.end);
+      return object && expression ? `${object}${node.optional ? '?.' : ''}[${expression}]` : null;
+    }
+    const property = identifierName(node.property, source);
     return object && property ? `${object}.${property}` : object || property;
   }
   return null;
@@ -162,16 +166,16 @@ export function parseFile(file) {
 
     if (
       (node.type === 'CallExpression' || node.type === 'OptionalCallExpression')
-      && identifierName(node.callee)
+      && identifierName(node.callee, file.content)
     ) {
       record.calls.push({
-        name: identifierName(node.callee),
+        name: identifierName(node.callee, file.content),
         ...lineRange(node),
       });
     }
-    if (node.type === 'NewExpression' && identifierName(node.callee)) {
+    if (node.type === 'NewExpression' && identifierName(node.callee, file.content)) {
       record.calls.push({
-        name: identifierName(node.callee),
+        name: identifierName(node.callee, file.content),
         ...lineRange(node),
       });
     }

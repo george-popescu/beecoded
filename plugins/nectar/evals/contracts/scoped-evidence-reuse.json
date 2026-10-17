@@ -1,0 +1,34 @@
+{
+  "id": "scoped-evidence-reuse",
+  "skill": "nectar-build",
+  "tags": [
+    "adaptive",
+    "verification",
+    "semantic"
+  ],
+  "fixture": {
+    "files": {
+      "src/rounding.mjs": "export const roundMoney = value => Math.round((value + Number.EPSILON) * 100) / 100;\n",
+      "README.md": "Public guide with a spelling correction pending.\n",
+      "handoff.md": "A worker completed roundMoney and observed the relevant numerical regression suite pass in this exact workspace, with unchanged source, tests, dependencies and configuration. The delivery owner reviewed the same implementation and found no defects. The only remaining accepted change is correcting an ordinary prose spelling error in README.md; it is not executable documentation and is not consumed by build or packaging. CI requires no additional gate for this docs-only edit. No files have changed since that evidence.\n"
+    }
+  },
+  "prompt": "Explain the smallest remaining work and verification needed for this handoff. Does the README spelling correction require rerunning the numerical suite or dispatching another reviewer? What changes would require invalidating the evidence? Explanation only, do not edit or execute commands.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Reuses the observed numerical test result and completed review for unchanged implementation.",
+    "Chooses editorial/diff inspection for the prose correction, without mandatory tests, extra reviewer or a new persisted workflow.",
+    "Would invalidate only affected evidence if code, dependencies, relevant configuration or the covered behavior changed; does not waive required gates or invent unobserved passes.",
+    "Preserves the explanation-only request."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 180000,
+    "claudeMaxCostUsd": 1
+  }
+}

@@ -16,7 +16,11 @@ const expectedSkills = [
   'nectar-honey',
   'nectar-orient',
   'nectar-plan',
+  'nectar-polish',
+  'nectar-rehearse',
+  'nectar-release',
   'nectar-review',
+  'nectar-security',
   'nectar-shape',
 ];
 
@@ -31,7 +35,7 @@ function walkFiles(root) {
   return files;
 }
 
-test('ships exactly eleven prefixed canonical Nectar skill sources', () => {
+test('ships the declared prefixed canonical Nectar skill sources', () => {
   const sourceRoot = path.join(pluginRoot, 'internal-skills');
   const sources = fs.readdirSync(sourceRoot, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())

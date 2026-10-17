@@ -8,6 +8,7 @@ import {
 } from './paths.mjs';
 import { ATLAS_SCHEMA_VERSION } from './schema.mjs';
 import { assertAtlasRuntime } from './runtime.mjs';
+import { isTestSourcePath } from './test-path.mjs';
 
 const MAX_RESULTS = 101;
 
@@ -104,6 +105,7 @@ function evidenceRow(row) {
 class AtlasRetrieval {
   constructor(database, repository, snapshot) {
     this.database = database;
+    database.function('nectar_is_test', { deterministic: true }, (value) => Number(isTestSourcePath(value)));
     this.repository = repository;
     this.snapshot = snapshot;
     this.freshness = null;
@@ -273,7 +275,7 @@ class AtlasRetrieval {
     ).map(evidenceRow);
   }
 
-  searchText(query, { limit = 20 } = {}) {
+  searchText(query, { limit = 20, testsOnly = false } = {}) {
     const expression = ftsQuery(query);
     if (!expression) return [];
     return this.database.prepare(`
@@ -284,11 +286,13 @@ class AtlasRetrieval {
         bm25(documents_fts) AS rank
       FROM documents_fts
       WHERE documents_fts MATCH ? AND worktree_id = ?
+        AND (? = 0 OR nectar_is_test(path) = 1)
       ORDER BY rank, path
       LIMIT ?
     `).all(
       expression,
       this.repository.worktreeId,
+      Number(testsOnly),
       limitValue(limit),
     ).map(({ content, ...row }) => ({
       ...row,

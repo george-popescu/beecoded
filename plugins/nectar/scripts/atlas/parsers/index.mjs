@@ -15,7 +15,7 @@ function languageForPath(filePath) {
 export function parserIdentityForPath(filePath) {
   const extension = path.extname(filePath).toLowerCase();
   if (['.js', '.jsx', '.ts', '.tsx'].includes(extension)) {
-    return `javascript:babel8:${extension.slice(1)}`;
+    return `javascript:babel8:computed-v2:${extension.slice(1)}`;
   }
   if (extension === '.php') return 'php:php-parser3';
   return null;

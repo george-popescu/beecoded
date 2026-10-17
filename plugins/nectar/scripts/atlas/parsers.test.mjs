@@ -1,4 +1,12 @@
 import assert from 'node:assert/strict';
+
+test('computed callee syntax is preserved rather than flattened into a static member', async () => {
+  const { parseFile } = await import('./parsers/javascript.mjs');
+  const parsed = parseFile({ path: 'dispatch.js', content: 'export function send(order) { channels[order.channel](order); channels["email"](order); channels?.[order.channel](order); }' });
+  assert.deepEqual(parsed.calls.map((entry) => entry.name), [
+    'channels[order.channel]', 'channels["email"]', 'channels?.[order.channel]',
+  ]);
+});
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';

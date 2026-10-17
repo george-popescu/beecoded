@@ -1,0 +1,40 @@
+{
+  "id": "context-refresh-current-project",
+  "skill": "nectar-context",
+  "fixture": {
+    "files": {
+      "package.json": "{\"name\":\"example-inventory\",\"type\":\"module\",\"scripts\":{\"test\":\"node --test\"}}\n",
+      "src/inventory.js": "export const stock = rows => rows.reduce((sum, row) => sum + row.quantity, 0);\n",
+      "src/orders.js": "export const total = rows => rows.reduce((sum, row) => sum + row.price, 0);\n"
+    }
+  },
+  "prompt": "Refresh the compact project context for this exact workspace using the existing Nectar context workflow. Read the local source and package commands. Generate and promote the snapshot. Do not modify application files, install dependencies, commit or publish.",
+  "checks": [
+    {
+      "type": "contextSnapshotCurrent"
+    },
+    {
+      "type": "workspaceChangesOnly",
+      "paths": [
+        ".nectar/CONTEXT.md",
+        ".nectar/CONVENTIONS.md",
+        ".nectar/context.json"
+      ]
+    }
+  ],
+  "graderCriteria": [
+    "The saved CONTEXT.md accurately describes the inventory project and its actual test command with valid source references.",
+    "The saved conventions avoid invented framework or deployment requirements.",
+    "Completes a promoted snapshot for this project and leaves application files untouched."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 180000,
+    "claudeMaxCostUsd": 1
+  },
+  "tags": [
+    "maintenance",
+    "execution"
+  ]
+}

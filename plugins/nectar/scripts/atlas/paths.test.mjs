@@ -7,6 +7,16 @@ import test from 'node:test';
 
 import { gitWorktreeState, resolveRepositoryIdentity } from './paths.mjs';
 
+test('failed Git probes retain the cause without truncated quoted credentials', () => {
+  assert.throws(() => gitWorktreeState(process.cwd(), {
+    spawn: () => ({ status: 1, stdout: '', stderr: 'repository unavailable password="two word secret\nretry later' }),
+  }), (error) => {
+    assert.match(error.message, /repository unavailable/);
+    assert.doesNotMatch(error.message, /two word secret/);
+    return error.code === 'ATLAS_GIT_STATE_UNAVAILABLE';
+  });
+});
+
 function git(root, args) {
   return execFileSync('git', args, {
     cwd: root,

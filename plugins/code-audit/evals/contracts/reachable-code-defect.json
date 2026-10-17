@@ -8,7 +8,7 @@
       "src/server.js": "import fs from 'node:fs';\n\nexport function download(req, res) {\n  const requested = req.query.path;\n  return res.send(fs.readFileSync(requested));\n}\n"
     }
   },
-  "prompt": "Audit this complete repository. Write the report to code-audit-report.md, then repeat the complete confirmed finding and parseable summary in your final response.",
+  "prompt": "Audit this complete repository. Write the report to code-audit-report.md, then repeat the complete confirmed finding and parseable summary in your final response. For this integration report, use a severity heading and named Class, Where (file:line), Evidence, Impact, Confidence and Convergence fields for each finding.",
   "checks": [
     {
       "type": "pathExists",
@@ -31,15 +31,8 @@
       "convergence": "BLOCKING",
       "requiredFields": [
         "Evidence",
-        "Runtime path",
-        "Reachability",
-        "Exposure/preconditions",
-        "Likelihood",
-        "Exploitability",
         "Impact",
-        "Solution opportunity",
-        "Confidence",
-        "Disposition"
+        "Confidence"
       ]
     },
     {

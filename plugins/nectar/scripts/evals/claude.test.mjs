@@ -32,6 +32,8 @@ test('materializes a native Claude prompt and grader from one shared contract', 
 
   const prompt = fs.readFileSync(workspace.promptPath, 'utf8');
   const grader = fs.readFileSync(workspace.graderPath, 'utf8');
+  assert.match(grader, /^---\ntype: llm\n---/);
+  assert.match(prompt, /^---\nallowed_tools: \[Read, Glob, Grep, Skill\]/);
   const copiedManifest = JSON.parse(fs.readFileSync(
     path.join(workspace.pluginRoot, '.claude-plugin', 'plugin.json'),
     'utf8',
@@ -73,11 +75,7 @@ test('marks native success unavailable when required final workspace is not expo
     },
   });
 
-  assert.equal(invocation.command, 'claude');
-  assert.deepEqual(invocation.args.slice(0, 2), ['plugin', 'eval']);
-  assert.ok(invocation.args[2].startsWith(os.tmpdir()));
-  assert.ok(invocation.args.includes('--json'));
-  assert.ok(invocation.args.includes('--case'));
+  assert.equal(invocation, undefined, 'unavailable cases must not start a model');
   assert.equal(result.host, 'claude');
   assert.equal(result.caseId, 'split-approval');
   assert.equal(result.status, 'unavailable');
@@ -85,9 +83,27 @@ test('marks native success unavailable when required final workspace is not expo
   assert.match(result.evidence[0], /final workspace.*not exposed/i);
 });
 
-test('redacts excluded values from Claude artifacts before an unavailable result persists', async () => {
+test('reads current native aggregate scores for semantic-only cases', async () => {
   const result = await runClaudeCase({
-    contract: secretRedaction,
+    contract: semanticOnlySplitApproval,
+    pluginRoot,
+    execute: async () => ({
+      status: 0,
+      stdout: JSON.stringify({ cases: [{
+        name: semanticOnlySplitApproval.id,
+        arms: { with: [{ score: 1, graders: [{ name: 'criteria', passed: true, explanation: 'judge votes: PASS PASS PASS' }] }] },
+        aggregates: { score: 1, passRate: 1 },
+      }] }),
+      stderr: '',
+    }),
+  });
+  assert.equal(result.status, 'passed');
+  assert.equal(result.metadata.semanticScore, 1);
+});
+
+test('redacts excluded values from semantic-only Claude artifacts', async () => {
+  const result = await runClaudeCase({
+    contract: { ...secretRedaction, requireLocalChecks: false },
     pluginRoot,
     execute() {
       return {
@@ -105,7 +121,7 @@ test('redacts excluded values from Claude artifacts before an unavailable result
     },
   });
 
-  assert.equal(result.status, 'unavailable');
+  assert.equal(result.status, 'passed');
   assert.doesNotMatch(result.artifacts.actorResponse, /SECRET_VALUE_DO_NOT_REPEAT/);
   assert.match(result.artifacts.actorResponse, /<redacted>/);
   assert.equal(
@@ -143,11 +159,8 @@ test('does not grade the immutable definition fixture as native actor final stat
   });
   assert.equal(result.status, 'unavailable');
   assert.match(result.evidence[0], /final workspace.*not exposed/i);
-  assert.equal(invocationOptions.timeout, 5000);
-  assert.deepEqual(
-    invocationArgs.slice(invocationArgs.indexOf('--max-cost-usd'), invocationArgs.indexOf('--max-cost-usd') + 2),
-    ['--max-cost-usd', '0.25'],
-  );
+  assert.equal(invocationOptions, undefined);
+  assert.equal(invocationArgs, undefined);
 });
 
 test('normalizes a semantic-only native success without claiming local checks', async () => {
@@ -277,7 +290,7 @@ test('does not mistake successful grader evidence containing not available for h
 
 test('normalizes invalid JSON and native command failures with evidence', async () => {
   const invalidJson = await runClaudeCase({
-    contract: splitApproval,
+    contract: semanticOnlySplitApproval,
     pluginRoot,
     execute() {
       return { status: 0, stdout: 'not-json', stderr: '' };
@@ -287,7 +300,7 @@ test('normalizes invalid JSON and native command failures with evidence', async 
   assert.match(invalidJson.evidence[0], /invalid JSON/);
 
   const commandFailure = await runClaudeCase({
-    contract: splitApproval,
+    contract: semanticOnlySplitApproval,
     pluginRoot,
     execute() {
       return { status: 2, stdout: '', stderr: 'grader crashed' };

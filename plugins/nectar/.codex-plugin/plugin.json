@@ -1,7 +1,7 @@
 {
   "name": "nectar",
-  "version": "3.3.0",
-  "description": "Lightweight spec-driven development for Codex with five agents, technical Solution Fit, and approval-before-write.",
+  "version": "3.4.1",
+  "description": "Adaptive software delivery, security review and product polish for Claude Code and Codex",
   "author": {
     "name": "Beecoded",
     "email": "george.popescu@beecoded.ro",
@@ -12,15 +12,14 @@
   "license": "MIT",
   "keywords": [
     "spec-driven-development",
-    "tdd",
     "skills",
     "workflow"
   ],
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Nectar",
-    "shortDescription": "Lightweight delivery discipline",
-    "longDescription": "Investigate, validate Solution Fit, approve a plan, build, review, debug, audit, close completed work, and maintain project context with eleven skills and five agent roles.",
+    "shortDescription": "Adaptive delivery and security review",
+    "longDescription": "Plan and deliver software with proportional checks, focused security review, natural product language, isolated rehearsals and verified releases.",
     "developerName": "Beecoded",
     "category": "Productivity",
     "capabilities": [

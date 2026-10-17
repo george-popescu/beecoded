@@ -41,7 +41,12 @@ function promptFor(contract) {
     .join('\n\n');
 
   const workflow = contract.skill.replace(/^nectar-/, '');
-  return `# Nectar behavioral case: ${contract.id}
+  return `---
+allowed_tools: [Read, Glob, Grep, Skill]
+timeout_seconds: ${Math.ceil((contract.budgets?.timeoutMs || 300000) / 1000)}
+plugins: ["../.."]
+---
+# Nectar behavioral case: ${contract.id}
 
 Use the Nectar \`${workflow}\` skill through its public \`${contract.skill}\`
 identifier for this request. Treat the fixture below as the exact initial
@@ -65,7 +70,10 @@ function graderFor(contract) {
     .map((check) => `- ${check.type} ${JSON.stringify(check)}`)
     .join('\n');
 
-  return `# Grading criteria
+  return `---
+type: llm
+---
+# Grading criteria
 
 Score this case from 0 to 1. A passing score requires every criterion and every
 deterministic observation to hold. Use the assistant response, tool trace, and
@@ -123,6 +131,14 @@ function findCaseResult(value, caseId) {
 
   const id = value.caseId || value.case_id || value.name || value.id;
   if (id === caseId && typeof value.score === 'number') return value;
+  // Current Claude Code nests the case score under aggregates; arm scores must
+  // not be confused with the aggregate or with authoritative filesystem checks.
+  if (id === caseId && typeof value.aggregates?.score === 'number') {
+    const runs = Array.isArray(value.arms?.with) ? value.arms.with : [];
+    const evidence = runs.flatMap((run) => (run.graders || [])
+      .map((grader) => `${grader.name}: ${grader.explanation || (grader.passed ? 'passed' : 'failed')}`));
+    return { ...value, score: value.aggregates.score, evidence };
+  }
 
   for (const nested of Object.values(value)) {
     const found = findCaseResult(nested, caseId);
@@ -148,6 +164,12 @@ export async function runClaudeCase({
   execute = runCommand,
   keepTemp = false,
 }) {
+  if (contract.requireLocalChecks) {
+    return normalizeResult({ host: 'claude', caseId: contract.id, passed: false,
+      score: 0, status: 'unavailable', evidence: [
+        'Claude native eval final workspace is not exposed authoritatively; required local final-state checks cannot be graded. No model run was started.',
+      ] });
+  }
   const workspace = createClaudeEvalWorkspace({ contract, pluginRoot });
   const startedAt = Date.now();
 
@@ -164,6 +186,9 @@ export async function runClaudeCase({
       '--runs',
       '1',
       '--no-publish',
+      // The operator requested this bundled suite. Trust only its isolated copy,
+      // not a persistent plugin directory or additional real MCP servers.
+      '--trust-plugin',
     ];
     if (contract.budgets?.claudeMaxCostUsd) {
       args.push('--max-cost-usd', String(contract.budgets.claudeMaxCostUsd));

@@ -424,9 +424,17 @@ export function promoteContextSnapshot(projectRoot, stagingDirectory, {
   validateContextDocuments(resolvedRoot, { context, conventions });
   const existingMetadata = readMetadata(existingContextSource(resolvedRoot));
   const thresholds = normalizeThresholds(thresholdOverrides ?? existingMetadata?.thresholds);
+  const evidenceHashes = {};
+  for (const match of `${context}\n${conventions}`.matchAll(/source:\s+([^:\n]+):\d+\b/g)) {
+    const relative = match[1].trim();
+    evidenceHashes[relative] = crypto.createHash('sha256')
+      .update(fs.readFileSync(path.resolve(resolvedRoot, relative))).digest('hex');
+  }
   const metadata = {
     schema: 1,
     source: 'nectar',
+    projectIdentity: crypto.createHash('sha256').update(fs.realpathSync(resolvedRoot)).digest('hex'),
+    evidenceHashes,
     generatedAt: now.toISOString(),
     baseCommit: currentHead(resolvedRoot),
     fingerprint: fingerprintDocuments(context, conventions),
@@ -493,6 +501,15 @@ export function inspectContext(projectRoot, { now = new Date() } = {}) {
   }
 
   const metadata = readMetadata(active);
+  const projectMatches = !metadata?.projectIdentity || metadata.projectIdentity
+    === crypto.createHash('sha256').update(fs.realpathSync(resolvedRoot)).digest('hex');
+  const evidenceChanged = Object.entries(metadata?.evidenceHashes || {}).flatMap(([relative, expected]) => {
+    try {
+      validateEvidence(resolvedRoot, `source: ${relative}:1`, 'context');
+      const actual = crypto.createHash('sha256').update(fs.readFileSync(path.resolve(resolvedRoot, relative))).digest('hex');
+      return actual === expected ? [] : [relative];
+    } catch { return [relative]; }
+  });
   const fingerprintActual = fingerprintDocuments(
     fs.readFileSync(path.join(active.root, 'CONTEXT.md'), 'utf8'),
     fs.readFileSync(path.join(active.root, 'CONVENTIONS.md'), 'utf8'),
@@ -516,7 +533,7 @@ export function inspectContext(projectRoot, { now = new Date() } = {}) {
     ));
   const ageDays = Math.max(0, (now.getTime() - generatedAt.getTime()) / 86_400_000);
   const git = inspectGit(resolvedRoot, metadata?.baseCommit ?? null);
-  const state = ageDays >= thresholds.expiredDays
+  const state = !projectMatches || ageDays >= thresholds.expiredDays
     || (git.available && !git.baseResolvable)
     || git.changedFiles.length >= thresholds.expiredFiles
     ? 'expired'
@@ -524,12 +541,15 @@ export function inspectContext(projectRoot, { now = new Date() } = {}) {
       || git.changedFiles.length >= thresholds.staleFiles
       || git.structuralChanges.length > 0
       || !fingerprint.matches
+      || evidenceChanged.length > 0
       || !metadata
       ? 'stale'
       : 'fresh';
 
   return {
     source: active.source,
+    projectMatches,
+    evidenceChanged,
     state,
     ageDays,
     generatedAt: generatedAt.toISOString(),

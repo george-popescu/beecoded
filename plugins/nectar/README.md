@@ -4,7 +4,8 @@ Nectar gives Claude Code and Codex a direction for planning, implementation and
 verification. Its slim workflow leaves task size, scheduling and useful depth of
 investigation to the model.
 
-Nectar 3.3 introduces this slim workflow while retaining compatibility with older plans.
+Nectar 3.4 adds focused security review and adapts verification and audit depth to
+the work's impact. It retains compatibility with existing slim and older plans.
 
 | Host | Example |
 |---|---|
@@ -52,6 +53,10 @@ nectar --allow-downgrade
 | nectar-build | Implement the authorized outcome and verify the integrated result. |
 | nectar-honey | Carry planning, implementation, verification and review through to delivery. |
 | nectar-review | Review a specific change and report evidenced findings. |
+| nectar-security | Assess a specified change or component for reachable security flaws. |
+| nectar-polish | Refine website/product wording and design for clarity, natural language and contextual fit. |
+| nectar-rehearse | Exercise a migration, import or risky upgrade in an isolated environment. |
+| nectar-release | Prepare or execute an authorized release and verify its actual destination. |
 | nectar-debug | Diagnose a failure; continue to repair when requested. |
 | nectar-audit | Produce a whole-codebase health report. |
 | nectar-orient | Recover status or continue existing authorized work. |
@@ -87,8 +92,9 @@ useful when it resolves a bug or uncertain dependency. Do not rerun passing chec
 solely because a wave ended, a subagent handed off or a different role took over.
 
 After a repair, rerun affected checks and broaden only when changed dependencies
-or unresolved risk justify it. Mark previous verification and review stale when
-implementation changes. Review the final result proportionately; zero blockers
+or unresolved risk justify it. When relevant inputs change, mark overall verification
+pending, retain unaffected evidence and recheck the changed behavior and dependencies.
+Review the final result proportionately; zero blockers
 does not compensate for missing verification. Honey owns the final review when
 orchestrating Build; standalone Build owns its own review. Neither repeats a
 current review just because ownership changes.
@@ -97,6 +103,48 @@ current review just because ownership changes.
 behavior. Reuse useful existing coverage; avoid exact-copy, label, boilerplate
 and implementation-mirroring tests. A concise reason and evidence route replace
 the former mandatory per-behavior dossier.
+
+Prose changes can use editorial inspection; small visual changes may need a browser
+check. Behavioral changes use relevant existing checks and valuable missing coverage.
+Authorization, tenancy, money, data transformations and recovery warrant stronger
+failure-path evidence. For small low-risk work, final review can be the implementer's
+diff inspection. Stages do not require separate agents, skills or documents.
+
+[Native host evidence](references/host-capabilities.md) can satisfy the selected
+verification when scope and inputs match. Discover available tools rather than
+assuming a particular model or host version. Nectar preserves model/effort settings
+and introduces no verification hooks or duplicate pre-commit checks.
+
+## Focused security review
+
+Invoke `/nectar-security` in Claude Code or `$nectar-security` in Codex with the
+diff or component to assess. It checks relevant trust boundaries and reports
+reachable flaws with evidence, bounded impact and a proportional remedy. Source
+review stays read-only unless a broader request authorizes fixes through delivery.
+It is not a mandatory gate and does not perform active pentesting. Pentesting
+remains a separate request with explicit targets, environment and available tools.
+
+Whole-codebase Audit now selects depth and delegation by risk, without agent-count
+thresholds or fixed risk dossiers. Reports retain their parseable completion summary
+and state material coverage gaps.
+
+## Product polish and delivery
+
+`nectar-polish` writes or refines website/product text for natural language and
+clear meaning, including plausible unintended readings in the target locale. It
+also refines design when requested, using the product's audience and brand rather
+than treating familiar fonts or layouts as forbidden. It preserves factual claims,
+localization placeholders and accessibility, and never certifies human authorship.
+See [research notes](references/polish-research.md) for the sources and their limits.
+
+`nectar-release` follows the project's release process and the user's preparation
+or publication scope. It reuses validated artifacts and checks the actual registry,
+deployment or store state before claiming a release is live.
+
+`nectar-rehearse` checks risky data operations in disposable, verified environments,
+including relevant interruption and recovery behavior. A staging label alone does
+not establish isolation. These skills are available when useful and add no mandatory
+stages to ordinary Honey delivery.
 
 ## Compatibility and cleanup
 
@@ -195,19 +243,32 @@ npm run benchmark:nectar
 npm run benchmark:nectar -- --codex /absolute/path/to/codex
 ```
 
-This live Codex smoke benchmark consumes model usage. It uses disposable projects:
-one rounding fix with and without project-local Nectar skills, plus an explicitly
-requested Honey continuation. Each native run is capped at three minutes; an
-unavailable actor stops the batch without scoring untouched code as a product
-failure. Existing CLI model and effort settings are left unchanged.
+This opt-in Codex benchmark consumes model usage. Both rounding and resumed Honey
+tasks have a plain-agent comparator. Use `--scenarios rounding,debug,honey` for a
+misleading-hypothesis debug case too, `--repetitions 3` for alternating-order trials,
+and `--published-root /verified/extracted/package` for a third published-release
+arm. Verify that archive's integrity before using it as a comparator.
+
+Each run is capped at three minutes. An unavailable actor stops the batch without
+scoring untouched code as a product failure. Temporary host directories exclude
+personal instructions, skills, plugins and MCPs. Scalar model/effort settings and
+file-backed authentication are retained; credentials are removed even if results
+are kept. Custom providers and active profiles currently report unavailable rather
+than silently changing model/provider. This is configuration isolation, not a
+hostile-code sandbox.
 
 The output records independent behavioral checks, changes to fixture tests, observed
 skill-file reads, test-run counts, elapsed time and any exposed usage. Skill reads
 only reflect observed command traces, not hidden native selection. Test counts
 cover the fixture's instrumented command. A single trial is not a general speed or
-quality claim, and user-level configuration remains part of the environment.
+quality claim. Model settings are recorded for comparison; other user configuration
+is excluded. Native Claude cases needing final filesystem evidence are unavailable
+before execution, because native grading does not expose that state authoritatively.
 Legitimate test additions do not fail the benchmark: the immutable external
 behavior checks decide correctness, while test changes remain review evidence.
+External oracles run without ambient credentials, native imports or filesystem
+write access and require a completion receipt; exit zero alone is insufficient.
+Honey's Doctor status is additional workflow evidence, not product correctness.
 Unknown model/usage metadata stays unknown. Artifacts and full traces remain in the
 reported temporary directory. This benchmark is separate from normal tests and
 release gates; it is not a native Claude evaluation.
@@ -217,6 +278,11 @@ release gates; it is not a native Claude evaluation.
 Atlas keeps one local index per Git repository and exposes compact,
 evidence-linked retrieval through the Nectar CLI and the bundled MCP server.
 Queries never create or refresh an index implicitly.
+
+Schema 8 requires refreshing older indexes before retrieval. Calls report the
+observed callee expression with unresolved target status, including computed access
+and injected PHP receivers; a relation is not proof of a concrete runtime dispatch.
+`find-tests` prefers test relationships and labels test-only lexical fallback.
 
 ```bash
 nectar atlas status --path .

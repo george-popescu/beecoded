@@ -64,6 +64,27 @@ async function queryModule() {
   return import('./query.mjs');
 }
 
+test('test retrieval filters before limiting and prefers relations over lexical duplicates', async (t) => {
+  const { root, cacheRoot } = fixture(t);
+  for (let i = 0; i < 25; i++) write(root, `docs/OrderService-${i}.md`, 'OrderService OrderService');
+  write(root, 'tests/fallback.py', '# OrderService regression\n');
+  write(root, 'src/dynamic.ts', 'export function send(order) { return channels[order.channel](order); }');
+  write(root, 'app/Lookup.php', '<?php function lookup($repo) { return $repo->find(1); }');
+  await indexRepository(root, { cacheRoot });
+  const { queryAtlas } = await queryModule();
+  const packet = queryAtlas(root, { operation: 'find-tests', query: 'OrderService', limit: 2, cacheRoot });
+  assert.equal(packet.evidence.length, 2);
+  assert.equal(packet.evidence[0].path, 'src/OrderService.test.ts');
+  assert.ok(packet.evidence.some((e) => e.path === 'tests/fallback.py' && e.reason === 'test-text-fallback'));
+  const flow = queryAtlas(root, { operation: 'trace-flow', query: 'send', cacheRoot });
+  const call = flow.evidence.find((e) => e.target === 'channels[order.channel]');
+  assert.equal(call?.targetResolution, 'unresolved');
+  assert.equal(call?.confidence, 'medium');
+  const php = queryAtlas(root, { operation: 'trace-flow', query: 'lookup', cacheRoot });
+  const injected = php.evidence.find((e) => e.target === 'repo.find');
+  assert.equal(injected?.targetResolution, 'unresolved');
+});
+
 test('serves all six operations through one evidence packet contract', async (t) => {
   const { root, cacheRoot } = fixture(t);
   await indexRepository(root, { cacheRoot });

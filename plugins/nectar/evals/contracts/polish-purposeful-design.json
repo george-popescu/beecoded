@@ -1,0 +1,32 @@
+{
+  "id": "polish-purposeful-design",
+  "skill": "nectar-polish",
+  "tags": [
+    "polish",
+    "design",
+    "semantic"
+  ],
+  "fixture": {
+    "files": {
+      "design-brief.md": "This is a source-only description of a staff scheduling page. No browser or screenshot is supplied. Approved design system: Inter, violet accent, accessible component library. Three summary cards correspond to actual operational metrics: unfilled shifts, overtime hours, pending leave. Current draft starts with a full-height decorative hero and a generic 'Unlock your team's limitless potential' heading, pushing today's schedule below the fold. The primary user task is assigning uncovered shifts quickly. Do not change permissions or scheduling behavior.\n"
+    }
+  },
+  "prompt": "Recommend a focused polish of this described interface and its heading. Keep the existing brand. Explain only; do not edit files. Is using Inter, violet and three cards itself evidence that the design is AI-generated?",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Prioritizes actionable scheduling content over the decorative hero and suggests a concrete task-related heading.",
+    "Preserves the approved typography, accent and meaningful metric cards rather than banning visual patterns or inventing a brand redesign.",
+    "Does not infer AI authorship from style patterns, introduce fake research or claim rendered usability/accessibility verification from the description.",
+    "Keeps scope read-only and avoids turning polish into a complete audit or a mandatory test suite."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 180000,
+    "claudeMaxCostUsd": 1
+  }
+}

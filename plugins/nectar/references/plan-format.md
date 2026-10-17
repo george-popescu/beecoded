@@ -50,8 +50,10 @@ Explain the evidence, credible consequence and proportional correction; these ar
 risks of following the plan, not current production CODE_DEFECT findings. A concise
 `Plan blocking: N` summary is sufficient when a caller needs a planning gate.
 
-Before more implementation after a verification pass, set Status back to pending
-and treat any old review as stale. Once final checks pass, review the current change
+When implementation changes affect required evidence, set Status back to pending
+and identify the checks and review scope made stale. Keep unaffected evidence;
+verify the repair and its dependencies instead of restarting every check. Once
+required evidence is current, review the current change
 and write `review.md` using [review format](review-format.md). Doctor/Close require
 both final verification and a clean review before a slim topic is done.
 

@@ -637,6 +637,7 @@ function snapshotDelivery(root, files) {
   return files.map((relative) => {
     const requiresCommit = dirty.has(relative);
     if (!fs.existsSync(path.join(root, relative))) {
+      assertDeliveryAbsenceHistory(root, headCommit(root), relative);
       return { owner: 'delivery', path: relative, requiresCommit, state: 'absent' };
     }
     return { ...scanNormalFile(root, relative, 'delivery'), requiresCommit, state: 'present' };
@@ -1039,12 +1040,19 @@ function assertTrackedHistory(root, manifest, currentHead) {
   return tracked;
 }
 
+function assertDeliveryAbsenceHistory(root, commit, relative) {
+  if (blobBytesAt(root, commit, relative) !== null) return;
+  const deletion = runGit(root, ['log', '-1', '--format=%H', '--diff-filter=D', commit, '--', relative]).stdout.trim();
+  if (!deletion) throw new Error(`delivery absence has no deletion history: ${relative}`);
+}
+
 function assertDeliveryCommitted(root, manifest, currentHead, supportPosts = new Map()) {
   const dirty = dirtyPaths(root);
   for (const record of manifest.delivery) {
     if (dirty.has(record.path)) throw new Error(`delivery path remains dirty: ${record.path}`);
     if (record.state === 'absent') {
       if (blobBytesAt(root, currentHead, record.path) !== null) throw new Error(`delivery absence changed: ${record.path}`);
+      assertDeliveryAbsenceHistory(root, currentHead, record.path);
       continue;
     }
     const bytes = blobBytesAt(root, currentHead, record.path);
@@ -1269,7 +1277,7 @@ function finalizeInternal({
   const supportSeal = readSupportSeal(initial);
   const currentHead = headCommit(root);
   if (currentHead === manifest.head || !isAncestor(root, manifest.head, currentHead)) {
-    throw new Error('finalize requires a changed user-created HEAD descended from prepared HEAD');
+    throw new Error('finalize requires HEAD to change to a commit descended from prepared HEAD');
   }
   if (manifest.immutable?.assets) assertImmutableSnapshot(root, manifest.immutable.assets);
   const ownershipOverlap = activeOwnershipOverlap(root, topicReferences, manifest.planFiles);

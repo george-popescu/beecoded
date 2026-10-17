@@ -1,4 +1,4 @@
-export const ATLAS_SCHEMA_VERSION = 7;
+export const ATLAS_SCHEMA_VERSION = 8;
 
 export const ATLAS_MIGRATIONS = Object.freeze([
   Object.freeze({
@@ -219,6 +219,15 @@ export const ATLAS_MIGRATIONS = Object.freeze([
       UPDATE manifest SET parse_key = NULL;
       DELETE FROM parse_records;
       UPDATE snapshots SET dirty = 1, worktree_fingerprint = NULL;
+    `,
+  }),
+  Object.freeze({
+    version: 8,
+    sql: `
+      UPDATE manifest SET parse_key = NULL;
+      DELETE FROM path_edges;
+      DELETE FROM parse_records;
+      UPDATE snapshots SET dirty = 1, worktree_fingerprint = NULL, dirty_paths_json = NULL;
     `,
   }),
 ]);
