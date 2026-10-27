@@ -152,6 +152,7 @@ const productRegistry = defineProductRegistry([
       'nectar-review',
       'nectar-security',
       'nectar-shape',
+      'nectar-test-review',
     ],
     reservedSkillPrefixes: ['nectar-'],
     managedInstaller: true,

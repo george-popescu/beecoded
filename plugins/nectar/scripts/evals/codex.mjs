@@ -11,9 +11,11 @@ import {
 import { runCommand } from './process.mjs';
 import { createCodexIsolation } from './isolation.mjs';
 import { inspectContext } from '../context/state.mjs';
+import { evaluateTestOptimization } from './test-optimization.mjs';
 import { renderManagedSkill } from '../../bin/install.mjs';
 
 const RESOURCE_PATHS = {
+  'nectar-test-review': [['test-value', 'references/test-value.md']],
   'nectar-polish': [['polish-research', 'references/polish-research.md']],
   'nectar-build': [
     ['host-capabilities', 'references/host-capabilities.md'],
@@ -431,6 +433,7 @@ function evaluateSummaryCount(check, response) {
 }
 
 export function evaluateCheck(check, response, root, fixtureFiles) {
+  if (check.type === 'testOptimizationIntegrity') return evaluateTestOptimization(root, fixtureFiles);
   const lowerResponse = response.toLocaleLowerCase();
   if (check.type === 'responseIncludes') {
     const passed = lowerResponse.includes(check.value.toLocaleLowerCase());

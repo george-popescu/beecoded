@@ -22,6 +22,7 @@ const expectedSkills = [
   'nectar-review',
   'nectar-security',
   'nectar-shape',
+  'nectar-test-review',
 ];
 
 function walkFiles(root) {

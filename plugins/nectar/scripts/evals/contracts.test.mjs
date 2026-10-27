@@ -55,13 +55,16 @@ test('loads the complete quality-lifecycle behavioral contract roster', () => {
       'static-copy',
       'suite-consolidation',
       'tenant-isolation',
+      'test-review-optimize',
+      'test-review-readonly',
+      'test-review-speed-trap',
       'unbounded-planning',
     ],
   );
 
   for (const contract of contracts) {
     assert.match(contract.prompt, /\S/);
-    assert.match(contract.skill, /^nectar-(audit|build|capture|close|context|orient|plan|polish|rehearse|release|review|security|shape)$/);
+    assert.match(contract.skill, /^nectar-(audit|build|capture|close|context|orient|plan|polish|rehearse|release|review|security|shape|test-review)$/);
     assert.ok(Object.keys(contract.fixture.files).length > 0);
     assert.ok(contract.checks.length > 0);
     assert.ok(contract.graderCriteria.length > 0);

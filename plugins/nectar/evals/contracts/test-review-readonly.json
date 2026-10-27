@@ -1,0 +1,35 @@
+{
+  "id": "test-review-readonly",
+  "skill": "nectar-test-review",
+  "tags": [
+    "tests",
+    "review",
+    "semantic"
+  ],
+  "fixture": {
+    "files": {
+      "package.json": "{\"type\":\"module\",\"scripts\":{\"test\":\"node --test test/*.test.mjs\"}}\n",
+      "src/store.mjs": "export const cache = new Map();\nexport async function reserve(db, sku) {\n  return db.transaction(async tx => {\n    const row = await tx.lock(sku);\n    if (row.stock < 1) throw new Error('Out of stock');\n    await tx.decrement(sku);\n    cache.set(sku, row.stock - 1);\n    return { reserved: true };\n  });\n}\n",
+      "test/reserve.test.mjs": "import assert from 'node:assert/strict';\nimport { test, beforeEach } from 'node:test';\nimport { cache, reserve } from '../src/store.mjs';\nlet migrated = 0;\nbeforeEach(async () => { migrated++; /* real suite runs full migrations and seed here */ });\ntest('reserve changes stock', async () => {\n  cache.set('a', 10);\n  const result = await reserve({ transaction: fn => fn({ lock: async () => ({stock:10}), decrement: async () => {} }) }, 'a');\n  await new Promise(resolve => setTimeout(resolve, 500));\n  assert.equal(result.reserved, true);\n});\ntest('stock exists', () => assert.ok(cache.get('a')));\n",
+      "review-notes.md": "Recent local run: two cases, zero skipped, total 2.2 seconds. No before/after timings or line/branch coverage available. Existing separate integration suite exercises real DB locking and rollback; its source and results were not provided. A colleague suggests skipping that suite and using one shared database snapshot across all workers. Review requested; no edits authorized.\n"
+    }
+  },
+  "prompt": "Review the supplied tests for useful coverage, isolation and avoidable runtime. Read the source and notes, report concrete issues and proportionate proposals. Do not edit files or execute the suite. Evaluate the colleague's snapshot/skip suggestion too.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Identifies that stock exists depends on the previous case populating shared cache, and that assertions do not establish actual persistent stock decrement.",
+    "Distinguishes the unit mock from real transaction/locking proof, preserves unique integration coverage and rejects skipping tests for speed.",
+    "Recognizes the fixed sleep and repeated setup as optimization candidates without claiming measured savings; treats DB snapshots as conditional with invalidation, worker isolation, setup side effects and cold fallback.",
+    "Keeps the review read-only, proposes scoped work instead of implementing changes, and does not claim line/branch coverage or concurrency isolation was measured."
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 180000,
+    "claudeMaxCostUsd": 1
+  }
+}

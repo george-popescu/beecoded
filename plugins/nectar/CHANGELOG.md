@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.5.0 — 2026-10-27
+
+- Added `nectar-test-review` for scoped read-only test analysis and separately
+  authorized optimizations, preserving meaningful coverage and isolation. Registered
+  the sixteenth public skill for both hosts; no mandatory delivery gate was added.
+- Added an executed optimization scenario with external before/after test runs and
+  mutation checks, plus a read-only trap scenario rejecting skipped coverage,
+  weakened assertions and shared mutable state disguised as speed improvements.
+- Test-review handoffs summarize changes, retained useful checks and comparable
+  measured durations, explicitly stating any missing evidence.
+
 ## 3.4.1 — 2026-10-18
 
 - Preserve computed JavaScript callees in Atlas and label call targets as unresolved

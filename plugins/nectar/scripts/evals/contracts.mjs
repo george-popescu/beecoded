@@ -17,6 +17,7 @@ const VALID_SKILLS = new Set([
   'nectar-review',
   'nectar-security',
   'nectar-shape',
+  'nectar-test-review',
 ]);
 
 const VALID_CHECKS = new Set([
@@ -29,6 +30,7 @@ const VALID_CHECKS = new Set([
   'onlyReportAdded',
   'workspaceChangesOnly',
   'contextSnapshotCurrent',
+  'testOptimizationIntegrity',
   'onlyDatedTopicDesignAdded',
   'pathExists',
   'pathAbsent',
@@ -115,7 +117,7 @@ export function validateContract(contract, source = 'contract') {
         failures.push(`${source}.checks[${index}].type must be one of ${[...VALID_CHECKS].join(', ')}`);
         return;
       }
-      if (check.type === 'fixtureUnchanged' || check.type === 'fixtureFilesUnchanged' || check.type === 'contextSnapshotCurrent') {
+      if (check.type === 'fixtureUnchanged' || check.type === 'fixtureFilesUnchanged' || check.type === 'contextSnapshotCurrent' || check.type === 'testOptimizationIntegrity') {
         // The fixture itself supplies the complete expected tree and contents.
       } else if (check.type === 'workspaceChangesOnly') {
         if (!Array.isArray(check.paths) || !check.paths.length || check.paths.some((entry) => !safeRelativePath(entry))) {

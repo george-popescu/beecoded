@@ -53,6 +53,7 @@ nectar --allow-downgrade
 | nectar-build | Implement the authorized outcome and verify the integrated result. |
 | nectar-honey | Carry planning, implementation, verification and review through to delivery. |
 | nectar-review | Review a specific change and report evidenced findings. |
+| nectar-test-review | Assess test value, isolation, reliability and runtime; optimize only when authorized. |
 | nectar-security | Assess a specified change or component for reachable security flaws. |
 | nectar-polish | Refine website/product wording and design for clarity, natural language and contextual fit. |
 | nectar-rehearse | Exercise a migration, import or risky upgrade in an isolated environment. |
@@ -114,6 +115,23 @@ diff inspection. Stages do not require separate agents, skills or documents.
 verification when scope and inputs match. Discover available tools rather than
 assuming a particular model or host version. Nectar preserves model/effort settings
 and introduces no verification hooks or duplicate pre-commit checks.
+
+## Test review and optimization
+
+For test-specific analysis, use `/nectar-test-review` in Claude Code or
+`$nectar-test-review` in Codex. Name the recent changes or suite to inspect. It starts
+read-only, reports useful coverage, isolation, reliability and runtime concerns,
+and does not launch a full suite merely for review. Explicitly authorized test
+optimizations preserve useful assertions and real transaction/concurrency semantics;
+infrastructure and pipeline changes require their own explicit scope. Before/after
+evidence uses comparable inputs and the project's canonical command. This skill
+adds no automatic Honey gate.
+
+Optimization handoffs briefly state what changed, which useful checks remain and
+the measured before/after duration under comparable conditions. Missing baselines
+or coverage measurements remain explicit. The behavioral suite includes a real
+fixed-wait optimization with independently executed tests and mutation checks,
+and a proposal-review trap that must reject speed gains bought by losing coverage.
 
 ## Focused security review
 

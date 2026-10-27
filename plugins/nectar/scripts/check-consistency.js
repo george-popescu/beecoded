@@ -68,6 +68,7 @@ const expectedSkillDirs = [
   'nectar-review',
   'nectar-security',
   'nectar-shape',
+  'nectar-test-review',
 ];
 if (JSON.stringify(skillDirs) !== JSON.stringify(expectedSkillDirs)) {
   fail(`internal skill roster must be exactly: ${expectedSkillDirs.join(', ')}`);

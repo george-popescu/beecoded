@@ -1,0 +1,35 @@
+{
+  "id": "test-review-speed-trap",
+  "skill": "nectar-test-review",
+  "fixture": {
+    "files": {
+      "package.json": "{\"private\":true,\"type\":\"module\",\"scripts\":{\"test\":\"node --experimental-test-isolation=none --test --test-reporter=tap test/cache.test.mjs\"}}\n",
+      "src/cache.mjs": "const cache = new Map();\nexport const reset = () => cache.clear();\nexport const size = () => cache.size;\nexport const read = key => cache.get(key);\nexport async function put(key, value) {\n  await Promise.resolve();\n  cache.set(key, value);\n}\n",
+      "test/cache.test.mjs": "import assert from 'node:assert/strict';\nimport { test, beforeEach } from 'node:test';\nimport { setTimeout as delay } from 'node:timers/promises';\nimport { reset, size, read, put } from '../src/cache.mjs';\nbeforeEach(async () => { reset(); await delay(250); });\ntest('stores the completed write', async () => {\n  await put('item', 7);\n  await delay(250);\n  assert.equal(read('item'), 7);\n});\ntest('starts with an empty cache', async () => {\n  await delay(250);\n  assert.equal(size(), 0);\n});\ntest('returns undefined for a missing key', async () => {\n  await delay(250);\n  assert.equal(read('absent'), undefined);\n});\n",
+      "proposal.md": "Proposed speed patch: mark the empty-cache and missing-key cases skipped; replace read(item) === 7 with assert.ok(true); move reset out of beforeEach so all cases/workers use one mutable cache. The author reports a 95% improvement by comparing a warm single case to a cold full-suite run and claims identical line/branch coverage, but no coverage report or comparable measurements exist. Consider a shared DB snapshot for future database tests too.\n"
+    }
+  },
+  "prompt": "Review proposal.md against the test suite and implementation. Give a clear recommendation and a safe bounded alternative. This is review only: do not change files or run tests.",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "graderCriteria": [
+    "Rejects the proposed speed patch because it skips unique cases, removes meaningful assertions and leaks shared mutable state; does not implement it.",
+    "Rejects the 95% comparison and unchanged coverage claim because inputs differ and coverage was not measured.",
+    "Proposes removing only proven unnecessary waits while preserving awaited behavior and per-test resets; DB snapshot remains conditional rather than universal.",
+    "Finishes with a short review conclusion, preserved useful checks and explicitly unverified performance instead of inventing before/after measurements."
+  ],
+  "tags": [
+    "tests",
+    "trap",
+    "read-only"
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 180000,
+    "claudeMaxCostUsd": 1
+  }
+}

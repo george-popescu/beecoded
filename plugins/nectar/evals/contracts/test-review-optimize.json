@@ -1,0 +1,39 @@
+{
+  "id": "test-review-optimize",
+  "skill": "nectar-test-review",
+  "fixture": {
+    "files": {
+      "package.json": "{\"private\":true,\"type\":\"module\",\"scripts\":{\"test\":\"node --experimental-test-isolation=none --test --test-reporter=tap test/cache.test.mjs\"}}\n",
+      "src/cache.mjs": "const cache = new Map();\nexport const reset = () => cache.clear();\nexport const size = () => cache.size;\nexport const read = key => cache.get(key);\nexport async function put(key, value) {\n  await Promise.resolve();\n  cache.set(key, value);\n}\n",
+      "test/cache.test.mjs": "import assert from 'node:assert/strict';\nimport { test, beforeEach } from 'node:test';\nimport { setTimeout as delay } from 'node:timers/promises';\nimport { reset, size, read, put } from '../src/cache.mjs';\nbeforeEach(async () => { reset(); await delay(250); });\ntest('stores the completed write', async () => {\n  await put('item', 7);\n  await delay(250);\n  assert.equal(read('item'), 7);\n});\ntest('starts with an empty cache', async () => {\n  await delay(250);\n  assert.equal(size(), 0);\n});\ntest('returns undefined for a missing key', async () => {\n  await delay(250);\n  assert.equal(read('absent'), undefined);\n});\n"
+    }
+  },
+  "prompt": "Optimize this isolated test suite. First inspect the implementation; you are authorized to remove unnecessary fixed waits in test/cache.test.mjs only. Preserve all three cases, their useful assertions and reset isolation. Keep application code, package scripts and infrastructure unchanged. Use npm test for comparable before/after verification and report observed durations and what checks remain. Do not add dependencies or skip tests.",
+  "checks": [
+    {
+      "type": "workspaceChangesOnly",
+      "paths": [
+        "test/cache.test.mjs"
+      ]
+    },
+    {
+      "type": "testOptimizationIntegrity"
+    }
+  ],
+  "graderCriteria": [
+    "Actually removes redundant waits from the test file while preserving real awaited writes, reset isolation and all meaningful checks.",
+    "Reports what changed and the three useful behaviors retained; execution evidence supports before/after canonical test runs under comparable conditions.",
+    "Does not claim unchanged line/branch coverage without measurement or treat fewer tests/assertions as a speed improvement."
+  ],
+  "tags": [
+    "tests",
+    "execution",
+    "performance"
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 240000,
+    "claudeMaxCostUsd": 1
+  }
+}

@@ -460,7 +460,8 @@ try {
   assert.match(nectarInstall, /executing @beecoded\/nectar@\d+\.\d+\.\d+ source=/);
   assert.equal(fs.readFileSync(globalGitIgnore(nectar), 'utf8'), '.nectar/\n');
   assert.deepEqual(readState(nectar, 'claude').plugins.map((entry) => entry.selector), ['nectar@beecoded-nectar']);
-  assert.equal(installedSkillNames(nectar, 'claude', 'nectar').length, 15);
+  assert.equal(installedSkillNames(nectar, 'claude', 'nectar').length, 16);
+  assertOwnedSkill(nectar, 'claude', 'nectar-test-review', '@beecoded/nectar');
   assertOwnedSkill(nectar, 'claude', 'nectar-security', '@beecoded/nectar');
   assertOwnedSkill(nectar, 'claude', 'nectar-shape', '@beecoded/nectar');
   assert.equal(readState(nectar, 'codex').plugins.length, 0);
@@ -551,7 +552,8 @@ try {
       `dry-run uninstall must preserve the ${host} plugin`,
     );
     assert.equal(readState(installedDryRun, host).marketplaces.length, 1);
-    assert.equal(installedSkillNames(installedDryRun, host, 'nectar').length, 15);
+    assert.equal(installedSkillNames(installedDryRun, host, 'nectar').length, 16);
+    assertOwnedSkill(installedDryRun, host, 'nectar-test-review', '@beecoded/nectar');
     for (const skill of ['nectar-polish', 'nectar-rehearse', 'nectar-release']) {
       assertOwnedSkill(installedDryRun, host, skill, '@beecoded/nectar');
     }
