@@ -4,6 +4,7 @@ import path from 'node:path';
 const VALID_SKILLS = new Set([
   'nectar-audit',
   'nectar-build',
+  'nectar-burciu-inspection',
   'nectar-capture',
   'nectar-close',
   'nectar-context',

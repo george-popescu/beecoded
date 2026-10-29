@@ -55,6 +55,7 @@ console.log('\nskill frontmatter:');
 const expectedSkillDirs = [
   'nectar-audit',
   'nectar-build',
+  'nectar-burciu-inspection',
   'nectar-capture',
   'nectar-close',
   'nectar-context',

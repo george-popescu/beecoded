@@ -94,7 +94,7 @@ plugins/<product>/
 ```
 
 Bee keeps its canonical workflow definitions in `workflows/` and thin generated
-entry sources in `internal-skills/`. Nectar keeps its sixteen canonical entry
+entry sources in `internal-skills/`. Nectar keeps its seventeen canonical entry
 sources in `internal-skills/`. Code Audit generates its single standalone entry
 and the Nectar compatibility entry from one shared risk methodology. UI/UX Audit keeps one
 browser-first entry plus host capability references and does not bundle a browser or MCP server. The installer materializes those entries into

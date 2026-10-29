@@ -1,0 +1,32 @@
+{
+  "skill": "nectar-burciu-inspection",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 180000,
+    "claudeMaxCostUsd": 1
+  },
+  "tags": [
+    "inspection",
+    "effectiveness"
+  ],
+  "id": "inspection-documents",
+  "fixture": {
+    "files": {
+      "approved-brief.md": "Pilot for 80 users. Approved scope: manual CSV import and a weekly report. No live ERP synchronization. Maximum budget EUR 12000 excluding tax. Financial assumptions: 80 seats at EUR 20/month, implementation fee EUR 2000 once. Production data may be used only after anonymization. A pilot may start only after acceptance testing and business-owner signoff.\n",
+      "delivery-plan.md": "# Proposed delivery\n## Commercial summary\n80 seats at EUR 20/month = EUR 1800/month. Year one total: EUR 23600 including the EUR 2000 implementation fee.\n## Scope\nDeliver manual CSV import, weekly report, and real-time ERP synchronization within the approved budget. ERP credentials, API documentation and integration effort have not been obtained or estimated.\n## Schedule\nPilot starts Monday. Acceptance testing begins Wednesday; business-owner signoff follows on Friday.\n## Test data\nRestore the production customer database into the shared pilot environment. Anonymize the records at the end of the pilot week.\n## Ownership\nEngineering owns implementation. The business owner signs off. No additional technical design is included in this document.\n"
+    }
+  },
+  "prompt": "Review delivery-plan.md against approved-brief.md. Is it ready to send for execution? Give concrete findings and corrections, with document locations. This is document review only: do not edit anything or run software tests.",
+  "graderCriteria": [
+    "Blocks acceptance of the document despite no runtime code: identifies the arithmetic errors, with EUR 1600 monthly and EUR 21200 first year including the one-time fee.",
+    "Identifies unapproved/unestimated real-time ERP integration and recommends removing it from the approved delivery or obtaining a scoped decision, rather than silently committing it.",
+    "Identifies pilot launch before acceptance/signoff and use of production data before anonymization as contradictions to explicit prerequisites; gives specific corrections.",
+    "Uses section/line evidence, does not invent a legal breach or missing stakeholders, remains read-only and does not require tests for Markdown or insist only code defects can block."
+  ]
+}

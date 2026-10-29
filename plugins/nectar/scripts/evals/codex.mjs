@@ -45,6 +45,8 @@ const RESOURCE_PATHS = {
 };
 
 function bundledResources(pluginRoot, skillName) {
+  // This standalone cross-artifact review needs no delivery stages or context preflight.
+  if (skillName === 'nectar-burciu-inspection') return '';
   const resources = [
     ['workflow', 'references/workflow.md'],
     ['context-use', 'references/context-use.md'],

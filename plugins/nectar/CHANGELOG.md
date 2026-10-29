@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.6.0 — 2026-10-29
+
+- Added `nectar-burciu-inspection`: optional deep review across code, plans and documents,
+  with evidence-backed criticism, solution-fit assessment and cross-artifact blockers.
+  Public discovery and installation now include seventeen skills.
+
 ## 3.5.0 — 2026-10-27
 
 - Added `nectar-test-review` for scoped read-only test analysis and separately

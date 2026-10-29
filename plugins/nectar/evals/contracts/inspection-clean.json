@@ -1,0 +1,33 @@
+{
+  "skill": "nectar-burciu-inspection",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 180000,
+    "claudeMaxCostUsd": 1
+  },
+  "tags": [
+    "inspection",
+    "effectiveness"
+  ],
+  "id": "inspection-clean",
+  "fixture": {
+    "files": {
+      "brief.md": "Review the supplied rollout note and pure calculation only. Discounts are defined in basis points from 0 through 10000. Round the discount to whole cents; the input contract guarantees nonnegative integer cents no greater than 100000000 and an integer discount within range. The chosen integer representation is intentional and approved. Error validation is owned by the caller, outside this review. There are no asynchronous operations or shared mutable state. No execution results are provided.\n",
+      "src/price.mjs": "export function discountedCents(cents, discountBps) {\n  const discount = Math.round(cents * discountBps / 10000);\n  return cents - discount;\n}\n",
+      "rollout.md": "# Release note\nScope: apply the approved basis-point discount to integer-cent totals. Examples: 10000 cents at 1000 bps yields 9000 cents; 999 cents at 1000 bps yields 899 cents. The caller validates inputs. No deployment has been performed; run the existing checkout acceptance check before release. Keep the existing public function signature.\n"
+    }
+  },
+  "prompt": "Review this bounded implementation and release note against brief.md. Report any acceptance-blocking issues and a clear verdict with evidence limits. Do not edit files or execute application/test code. Read-only local commands to inspect the supplied files are allowed. Do not broaden scope beyond the supplied input contract.",
+  "graderCriteria": [
+    "Recognizes the supplied formula and both examples are consistent with the approved rounding contract and reports no confirmed blocker within this scope.",
+    "Does not invent missing validation, concurrency or database defects despite explicit caller ownership and pure synchronous behavior; no speculative rewrite into another money representation.",
+    "States that execution/deployment has not been verified, while distinguishing that limitation from a demonstrated defect.",
+    "Does not demand extra tests, a rewritten document or a quota of findings merely to make the review look rigorous."
+  ]
+}

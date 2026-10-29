@@ -53,6 +53,7 @@ nectar --allow-downgrade
 | nectar-build | Implement the authorized outcome and verify the integrated result. |
 | nectar-honey | Carry planning, implementation, verification and review through to delivery. |
 | nectar-review | Review a specific change and report evidenced findings. |
+| nectar-burciu-inspection | Rigorously assess code, plans or documents for correctness, solution fit and quality. |
 | nectar-test-review | Assess test value, isolation, reliability and runtime; optimize only when authorized. |
 | nectar-security | Assess a specified change or component for reachable security flaws. |
 | nectar-polish | Refine website/product wording and design for clarity, natural language and contextual fit. |
@@ -115,6 +116,15 @@ diff inspection. Stages do not require separate agents, skills or documents.
 verification when scope and inputs match. Discover available tools rather than
 assuming a particular model or host version. Nectar preserves model/effort settings
 and introduces no verification hooks or duplicate pre-commit checks.
+
+## Deep acceptance inspection
+
+For a detailed acceptance review across code, plans or documents, use
+`/nectar-burciu-inspection` in Claude Code or `$nectar-burciu-inspection` in Codex.
+It challenges solution fit as well as correctness, traces supporting evidence and
+reports a direct verdict. Material document contradictions can block acceptance;
+passing tests alone do not establish quality. It stays read-only unless repairs
+are separately authorized, accepts clean results and adds no mandatory Honey gate.
 
 ## Test review and optimization
 

@@ -1,0 +1,34 @@
+{
+  "skill": "nectar-burciu-inspection",
+  "checks": [
+    {
+      "type": "fixtureUnchanged"
+    }
+  ],
+  "requireLocalChecks": true,
+  "semanticJudge": true,
+  "budgets": {
+    "timeoutMs": 180000,
+    "claudeMaxCostUsd": 1
+  },
+  "tags": [
+    "inspection",
+    "effectiveness"
+  ],
+  "id": "inspection-code",
+  "fixture": {
+    "files": {
+      "requirements.md": "Invoice downloads are tenant-private. Authenticated members can download their own tenant's invoices. Invoice IDs may be guessed. Cancellation must persist status=cancelled; retry is allowed. The public handlers below are the actual exposed routes; no additional tenant middleware exists. Review only.\n",
+      "src/routes.mjs": "import { findInvoice, cancelInvoice } from './repository.mjs';\nexport async function download(req, db) {\n  if (!req.session?.userId) return {status:401};\n  const invoice = await findInvoice(db, req.params.id);\n  return invoice ? {status:200, body:invoice} : {status:404};\n}\nexport async function cancel(req, db) {\n  if (!req.session?.userId) return {status:401};\n  return cancelInvoice(db, req.params.id, req.session.tenantId);\n}\n",
+      "src/repository.mjs": "export const findInvoice = (db, id) => db.first('SELECT * FROM invoices WHERE id = ?', [id]);\nexport async function cancelInvoice(db, id, tenantId) {\n  try { await db.execute('UPDATE invoices SET status = ? WHERE id = ? AND tenant_id = ?', ['cancelled', id, tenantId]); }\n  catch { /* best effort */ }\n  return {status:200, body:{cancelled:true}};\n}\n",
+      "test/notes.md": "Existing mocked tests assert HTTP 200 and cancelled=true. They do not simulate a failed database write or cross-tenant lookup. No executed test results are supplied.\n"
+    }
+  },
+  "prompt": "Review these handlers and supporting files for acceptance. Inspect the actual source and requirements. Give a verdict, actionable findings with evidence and proportionate corrections. Do not edit files or run the full suite.",
+  "graderCriteria": [
+    "Identifies cross-tenant invoice disclosure through the ID-only lookup, despite authentication; gives the actual reachable path and tenant-scoped correction.",
+    "Identifies that cancelled=true/200 is returned after a database write throws, violating persistent-cancellation requirements; distinguishes this from a mere logging preference.",
+    "Does not report SQL injection in the shown parameterized queries or claim the cancel query lacks a tenant predicate.",
+    "Distinguishes inadequate mocked coverage from proved runtime defects, prioritizes substantive issues and remains read-only; does not claim tests ran without evidence."
+  ]
+}

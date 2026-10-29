@@ -9,6 +9,7 @@ const pluginRoot = path.resolve(currentDirectory, '..');
 const expectedSkills = [
   'nectar-audit',
   'nectar-build',
+  'nectar-burciu-inspection',
   'nectar-capture',
   'nectar-close',
   'nectar-context',
