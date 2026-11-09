@@ -1,6 +1,6 @@
 {
   "name": "@beecoded/nectar",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "description": "Adaptive software delivery, security review and product polish for Claude Code and Codex",
   "keywords": [
     "claude-code",
@@ -37,6 +37,7 @@
     ".codex-plugin/",
     "agents/",
     "bin/",
+    "hooks/",
     "evals/",
     "mcp/",
     "scripts/",
@@ -46,7 +47,7 @@
     "README.md"
   ],
   "scripts": {
-    "test": "node scripts/check-consistency.js && node --test bin/*.test.mjs mcp/*.test.mjs scripts/*.test.mjs scripts/atlas/*.test.mjs scripts/evals/*.test.mjs scripts/doctor/*.test.mjs",
+    "test": "node scripts/check-consistency.js && node --test bin/*.test.mjs mcp/*.test.mjs scripts/*.test.mjs scripts/atlas/*.test.mjs scripts/evals/*.test.mjs scripts/doctor/*.test.mjs scripts/telemetry/*.test.mjs",
     "doctor": "node scripts/run-doctor.mjs",
     "evals": "node scripts/run-behavioral-evals.mjs",
     "evals:atlas": "node scripts/run-atlas-evals.mjs",

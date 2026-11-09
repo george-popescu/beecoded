@@ -1,6 +1,6 @@
 ---
 name: nectar-review
-description: Review a specific change for evidenced defects, relevant coverage and maintainability.
+description: Ordinary or quick review of a specific change for defects, regressions and coverage. Not a detailed or meticulous inspection (use nectar-burciu-inspection), unless nectar-review is explicitly requested.
 ---
 
 # Review
@@ -8,6 +8,12 @@ description: Review a specific change for evidenced defects, relevant coverage a
 Review the requested change. Use named files first, otherwise the relevant plan
 and actual diff, including its new files. Resolve the scope once and inspect the
 current source and meaningful evidence.
+
+Compare the change with the requested outcome, acceptance criteria and agreed
+exclusions. Report missing required behavior or unrequested expansion separately
+from runtime defects; do not invent requirements. Trace changed contracts into
+their consumers and relevant callees, including unchanged code outside the diff.
+Judge scale and performance against evidenced load and deployment assumptions.
 
 This is one read-only review pass. Report findings; do not implement repairs unless
 the user's broader delivery request separately authorizes them through Build/Honey.

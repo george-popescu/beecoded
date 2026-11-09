@@ -1,6 +1,6 @@
 {
   "name": "nectar",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "description": "Adaptive software delivery, security review and product polish for Claude Code and Codex",
   "author": {
     "name": "Beecoded",
@@ -18,5 +18,6 @@
     "planning",
     "lightweight"
   ],
-  "mcpServers": "./.mcp.claude.json"
+  "mcpServers": "./.mcp.claude.json",
+  "hooks": ["./hooks/claude.json", "./hooks/claude-band.json"]
 }

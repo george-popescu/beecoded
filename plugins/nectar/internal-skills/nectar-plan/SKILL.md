@@ -1,6 +1,6 @@
 ---
 name: nectar-plan
-description: Plan tasks, dependencies and final verification for a defined outcome.
+description: Create a plan when the user asks for planning, task breakdown or dependencies for a defined outcome. Not a mandatory step before every implementation or small fix.
 ---
 
 # Plan

@@ -1,6 +1,6 @@
 ---
 name: nectar-debug
-description: Diagnose a concrete failure and identify a repair supported by current evidence.
+description: Investigate a concrete failure whose cause is uncertain, then repair it when authorized. Skip this workflow for a small fix with an already established cause and correction.
 ---
 
 # Debug

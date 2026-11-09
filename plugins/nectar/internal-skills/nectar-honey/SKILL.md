@@ -1,6 +1,6 @@
 ---
 name: nectar-honey
-description: Deliver an authorized outcome from solution choice through implementation and verification.
+description: Deliver an authorized multi-step outcome needing coordination across components, solution choices and verification. Not for small, well-defined low-risk fixes; use nectar-build to execute an already defined plan.
 ---
 
 # Honey
@@ -24,4 +24,5 @@ continue only while a concrete defect or missing evidence justifies more work.
 
 Resume from current artifacts and source without restarting the workflow. Report
 the delivered outcome, verification and real limitations. Follow existing commit
-or release authorization; accepted work can use Close for recoverable archiving.
+or release authorization. Use Close for recoverable archiving only when closure
+or archiving is requested.

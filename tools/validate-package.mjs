@@ -142,6 +142,14 @@ if (productDefinition.kind === 'bee') {
   check(!Object.hasOwn(codex, 'skills'), 'Codex manifest must not register Nectar public or internal skills');
   check(pkg.files.includes('evals/'), 'Nectar npm package must include evals/');
   check(pkg.files.includes('scripts/'), 'Nectar npm package must include scripts/');
+  check(pkg.files.includes('hooks/'), 'Nectar npm package must include optional hooks/');
+  check(codex.hooks === './hooks/codex.json', 'Codex must use its host-specific lifecycle hooks');
+  check(JSON.stringify(claude.hooks) === JSON.stringify(['./hooks/claude.json', './hooks/claude-band.json']), 'Claude must register lifecycle hooks and its native strip');
+  for (const relative of ['hooks/claude.json', 'hooks/codex.json', 'hooks/claude-band.json', 'hooks/lifecycle.mjs', 'hooks/band.tsx',
+    'scripts/run-board.mjs', 'scripts/board/render.mjs', 'scripts/board/client.js', 'scripts/board/style.css', 'scripts/board/coamb-mark.svg',
+    'scripts/run-hooks.mjs', 'scripts/run-telemetry.mjs', 'scripts/run-debt.mjs', 'scripts/run-guide.mjs', 'scripts/run-impact.mjs']) {
+    check(fs.existsSync(path.join(pluginRoot, relative)), `Nectar runtime resource missing: ${relative}`);
+  }
   check(pkg.files.includes('.mcp.json'), 'Nectar npm package must include the Codex MCP config');
   check(pkg.files.includes('.mcp.claude.json'), 'Nectar npm package must include the Claude MCP config');
   check(codex.mcpServers === './.mcp.json', 'Codex must use the package-relative MCP config');

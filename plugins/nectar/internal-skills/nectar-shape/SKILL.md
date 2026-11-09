@@ -1,6 +1,6 @@
 ---
 name: nectar-shape
-description: Clarify a new feature or change and choose a solution before planning implementation.
+description: Clarify a feature or change with unresolved product decisions or consequential solution choices. Not for an already specified fix, ordinary implementation or a request only to review existing work.
 ---
 
 # Shape

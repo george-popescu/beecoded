@@ -31,6 +31,12 @@ Usage:
   ${product} [install] [--claude | --codex | --all]
   ${product} uninstall [--claude | --codex | --all]
 ${product === 'nectar' ? `  ${product} doctor [path] [--json]
+  ${product} board [path] [--project <path>] [--output <file>] [--open]
+  ${product} guide [--json]
+  ${product} debt [path] [--json]
+  ${product} impact [--file <benchmark.json>]
+  ${product} telemetry <operation> [options]
+  ${product} hooks <operation> [options]
   ${product} eval [--claude | --codex | --all] [--case <glob>]
   ${product} atlas <operation> [query] [--path <project>] [--json]
     lifecycle: status, enable, refresh, disable, clear, explain
@@ -271,6 +277,9 @@ export function resolveProductCommand({ product: targetProduct, argv }) {
   if (targetProduct !== 'nectar') return null;
   const [command, ...args] = argv;
   if (command === 'doctor') return { script: 'scripts/run-doctor.mjs', args };
+  if (['board', 'guide', 'debt', 'impact', 'telemetry', 'hooks'].includes(command)) {
+    return { script: `scripts/run-${command}.mjs`, args };
+  }
   if (command === 'eval' || command === 'evals') {
     return { script: 'scripts/run-behavioral-evals.mjs', args };
   }
@@ -1124,6 +1133,16 @@ function uninstallFromHost(host, dryRun) {
     }
   }
 
+  // Explicit global hook registrations must not outlive the runtime they invoke.
+  if (product === 'nectar') {
+    if (dryRun) console.log('[nectar] would remove owned optional global hooks');
+    else {
+      const hooks = spawnSync(process.execPath, [path.join(packageRoot, 'scripts/run-hooks.mjs'), 'uninstall', '--host', host], {
+        env: process.env, encoding: 'utf8', timeout: 10000,
+      });
+      if (hooks.error || hooks.status !== 0) throw new Error('Could not remove Nectar hook registrations; inspect host settings before retrying uninstall.');
+    }
+  }
   const installed = pluginIsInstalled(host, dryRun);
   if (installed) {
     execute(host, pluginRemoveArgs(host), { dryRun });

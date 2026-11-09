@@ -14,6 +14,10 @@ the existing matching entry when it is clearly the same request; preserve unrela
 entries. Confirm briefly and return to active work. Capture unresolved meaning
 without turning it into a design session. Do not promise a fixed execution time.
 
+Capture saves a deferred idea; Debt inspects limitations already recorded in source.
+For a deliberate compromise, keep its practical limit and revisit condition with
+the existing entry or code comment rather than creating a second tracking system.
+
 ## Line format
 
 ```

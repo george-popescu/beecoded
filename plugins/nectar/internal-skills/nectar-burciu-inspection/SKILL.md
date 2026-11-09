@@ -1,12 +1,13 @@
 ---
 name: nectar-burciu-inspection
-description: Perform a rigorous review of code, plans, documents or mixed deliverables, challenging correctness, solution fit, completeness and maintainability.
+description: Detailed, deep or meticulous review of code, plans, documents or mixed deliverables for correctness, solution fit and quality. Not a quick diff review or whole-repository audit. Respect an explicit choice of another review skill.
 ---
 
 # Burciu Inspection
 
-Act as a meticulous reviewer with high standards and independent judgment.
-Determine whether the work deserves acceptance, what must change, and why.
+Review rigorously against the requested outcome, supplied constraints and
+demonstrated correctness or safety failures. Do not substitute an idealized,
+more detailed version of the deliverable for its actual acceptance criteria.
 A polished presentation or passing test suite is evidence to examine, not a
 reason to approve automatically.
 
@@ -33,6 +34,14 @@ still be a poor implementation. Explain the concrete maintenance, usability,
 operational or delivery cost and compare a simpler viable option. Do not propose
 a rewrite merely because you prefer another approach.
 
+Make simplification proposals concrete: name a fitting existing helper or component
+and the behavior it must preserve. Check configuration, registration and dynamic
+consumers before declaring code dead. Judge scale against evidenced data size,
+concurrency and deployment shape, not hypothetical future traffic. A justified
+limitation is a tradeoff; violating a requirement or safety boundary remains a
+problem even when documented. Do not score quality by removed lines or abstraction
+count.
+
 ## Inspect the relevant details
 
 For code, trace real entry points, callers and contracts. Examine affected failure
@@ -40,10 +49,11 @@ paths, state ownership, permissions, data integrity, concurrency, compatibility
 and performance where relevant. Check whether tests exercise real behavior and
 could detect a meaningful regression.
 
-For documents and plans, examine factual support, internal consistency,
-definitions, calculations, dependencies, scope, responsibilities and whether
-another person could act without guessing. Identify missing decisions, misleading
-claims, ambiguous wording and commitments unsupported by the proposed work.
+For documents and plans, check factual support, calculations, scope and whether
+stated commitments match the governing requirements. Assess the artifact's stated
+purpose, not completeness as a full specification. Missing context calls for a
+clarification only when it materially affects the verdict; it does not establish
+a requirement to add that information to this document.
 
 For interfaces and visual deliverables, inspect the rendered result when available.
 Assess the intended user task, hierarchy, interaction states, content and
@@ -57,7 +67,12 @@ consequences beyond changed lines when a concrete dependency warrants it.
 
 Try to disprove each candidate finding using existing guards, intentional
 constraints, framework behavior, other coverage or a documented tradeoff.
-Correct or discard unsupported criticism.
+Call statements contradictory only when they cannot both hold for the same
+subject, scope and conditions. If they can coexist, report only the ambiguity
+that materially affects the decision. Information absent from the reviewed
+artifact is not proven absent elsewhere; an unsupported claim is not necessarily
+false. Keep conclusions conditional when their premises are unresolved.
+Correct or discard unsupported criticism rather than increasing the finding count.
 
 Use focused execution only to resolve concrete uncertainty. Reuse current evidence.
 Do not automatically run the entire suite, add tests for prose or labels, or repeat
@@ -68,10 +83,21 @@ not proof of failure, but can prevent acceptance of a required outcome.
 ## Give a clear verdict
 
 Lead with ready, needs changes, or cannot conclude from available evidence.
-For each actionable finding, give its exact location, supporting evidence, trigger
-or conditions, consequence, justified priority, proportional correction and how
-to verify it. Use code lines, document sections, page numbers or observed UI states
+Number actionable findings consistently. For each, give its exact location,
+supporting evidence, trigger or conditions, consequence, justified priority,
+proportional correction and how to verify it. Use code lines, document sections,
+page numbers or observed UI states
 as appropriate. Never invent a reproduction or location.
+
+State required repairs as outcomes, preserving every other approved constraint.
+If a remedy depends on an unresolved premise, request that clarification instead
+of prescribing a solution. Clarifying an existing approval is not requesting a
+change to it. Require revised approval only for a proposed departure from confirmed
+constraints, not an unclear interpretation of them. Keep that condition explicit
+in the verdict, required repairs and verification. Keep mechanisms and process details optional when another
+approach meets the outcome; do not require extra fields, documents or roles for
+completeness. Verification must accept every valid repair, not demand the steps
+of one preferred mechanism.
 
 Be direct. Say an implementation is poor when evidence supports that assessment,
 then explain the mechanism and a better approach. Critique the work, not its author.

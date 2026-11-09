@@ -1,0 +1,76 @@
+{
+  "hooks": {
+    "PreModelRequest": [
+      { "hooks": [{ "type": "command", "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.PLUGIN_ROOT||process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','codex']))\"", "timeout": 3 }] }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.PLUGIN_ROOT||process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','codex']))\"", "timeout": 3 }] }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.PLUGIN_ROOT||process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','codex']))\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.PLUGIN_ROOT||process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','codex']))\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.PLUGIN_ROOT||process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','codex']))\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.PLUGIN_ROOT||process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','codex']))\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.PLUGIN_ROOT||process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','codex']))\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.PLUGIN_ROOT||process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','codex']))\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}

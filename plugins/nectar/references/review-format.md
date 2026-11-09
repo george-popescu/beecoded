@@ -24,6 +24,14 @@ proportional recommendation. Add reachability, exploitability, uncertainty and
 alternatives when they affect the decision. Avoid mechanically filling fields
 that do not help assess the finding.
 
+Number actionable findings consistently so the user can select repairs by number.
+Explain the concrete consequence and smallest viable correction in the user's
+language. For simplification, name the existing replacement and contracts to retain;
+check configuration, registration and dynamic consumers before calling code unused.
+Treat maintainability cost as its own finding, not an invented runtime failure.
+Respect a justified scoped tradeoff unless current requirements, load or safety
+invalidate it. A comment alone does not establish that the tradeoff is sound.
+
 Validate candidates against current callers, guards and tests. CONFIRMED means the
 evidence supports the adjusted class; REFUTED means discard it. Only confirmed
 MEDIUM-or-higher CODE_DEFECT findings block completion. Missing useful coverage is
@@ -56,5 +64,8 @@ Clean pass: zero blocking code defects remain.
 
 These summary lines must be actual unfenced report content; the fences above only
 illustrate the format. Do not claim completion with missing/failed verification.
+Put human verdicts and limitations before the canonical summary/clean tail. Do not
+replace the completion fields with a conversational verdict or append text after
+the clean marker. Zero code blockers does not establish that acceptance is complete.
 For ad-hoc reviews, give concise findings and limitations inline. A whole-codebase
 Audit may request its richer canonical finding record; follow that caller's format.

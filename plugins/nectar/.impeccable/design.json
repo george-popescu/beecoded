@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-06T09:59:25Z",
+  "title": "Design System: Coamb",
+  "extensions": {
+    "colorMeta": {
+      "amber": { "role": "primary", "displayName": "Amber data and focus", "tonalRamp": ["oklch(15% 0.15 79)", "oklch(26% 0.15 79)", "oklch(38% 0.15 79)", "oklch(49% 0.15 79)", "oklch(61% 0.15 79)", "oklch(72% 0.15 79)", "oklch(84% 0.15 79)", "oklch(95% 0.15 79)"] },
+      "green": { "role": "secondary", "displayName": "Recorded success", "tonalRamp": ["oklch(15% 0.09 161)", "oklch(26% 0.09 161)", "oklch(38% 0.09 161)", "oklch(49% 0.09 161)", "oklch(61% 0.09 161)", "oklch(72% 0.09 161)", "oklch(84% 0.09 161)", "oklch(95% 0.09 161)"] },
+      "red": { "role": "secondary", "displayName": "Recorded failure", "tonalRamp": ["oklch(15% 0.1 23)", "oklch(26% 0.1 23)", "oklch(38% 0.1 23)", "oklch(49% 0.1 23)", "oklch(61% 0.1 23)", "oklch(72% 0.1 23)", "oklch(84% 0.1 23)", "oklch(95% 0.1 23)"] },
+      "bg": { "role": "neutral", "displayName": "Background", "tonalRamp": ["#080808", "#141414", "#242424", "#292929", "#444", "#949494", "#b4b4b4", "#f5f5f5"] },
+      "panel": { "role": "neutral", "displayName": "Panel", "tonalRamp": ["#080808", "#141414", "#242424", "#292929", "#444", "#949494", "#b4b4b4", "#f5f5f5"] },
+      "raised": { "role": "neutral", "displayName": "Raised state", "tonalRamp": ["#080808", "#141414", "#242424", "#292929", "#444", "#949494", "#b4b4b4", "#f5f5f5"] },
+      "line": { "role": "neutral", "displayName": "Row separator", "tonalRamp": ["#080808", "#141414", "#242424", "#292929", "#444", "#949494", "#b4b4b4", "#f5f5f5"] },
+      "control": { "role": "neutral", "displayName": "Control boundary", "tonalRamp": ["#080808", "#141414", "#242424", "#292929", "#444", "#949494", "#b4b4b4", "#f5f5f5"] },
+      "text": { "role": "neutral", "displayName": "Primary text", "tonalRamp": ["#080808", "#141414", "#242424", "#292929", "#444", "#949494", "#b4b4b4", "#f5f5f5"] },
+      "muted": { "role": "neutral", "displayName": "Supporting text", "tonalRamp": ["#080808", "#141414", "#242424", "#292929", "#444", "#949494", "#b4b4b4", "#f5f5f5"] },
+      "faint": { "role": "neutral", "displayName": "Metadata text", "tonalRamp": ["#080808", "#141414", "#242424", "#292929", "#444", "#949494", "#b4b4b4", "#f5f5f5"] }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Page heading", "purpose": "Current project or all-projects title; reduces to 22px on phones." },
+      "title": { "displayName": "Section title", "purpose": "Delivery, Session usage and Sessions headings." },
+      "body": { "displayName": "Body and controls", "purpose": "Base interface text, view controls and phone work rows." },
+      "table": { "displayName": "Table content", "purpose": "Desktop and tablet rows." },
+      "label": { "displayName": "Supporting label", "purpose": "Field labels, metadata, table headers, axis text and export actions." },
+      "metric": { "displayName": "Summary value", "purpose": "Tabular summary numbers; reduces to 22px on phones." },
+      "path": { "displayName": "Artifact path", "purpose": "Wrapping document paths inside evidence disclosures." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "button-hover", "value": "background 120ms ease-out", "purpose": "Ordinary button hover only; disabled under prefers-reduced-motion: reduce." }
+    ],
+    "breakpoints": [
+      { "name": "compact-header-max", "value": "1100px" },
+      { "name": "phone-max", "value": "640px" }
+    ],
+    "notes": "Neutral ramps reuse the implemented neutral scale. Chromatic ramps are generated panel previews, not additional shipping tokens. All sample measurements below are synthetic."
+  },
+  "components": [
+    {
+      "name": "Export action",
+      "kind": "button",
+      "refersTo": "action",
+      "description": "The compact bordered header action; no export handler is attached in this preview.",
+      "html": "<button class=\"ds-action\" type=\"button\">Export usage JSON</button>",
+      "css": ".ds-action{font:12px/1.45 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;border:1px solid var(--control,#444);border-radius:6px;background:var(--panel,#141414);color:var(--text,#f5f5f5);min-height:36px;padding:7px 11px;cursor:pointer;transition:background 120ms ease-out;touch-action:manipulation}.ds-action:hover{background:var(--raised,#242424)}.ds-action:disabled{color:var(--faint,#949494);cursor:default}.ds-action:focus-visible{outline:2px solid var(--focus,#f2b33d);outline-offset:3px}@media(max-width:640px){.ds-action{min-height:44px}}@media(prefers-reduced-motion:reduce){.ds-action{transition:none}}"
+    },
+    {
+      "name": "View selection",
+      "kind": "button",
+      "refersTo": "view-selected",
+      "description": "Neutral view buttons expose selected state through aria-pressed and raised fill.",
+      "html": "<div class=\"ds-tabs\" role=\"group\" aria-label=\"Board view\"><button type=\"button\" aria-pressed=\"true\">Delivery</button><button type=\"button\" aria-pressed=\"false\">Usage &amp; cost</button></div>",
+      "css": ".ds-tabs{display:flex;gap:5px}.ds-tabs button{font:14px/1.45 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--muted,#b4b4b4);min-height:36px;padding:7px 11px;cursor:pointer;transition:background 120ms ease-out;touch-action:manipulation}.ds-tabs button[aria-pressed=true]{background:var(--raised,#242424);color:#fff}.ds-tabs button:focus-visible{outline:2px solid var(--focus,#f2b33d);outline-offset:3px}@media(max-width:640px){.ds-tabs button{min-height:44px}}@media(prefers-reduced-motion:reduce){.ds-tabs button{transition:none}}"
+    },
+    {
+      "name": "Search field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A native search field with a visible supporting label and amber caret.",
+      "html": "<label class=\"ds-field\">Find work<input type=\"search\" placeholder=\"Search topics\"></label>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:5px;color:var(--muted,#b4b4b4);font:12px/1.45 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif}.ds-field input{font:14px/1.45 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;min-width:0;min-height:36px;padding:7px 11px;border:1px solid var(--control,#444);border-radius:6px;background:var(--panel,#141414);color:var(--text,#f5f5f5);caret-color:var(--amber,#f2b33d);touch-action:manipulation}.ds-field input::placeholder{color:var(--faint,#949494)}.ds-field input:focus-visible{outline:2px solid var(--focus,#f2b33d);outline-offset:3px}@media(max-width:640px){.ds-field input{min-height:44px}}"
+    },
+    {
+      "name": "Project navigation",
+      "kind": "nav",
+      "description": "Left-aligned project labels with quiet counts; selection stays neutral. Demo project only.",
+      "html": "<nav class=\"ds-projects\" aria-label=\"Projects\"><button type=\"button\" aria-pressed=\"true\"><span>All projects</span><small>5 topics</small></button><button type=\"button\" aria-pressed=\"false\"><span>Demo · Platform</span><small>3 topics</small></button></nav>",
+      "css": ".ds-projects{display:grid;gap:3px;background:var(--bg,#080808)}.ds-projects button{font:14px/1.45 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:36px;padding:9px 8px;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--muted,#b4b4b4);cursor:pointer;transition:background 120ms ease-out;touch-action:manipulation}.ds-projects button[aria-pressed=true]{background:transparent;color:#fff}.ds-projects button:hover{background:var(--panel,#141414)}.ds-projects button:focus-visible{outline:2px solid var(--focus,#f2b33d);outline-offset:3px}.ds-projects span{min-width:0;overflow-wrap:anywhere}.ds-projects small{color:var(--faint,#949494);font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}@media(max-width:1100px){.ds-projects button{min-height:44px}}@media(prefers-reduced-motion:reduce){.ds-projects button{transition:none}}"
+    },
+    {
+      "name": "Recorded status",
+      "kind": "chip",
+      "refersTo": "status",
+      "description": "Text-labelled, noninteractive state markers with success/failure color only where recorded.",
+      "html": "<span class=\"ds-status ds-pending\">awaiting verification</span> <span class=\"ds-status ds-ok\">done</span> <span class=\"ds-status ds-bad\">verification failed</span>",
+      "css": ".ds-status{display:inline-block;white-space:nowrap;padding:2px 7px;border-radius:4px;background:var(--raised,#242424);color:var(--muted,#b4b4b4);font:12px/1.45 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif}.ds-ok{color:var(--green,#80c9a5)}.ds-bad{color:var(--red,#f49b98)}.ds-pending{color:var(--text,#f5f5f5)}"
+    },
+    {
+      "name": "Summary panel",
+      "kind": "card",
+      "refersTo": "summary",
+      "description": "A single flat panel groups four metrics; the sample is explicitly synthetic and retains partial coverage.",
+      "html": "<div class=\"ds-summary\" aria-label=\"Synthetic preview measurements\"><div class=\"ds-item\"><span>Sessions</span><strong>5</strong><small>Includes subagents</small></div><div class=\"ds-item\"><span>API-equivalent cost · partial</span><strong>$4.20</strong><small>3 / 5 measured</small></div><div class=\"ds-item\"><span>Tokens · partial</span><strong>939,000</strong><small>4 / 5 measured</small></div><div class=\"ds-item\"><span>Recorded time</span><strong>19m</strong><small>5 / 5 measured</small></div></div>",
+      "css": ".ds-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-radius:8px;background:var(--panel,#141414);color:var(--text,#f5f5f5);font:14px/1.45 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif}.ds-item{padding:15px 18px;min-width:0}.ds-item strong{display:block;font-size:24px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.4}.ds-item span,.ds-item small{display:block;color:var(--muted,#b4b4b4);font-size:12px}.ds-item small{margin-top:4px;color:var(--faint,#949494)}@media(max-width:1100px){.ds-item{padding:13px 16px}}@media(max-width:640px){.ds-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.ds-item{padding:10px 12px}.ds-item strong{font-size:22px}}"
+    },
+    {
+      "name": "Evidence disclosure",
+      "kind": "custom",
+      "description": "Native disclosure with a wrapping path and local evidence link; the path is a synthetic example.",
+      "html": "<details class=\"ds-details\"><summary>Details</summary><p class=\"ds-path\">2026-11-06-api-pagination</p><div class=\"ds-links\"><span>No linked documents</span></div></details>",
+      "css": ".ds-details{font:12px/1.45 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;min-width:0;color:var(--text,#f5f5f5)}.ds-details summary{white-space:nowrap;min-height:24px;cursor:pointer;touch-action:manipulation}.ds-details summary:focus-visible{outline:2px solid var(--focus,#f2b33d);outline-offset:3px}.ds-details p{margin:9px 0 0;overflow-wrap:anywhere;white-space:normal;color:var(--muted,#b4b4b4)}.ds-details[open] summary{margin-bottom:8px}.ds-path{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}.ds-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;color:var(--muted,#b4b4b4)}@media(max-width:640px){.ds-details summary{padding-block:12px;min-height:44px}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Dark, compact, clear",
+    "overview": "Coamb follows the user's Ponytail-like dashboard direction: neutral working surfaces, readable tables and restrained charts. Its character comes from density, alignment and honest labels, not ornament. The Coamb name sits beside an amber hexagonal C mark, without an attribution line.\n\nThis system is extracted from `scripts/board/style.css`, `render.mjs` and `client.js`. It describes the Board; Nectar's CLI remains `nectar board`. Surface composition and purpose belong in the surface brief, not in this global visual contract.",
+    "keyCharacteristics": [
+      "Neutral dark surfaces with amber data and focus accents.",
+      "Compact system typography and aligned numeric columns.",
+      "Flat panels, modest corners and native controls.",
+      "Visible units, measurement coverage and unknown states."
+    ],
+    "rules": [
+      { "name": "The Data Accent Rule", "body": "Keep navigation neutral; use amber for plotted data, the mark and focus, and status colors only with their recorded labels.", "section": "colors" },
+      { "name": "The Aligned Numbers Rule", "body": "Use tabular numerals for counts and measurements, right-align numeric table columns, and keep value/unit groups together. Preserve explicit unknown markers instead of turning missing measurements into zero.", "section": "typography" },
+      { "name": "The Flat Surface Rule", "body": "Distinguish grouping and state through tone and spacing; keep panels flat.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do retain neutral navigation and the Data Accent Rule.",
+      "Do keep numeric alignment, units, coverage and unknown states visible.",
+      "Do preserve native controls, keyboard focus and the responsive target sizes.",
+      "Do keep component previews and sample measurements explicitly synthetic."
+    ],
+    "donts": [
+      "Don't replace recorded state labels with color alone.",
+      "Don't present partial measurements as complete or missing values as zero.",
+      "Don't add shadows or decorative gradients to the flat Board surfaces.",
+      "Don't shrink the desktop table into unreadable phone columns; use the implemented reflow or scroll pattern."
+    ]
+  }
+}

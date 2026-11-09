@@ -1,6 +1,6 @@
 ---
 name: nectar-security
-description: Review a specified change or component for reachable security flaws when a focused security assessment is needed.
+description: Focused security review of authentication, authorization, sensitive data or other reachable attack surfaces. Use for a security assessment or substantive security-sensitive change, not a mere mention or label edit.
 ---
 
 # Security

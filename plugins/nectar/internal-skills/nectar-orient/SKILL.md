@@ -18,6 +18,11 @@ Select the relevant topic and diagnostics from the report. Do not use Close disc
 for an ordinary status question: archive eligibility and snapshots belong to Close.
 Do not infer "done" from a remembered summary or checked implementation tasks.
 
+When the user asks for a visual overview, `nectar board [path]` can render the
+recorded state. Treat it as a dated snapshot, not a running agent monitor or new
+source of truth. Session activity, cost and recorded test observations do not
+establish delivery completion; inspect the underlying topic and evidence as needed.
+
 For `Workflow: nectar-slim-v1`, the meaningful states are:
 
 - `building`: implementation tasks remain.

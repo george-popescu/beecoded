@@ -159,7 +159,7 @@ process.exit(2);
 `;
 
 function makeFixture() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'beecoded-installer-test-'));
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'beecoded-installer-test-')));
   temporaryRoots.push(root);
   const binDirectory = path.join(root, 'bin');
   const stateDirectory = path.join(root, 'state');
@@ -460,7 +460,9 @@ try {
   assert.match(nectarInstall, /executing @beecoded\/nectar@\d+\.\d+\.\d+ source=/);
   assert.equal(fs.readFileSync(globalGitIgnore(nectar), 'utf8'), '.nectar/\n');
   assert.deepEqual(readState(nectar, 'claude').plugins.map((entry) => entry.selector), ['nectar@beecoded-nectar']);
-  assert.equal(installedSkillNames(nectar, 'claude', 'nectar').length, 17);
+  assert.equal(installedSkillNames(nectar, 'claude', 'nectar').length, 19);
+  assertOwnedSkill(nectar, 'claude', 'nectar-debt', '@beecoded/nectar');
+  assertOwnedSkill(nectar, 'claude', 'nectar-help', '@beecoded/nectar');
   assertOwnedSkill(nectar, 'claude', 'nectar-burciu-inspection', '@beecoded/nectar');
   assertOwnedSkill(nectar, 'claude', 'nectar-test-review', '@beecoded/nectar');
   assertOwnedSkill(nectar, 'claude', 'nectar-security', '@beecoded/nectar');
@@ -481,7 +483,20 @@ try {
     'implementer.md',
   )));
   assert.doesNotMatch(installedBuild, /\.\.\/\.\.\/agents\/implementer\.md/);
+  const installedNectar = path.join(nectarRoot, 'plugins', 'nectar', 'bin', 'install.mjs');
+  for (const args of [['guide', '--json'], ['board', nectar.root, '--json'], ['telemetry', 'status', '--json']]) {
+    const result = runInstallerPath(installedNectar, nectar, args);
+    assert.equal(result.status, 0, `Installed Nectar ${args[0]}: ${result.stderr}`);
+    assert.doesNotThrow(() => JSON.parse(result.stdout));
+  }
+  const settingsPath = path.join(nectar.env.CLAUDE_CONFIG_DIR, 'settings.json');
+  writeJson(settingsPath, { hooks: { SessionStart: [{ hooks: [{ type: 'command', command: 'echo unrelated-hook' }] }] } });
+  run('nectar', nectar, ['hooks', 'install', '--host', 'claude']);
+  assert.ok(fs.readFileSync(settingsPath, 'utf8').includes('nectar-lifecycle:v1'));
   run('nectar', nectar, ['uninstall', '--all']);
+  const retainedSettings = fs.readFileSync(settingsPath, 'utf8');
+  assert.equal(retainedSettings.includes('nectar-lifecycle:v1'), false);
+  assert.ok(retainedSettings.includes('echo unrelated-hook'));
   assert.equal(fs.existsSync(nectarProductRoot), false, 'explicit --all uninstall must remove managed files');
   assert.equal(installedSkillNames(nectar, 'claude', 'nectar').length, 0);
   assert.equal(
@@ -553,7 +568,9 @@ try {
       `dry-run uninstall must preserve the ${host} plugin`,
     );
     assert.equal(readState(installedDryRun, host).marketplaces.length, 1);
-    assert.equal(installedSkillNames(installedDryRun, host, 'nectar').length, 17);
+    assert.equal(installedSkillNames(installedDryRun, host, 'nectar').length, 19);
+    assertOwnedSkill(installedDryRun, host, 'nectar-debt', '@beecoded/nectar');
+    assertOwnedSkill(installedDryRun, host, 'nectar-help', '@beecoded/nectar');
     assertOwnedSkill(installedDryRun, host, 'nectar-burciu-inspection', '@beecoded/nectar');
     assertOwnedSkill(installedDryRun, host, 'nectar-test-review', '@beecoded/nectar');
     for (const skill of ['nectar-polish', 'nectar-rehearse', 'nectar-release']) {

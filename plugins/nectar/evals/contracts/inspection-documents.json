@@ -27,6 +27,8 @@
     "Blocks acceptance of the document despite no runtime code: identifies the arithmetic errors, with EUR 1600 monthly and EUR 21200 first year including the one-time fee.",
     "Identifies unapproved/unestimated real-time ERP integration and recommends removing it from the approved delivery or obtaining a scoped decision, rather than silently committing it.",
     "Identifies pilot launch before acceptance/signoff and use of production data before anonymization as contradictions to explicit prerequisites; gives specific corrections.",
-    "Uses section/line evidence, does not invent a legal breach or missing stakeholders, remains read-only and does not require tests for Markdown or insist only code defects can block."
+    "Uses section/line evidence, does not invent a legal breach or missing stakeholders, remains read-only and does not require tests for Markdown or insist only code defects can block.",
+    "Does not call the annual cost projection and pilot week contradictory merely because their time horizons differ. Treats an unspecified budget period as unresolved rather than a proved breach, and separates optional safeguards or execution details from required corrections without imposing new approval delays, provisioning methods or architecture.",
+    "Distinguishes clarifying the existing budget's coverage from obtaining approval for a changed budget. Does not categorically require a new budget decision for a full-year commitment before confirming that the cap applies to it; preserves that condition in the verdict, required repairs and verification."
   ]
 }

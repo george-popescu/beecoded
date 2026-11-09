@@ -1,5 +1,36 @@
 # Changelog
 
+## 3.7.0 — 2026-11-09
+
+- Refine native automatic skill selection: detailed reviews use Burciu, small
+  well-defined fixes stay direct, and delivery stages are not an automatic chain.
+  Explicit invocations and existing authorization boundaries remain unchanged.
+- Calibrate Burciu Inspection to distinguish demonstrated contradictions from
+  missing information and keep optional improvements separate from required repairs.
+  Clarify existing approvals before requiring approval for a change in constraints.
+- Preserve the first enabled Codex turn after a collection pause with a pre-request
+  baseline; retain known session costs when a transcript enriches usage without prices.
+- Correct measurement-window transitions and collection pause boundaries; retain
+  disjoint history and keep uncertain overlap explicit. Remove internal native
+  measurement IDs from public exports and canonicalize Board project aliases.
+
+- Add Coamb, an optional local Board for recorded delivery state and provenance-aware
+  session usage, with project/host/model filters, charts and private exports.
+- Link saved work, sessions and skills through attributable usage intervals,
+  preserving Git branch/worktree metadata and unassigned switching boundaries.
+  Coamb exposes work/skill filters, linked-session navigation and interval exports.
+- Add opt-in local SQLite telemetry, scoped Claude/Codex transcript imports,
+  native Claude metadata snapshots, explicit rate-based estimates, retention and
+  an explicitly invoked HTTPS webhook. Unknown and partial data stay visible.
+- Add host-specific lifecycle hooks and a native Claude status strip without
+  automatic tests, reviews, publication or model changes. Context, collection
+  and strip visibility have independent controls.
+- Add `nectar-debt`, `nectar-help`, capability guidance and existing-benchmark
+  impact reporting. Public installation now exposes nineteen skills.
+- Improve solution fit, complete-change propagation, expected-load review,
+  dynamic-consumer checks and actionable findings while preserving completion
+  and recovery compatibility.
+
 ## 3.6.0 — 2026-10-29
 
 - Added `nectar-burciu-inspection`: optional deep review across code, plans and documents,

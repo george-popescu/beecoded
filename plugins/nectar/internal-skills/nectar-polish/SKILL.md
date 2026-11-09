@@ -1,6 +1,6 @@
 ---
 name: nectar-polish
-description: Write or refine website and product copy for natural, unambiguous language, and improve generic interface design when requested.
+description: Improve natural language, ambiguous product copy or generic interface design when editorial or design judgment is requested. Not for a mechanical label replacement or a known code fix.
 ---
 
 # Polish

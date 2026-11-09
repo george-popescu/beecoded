@@ -1,0 +1,87 @@
+{
+  "hooks": {
+    "UserPromptExpansion": [
+      { "hooks": [{ "type": "command", "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','claude']))\"", "timeout": 3 }] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Skill", "hooks": [{ "type": "command", "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','claude']))\"", "timeout": 3 }] }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','claude']))\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','claude']))\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','claude']))\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','claude']))\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','claude']))\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','claude']))\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"import(require('url').pathToFileURL(require('path').join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/lifecycle.mjs')).href).then(m=>m.main(['--host','claude']))\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}

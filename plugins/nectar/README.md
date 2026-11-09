@@ -4,13 +4,28 @@ Nectar gives Claude Code and Codex a direction for planning, implementation and
 verification. Its slim workflow leaves task size, scheduling and useful depth of
 investigation to the model.
 
-Nectar 3.4 adds focused security review and adapts verification and audit depth to
-the work's impact. It retains compatibility with existing slim and older plans.
+Nectar includes focused security review, detailed cross-artifact inspection and
+optional local observability. Verification depth follows the work's impact, with
+compatibility for existing slim and older plans. Version 3.7 adds Coamb, optional
+telemetry and selective native skill discovery without mandatory workflow stages.
 
 | Host | Example |
 |---|---|
 | Claude Code | `/nectar-shape` |
 | Codex | `$nectar-shape` |
+
+Describe the task normally: installed skill descriptions let the host select a
+useful skill without a command. Detailed or meticulous review targets
+`nectar-burciu-inspection`; ordinary change review targets `nectar-review`.
+Small, well-defined low-risk fixes need no Nectar workflow. Multi-step delivery
+can use Honey, and an already defined implementation plan can use Build.
+There is no automatic Shape → Plan → Build → Review chain. Explicit invocation
+remains available and takes precedence over inferred routing.
+
+Selection is a host/model decision, not a deterministic guarantee. It requires the
+skills to be installed and visible to that host. Optional hooks are not required;
+their context hint only reinforces the same boundaries when enabled. Selection
+never grants permission to edit, publish, deploy or archive beyond the request.
 
 ## Install
 
@@ -65,6 +80,188 @@ nectar --allow-downgrade
 | nectar-context | Inspect or refresh reusable project context. |
 | nectar-capture | Save an idea without derailing the active task. |
 | nectar-close | Archive accepted completed work with recoverable evidence. |
+| nectar-debt | Inspect documented limitations and deferred work without creating another ledger. |
+| nectar-help | Explain the installed skills and operational commands without activating them. |
+
+`nectar guide` derives this capability catalog from the installed skill sources.
+
+## Coamb: local Board and usage
+
+```bash
+nectar board /path/to/project --open
+nectar board --project /path/to/one --project /path/to/two --open
+nectar board /path/to/project --json
+nectar debt /path/to/project --json
+nectar guide --json
+nectar impact --file /path/to/benchmark-results.json
+```
+
+Coamb (`nectar board`) generates a self-contained local HTML snapshot with project selection,
+delivery/usage views, filters, charts and JSON/CSV export. It reads only selected
+projects and recorded telemetry. It runs no tests, starts no server, creates no
+plan and never infers completion from activity. `--output PATH` writes a new file;
+existing files are not overwritten. Without it, HTML lives in a new temporary
+directory. The page shows its generation time; regenerate to refresh. Evidence
+links open local documents when the browser allows local file links.
+
+Implementation, final verification and review remain separate. Doctor interprets
+recorded documents, not the truth of every evidence claim. A green recorded state
+does not establish a fresh test, production release or full audit. Small inline
+changes need not create documents just to appear on the Board.
+
+Usage is attributed to host/session/canonical project identity, never just a folder
+name. Missing metrics stay unavailable; imported or partial data retains its origin.
+Linked children are excluded when their totals overlap or may overlap a parent;
+explicit session-only scopes can be added. Unknown overlap and process-limited
+measurements keep totals marked partial. Model filters select matching sessions, not an invented per-model
+allocation inside mixed-model sessions. Turn elapsed time may include waits and is
+not human time saved. Session totals grouped by start date are not daily spend.
+
+### Work and skill attribution
+
+Coamb links saved work to its sessions and shows costs/tokens by work or skill.
+Git metadata records the observed branch, revision and worktree; shared repository
+identity does not merge distinct worktree sessions. The Usage view separates full
+session totals from attributable measurement intervals.
+For imported history, Git metadata describes the checkout at collection time,
+not an independently reconstructed historical branch.
+
+For an explicitly scoped session, launch the host from the project directory with
+the existing work path and skill. Hooks must already be registered/trusted and
+collection enabled:
+
+```bash
+NECTAR_TOPIC=docs/work/2026-11-06-example NECTAR_SKILL=nectar-build codex
+NECTAR_TOPIC=docs/work/2026-11-06-example NECTAR_SKILL=nectar-review claude
+nectar telemetry summary --group topic --project /path/to/project
+nectar telemetry summary --group skill --project /path/to/project
+```
+
+The work directory must contain an actual saved design or plan; an arbitrary title
+is not an identity. Explicit launches bind the initial measurement window. Actual
+Claude skill activation events and explicit Codex `$nectar-*` prompt invocations
+can change the skill binding; reading a skill file or mentioning a name in prose
+does not establish attribution. No prompt text is retained.
+
+For an existing session, use `nectar telemetry link --host codex --session ID
+--project PATH --topic docs/work/TOPIC --skill nectar-review`; use `unlink` with
+the same host/session/project to clear future attribution. `--scope session` is
+accepted only before the first measurement. Normal links apply prospectively.
+An interval crossing an unsampled assignment change remains unassigned instead
+of charging prior work to the new label. Repeated snapshots do not add cumulative
+totals twice. Unknown parent/subagent overlap stays partial; no skill leaderboard
+claims quality or speed from unmatched tasks. Old recorded sessions are not
+retroactively attributed automatically.
+
+JSON exports include sanitized intervals; Coamb also offers a filtered interval
+CSV. Private local work names and paths are omitted from public telemetry exports
+unless explicitly requested with `--include-names`.
+
+### Collection and privacy
+
+Collection and contextual hooks are **off by default**. Storage is local SQLite
+under `~/.nectar` (`NECTAR_STATE_DIR` or `--state-dir` overrides it), outside product
+repositories. No raw prompts, answers, source code, command text or tool output
+are retained. Session/project identifiers and paths are local metadata; telemetry exports
+and webhooks omit paths and hash session identifiers by default. HTML is a private
+local artifact containing selected project paths for evidence navigation, as is
+`board --json`. Treat both as private; only telemetry exports apply the path/ID privacy defaults.
+
+```bash
+nectar telemetry status --json
+nectar telemetry enable
+nectar telemetry disable
+nectar telemetry configure --band false
+nectar telemetry configure --retention-days 90
+nectar telemetry export --format json
+nectar telemetry export --format markdown --project /path/to/project
+nectar telemetry prune --before 2026-01-01
+```
+
+Disable stops future collection, not stored history. Retention is applied during
+recording; prune explicitly deletes matching local records and reports its count.
+Re-enabling starts a new collection epoch. Codex samples its cumulative transcript
+before the next model request, excluding paused usage while retaining the next
+enabled turn. If that baseline is unavailable, the unsampled boundary remains
+unknown rather than being charged to the next work item. Native collection rebases at the next observed
+turn start. Disjoint measurement windows retain their history; uncertain overlaps
+are marked partial rather than erased or counted twice.
+Session totals retain accepted usage and known costs across source changes.
+Hiding the native strip is independent of collection. No telemetry is sent merely
+by installing, enabling or viewing Nectar.
+
+Import is explicit and reads one selected normal, unlinked JSONL file, with bounded
+size and record counts. It does not scan all history or enable live collection.
+The supported record families are Claude transcript usage messages and Codex
+session/turn/token events; unknown formats fail or remain unavailable. Transcript
+schemas can change and host writes may lag a hook.
+
+```bash
+nectar telemetry import --host codex --file /absolute/session.jsonl --project /path/to/project
+nectar telemetry import --host claude --file /absolute/session.jsonl --project /path/to/project
+nectar telemetry send --url https://your-approved-endpoint.example/usage --project /path/to/project
+```
+
+`send` is the only webhook operation. It uses HTTPS, a bounded timeout, no redirects
+and optional `NECTAR_TELEMETRY_TOKEN` authorization. Use only an approved destination.
+There is no automatic upload or token stored in project configuration.
+
+### Cost provenance
+
+Native Claude reports API-equivalent current-process costs; these are not a
+subscription invoice or a guaranteed lifetime session total. Historical Claude
+`cost-state` is not accepted as a whole-session total after process restarts.
+Codex token counts alone do not supply a dollar price. Unknown costs remain null.
+
+For explicit estimates, pass `--pricing-file /absolute/rates.json` to import, or
+`nectar telemetry configure --pricing-file /absolute/rates.json` for future live
+snapshots. Use `--pricing-file none` on configure to remove those rates. The
+file has `schemaVersion: 1`, `currency: "USD"`, `rateDate: "YYYY-MM-DD"`, and a
+`models` object keyed by exact model IDs, each with nonnegative `input`, `output`,
+`cacheRead` and `cacheWrite` USD-per-million rates. Supply authoritative rates for
+your own model/provider; Nectar does not guess them or fetch a mutable price list.
+Estimation requires attributable usage. Mixed-model or unknown-price records remain
+unavailable. When only some charged token counts are known, a known-usage subtotal
+is explicitly partial rather than a complete bill. Estimates identify the rate
+date and file fingerprint. Choose rates matching the provider, service tier and
+context-size band: a flat supplied table does not model dynamic long-context or
+regional surcharges. Unreported provider charges are not included. Runtime input
+counts exclude cached input so cache usage is not charged twice.
+
+`nectar impact` reads selected existing benchmark results; it never runs a paid
+comparison. It separates correctness from efficiency, matches comparable pairs
+and does not transfer benchmark percentages to live project savings.
+
+### Optional hooks and native strip
+
+Native plugin manifests register separate Claude and Codex lifecycle definitions.
+Review/trust hooks in the host as required; Nectar never bypasses that approval.
+If the host integration does not load native plugin hooks, explicitly register
+owned global handlers against the stable managed runtime:
+
+```bash
+nectar hooks status --json
+nectar hooks install --host claude
+nectar hooks install --host codex
+nectar hooks enable
+nectar hooks disable
+nectar hooks uninstall --host claude
+```
+
+Do not add global handlers when native hooks already run. Registration preserves
+unrelated settings and does not enable collection. `hooks enable` controls compact
+context only; `telemetry enable` controls usage collection. Hooks return neutral
+results on failure, do not launch tests/reviews and never block edits or completion.
+Existing safe context pointers are bounded hints, not new authority or a required
+index build. Opt-in global handlers are removed by Nectar uninstall; historical
+telemetry is retained until explicitly pruned.
+
+Claude's documented native module provides a compact optional strip and explicit
+Review/Audit controls; Codex uses the portable CLI/HTML surface, not an invented
+equivalent UI slot. Native collection records metadata only and labels process
+scope. Unsupported fields remain unavailable. Module contract checks and fixture
+tests are not evidence that every installed host version paints the strip or
+delivers every lifecycle event.
 
 ## Planning and autonomy
 

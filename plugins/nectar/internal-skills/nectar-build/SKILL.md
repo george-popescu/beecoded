@@ -1,6 +1,6 @@
 ---
 name: nectar-build
-description: Implement an authorized change or plan and verify the integrated result.
+description: Execute an already approved multi-step or cross-component implementation plan and verify the result. Small, well-defined low-risk edits need no workflow skill unless explicitly requested.
 ---
 
 # Build
@@ -9,6 +9,11 @@ Use the [workflow contract](../../references/workflow.md). Implement the outcome
 and acceptance criteria with current source and repository conventions. Resume
 from actual progress; update the [persisted plan](../../references/plan-format.md)
 when useful task grouping, files or verification commands change.
+
+When a contract changes, trace its affected consumers and complete the necessary
+wiring. Fix a shared cause at its owner rather than patching one caller. If source
+evidence contradicts a plan assumption, reassess the dependent work within the
+authorized outcome instead of implementing that assumption mechanically.
 
 Group related work and respect dependencies and write ownership. For delegated
 implementation, use the [implementer](../../agents/implementer.md) role with a

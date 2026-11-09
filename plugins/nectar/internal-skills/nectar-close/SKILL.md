@@ -1,6 +1,6 @@
 ---
 name: nectar-close
-description: Archive accepted completed work with recoverable evidence and verified commit history.
+description: Archive accepted completed work with recoverable evidence when the user requests closure or archiving. Do not trigger merely because implementation or review has finished.
 ---
 
 # Close

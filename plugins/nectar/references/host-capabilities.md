@@ -28,3 +28,10 @@ actual result. Do not disable required checks to save time.
 
 Report uncovered requirements honestly. Avoid new hooks, duplicate reviews, tool
 installation and fresh context indexes without a task-specific need.
+
+Optional Nectar hooks, Board and telemetry are observational. Check support in the
+current host before using them; do not assume a Claude UI hook exists in Codex.
+Enable collection or import historical sessions only under explicit user authority.
+Use only the selected sources and distinguish unavailable data from measured zero.
+Label reported usage and API-priced estimates accurately: neither is necessarily
+the user's bill, and activity or a recorded test command is not acceptance evidence.

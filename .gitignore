@@ -3,3 +3,5 @@ node_modules/
 .nectar/
 *.tgz
 .DS_Store
+plugins/nectar/.taste-skill/
+plugins/nectar/.impeccable/review/

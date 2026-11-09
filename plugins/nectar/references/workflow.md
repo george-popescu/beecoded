@@ -3,6 +3,22 @@
 Deliver the user's outcome with enough context and evidence to support it. Choose
 planning, investigation and verification depth from impact and uncertainty.
 
+## Select only useful skills
+
+Honor an explicit skill choice within the user's authority and constraints.
+Otherwise use native skill discovery to choose a relevant entry point, not an
+automatic chain. Small, well-defined low-risk fixes can proceed directly without
+Nectar stages or saved work documents; required project checks still apply.
+
+Use Burciu Inspection for detailed or meticulous review of code or documents;
+Review for an ordinary bounded change review; Audit for a requested whole-repository
+assessment. Use Security for a focused security question or substantive security
+risk, not simply because security is mentioned. Honey coordinates multi-step
+delivery; Build executes a defined implementation plan. Shape and Plan are useful
+for unresolved choices and requested planning, not compulsory preflights.
+Load only the selected skill and relevant references. Selection does not authorize
+edits, tests, publication, deployment or archival beyond the user's request.
+
 ## Authority and direction
 
 An implementation request authorizes necessary local work within its constraints.
@@ -15,6 +31,13 @@ Inspect affected behavior and dependencies. Use [Solution Fit](solution-fit.md)
 for material uncertainty. Load relevant sources and references as needed; generated
 context and Atlas are optional. Keep small work inline; use the persisted
 [plan format](plan-format.md) when coordination or resumption benefits from it.
+
+Prefer existing project behavior and conventions before adding code. Make the
+smallest complete change: include affected callers, configuration, exports and
+fixtures, not just the visible edit. Preserve required validation, error handling,
+security, accessibility and compatibility when simplifying. Less code is useful
+when it reduces total complexity without weakening the requested outcome; line
+counts, reuse percentages and dependency counts are not quality targets.
 
 There are no wave or task caps. Group work by dependencies and delivery value.
 Delegate when a bounded independent task justifies coordination cost and the host
@@ -41,6 +64,11 @@ behavior and its dependencies. Review follows the same rule: assess the repair,
 expanding for new integration concerns. An unrelated edit does not invalidate
 everything. Required project gates still apply. Never claim completion while
 required evidence is missing or failed.
+
+Compare the integrated result with the requested outcome and agreed exclusions.
+A missing acceptance requirement is not made optional by a zero code-defect count.
+Boards, activity hooks and telemetry describe recorded observations; they do not
+grant authority, prove current verification or decide that work is done.
 
 Review proportionately; for small low-risk work this can be the implementer's diff
 inspection. Use an independent perspective for material risk or uncertainty.
