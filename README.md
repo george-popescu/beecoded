@@ -94,9 +94,11 @@ plugins/<product>/
 ```
 
 Bee keeps its canonical workflow definitions in `workflows/` and thin generated
-entry sources in `internal-skills/`. Nectar keeps its nineteen canonical entry
-sources in `internal-skills/`. Code Audit generates its single standalone entry
-and the Nectar compatibility entry from one shared risk methodology. UI/UX Audit keeps one
+entry sources in `internal-skills/`. Nectar keeps its nineteen entry
+sources in `internal-skills/`. Code Audit generates its standalone entry from its
+canonical risk methodology; Nectar Audit uses a separately maintained compact
+method adapted from Ponytail, generated from `tools/templates/nectar-audit-preamble.md`
+and its optional Atlas suffix, with attribution retained. UI/UX Audit keeps one
 browser-first entry plus host capability references and does not bundle a browser or MCP server. The installer materializes those entries into
 each selected host's user skill directory with Beecoded ownership metadata and
 durable references to the managed package under `~/.beecoded/`.

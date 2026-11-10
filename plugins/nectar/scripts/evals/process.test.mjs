@@ -48,26 +48,27 @@ test('kills a silent hung child after the configured timeout', async () => {
   assert.equal(result.signal, 'SIGKILL');
 });
 
-test('terminates descendants that inherit the timed-out child process pipes', {
+test('terminates ready descendants that inherit the child process pipes', {
   skip: process.platform === 'win32',
 }, async () => {
-  const grandchild = "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000);";
+  const grandchild = "process.on('SIGTERM', () => {}); process.send('ready'); setInterval(() => {}, 1000);";
   const parent = [
     "const { spawn } = require('node:child_process');",
-    `spawn(process.execPath, ['-e', ${JSON.stringify(grandchild)}], { stdio: 'inherit' });`,
     "process.on('SIGTERM', () => {});",
+    `const child = spawn(process.execPath, ['-e', ${JSON.stringify(grandchild)}], { stdio: ['inherit', 'inherit', 'inherit', 'ipc'] });`,
+    "child.once('message', () => process.stdout.write('x'.repeat(65536)));",
     'setInterval(() => {}, 1000);',
   ].join('');
   const started = Date.now();
   const result = await runCommand(
     process.execPath,
     ['-e', parent],
-    { timeout: 200, killGraceMs: 20 },
+    { maxBuffer: 1_024, timeout: 5_000, killGraceMs: 20 },
   );
 
-  assert.equal(result.error?.code, 'ETIMEDOUT');
+  assert.equal(result.error?.code, 'ENOBUFS');
   assert.equal(result.signal, 'SIGKILL');
-  assert.ok(Date.now() - started < 2_000);
+  assert.ok(Date.now() - started < 5_000);
 });
 
 test('keeps hard escalation armed after the direct child exits', {
@@ -77,19 +78,21 @@ test('keeps hard escalation armed after the direct child exits', {
   const pidFile = path.join(root, 'grandchild.pid');
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const grandchild = [
-    `require('node:fs').writeFileSync(${JSON.stringify(pidFile)}, String(process.pid));`,
     "process.on('SIGTERM', () => {});",
+    `require('node:fs').writeFileSync(${JSON.stringify(pidFile)}, String(process.pid));`,
+    "process.send('ready');",
     'setInterval(() => {}, 1000);',
   ].join('');
   const parent = [
     "const { spawn } = require('node:child_process');",
-    `spawn(process.execPath, ['-e', ${JSON.stringify(grandchild)}], { stdio: 'ignore' });`,
+    `const child = spawn(process.execPath, ['-e', ${JSON.stringify(grandchild)}], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });`,
+    "child.once('message', () => process.stdout.write('x'.repeat(65536)));",
     'setInterval(() => {}, 1000);',
   ].join('');
   const result = await runCommand(
     process.execPath,
     ['-e', parent],
-    { timeout: 200, killGraceMs: 100 },
+    { maxBuffer: 1_024, timeout: 5_000, killGraceMs: 100 },
   );
   const grandchildPid = Number(fs.readFileSync(pidFile, 'utf8'));
   let alive = true;
@@ -102,7 +105,7 @@ test('keeps hard escalation armed after the direct child exits', {
     try { process.kill(grandchildPid, 'SIGKILL'); } catch {}
   }
 
-  assert.equal(result.error?.code, 'ETIMEDOUT');
+  assert.equal(result.error?.code, 'ENOBUFS');
   assert.equal(alive, false);
 });
 

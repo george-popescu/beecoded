@@ -65,6 +65,10 @@ and report the exact failure. Do not retry by bypassing validation. Never modify
 - `CONTEXT.md` contains stable commands, modules, entry points, definitions,
   relationships, and useful links. It does not contain task status or volatile
   `docs/work/` decisions.
+- Include useful existing helpers/components in that same map, not a second index.
+  Use `- reuse: SymbolName source: relative/path:line` for a reusable public symbol
+  verified in current source. Prefer a few likely reuse points over exhaustive
+  exports. Startup hints expose only these identifier/path pairs, never prose.
 - `CONVENTIONS.md` contains only patterns supported by repeated examples. Omit
   guesses and one-off style choices.
 

@@ -11,6 +11,7 @@ plan. Use the [plan format](../../references/plan-format.md) only for persisted 
 Continue under existing implementation authority until the outcome is delivered.
 
 Shape, Plan and Build describe responsibilities you may handle in one session.
+Do not load their entrypoints merely to repeat responsibilities covered here.
 Delegate coherent independent work when it helps. Give workers the outcome,
 relevant context and ownership; collect actual changes and reusable evidence.
 

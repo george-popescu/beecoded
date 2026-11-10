@@ -9,7 +9,7 @@ import {
   renderAuditSurface,
 } from './generate-code-audit-surfaces.mjs';
 
-test('renders standalone and Nectar surfaces from one tokenized core', () => {
+test('renders tokenized audit content with an optional suffix', () => {
   const core = '## Core\nRole: {{ROLE_PREFIX}}; report: `{{DEFAULT_REPORT}}`; lens: `{{LENS_ROLE_PATH}}`.\n';
   const standalone = renderAuditSurface({
     preamble: '# Standalone\n',
@@ -57,6 +57,10 @@ test('check mode reports generated-surface drift without writing', (t) => {
   fs.writeFileSync(files.nectarSuffix, 'Atlas\n');
 
   generateCodeAuditSurfaces({ paths: files });
+  const nectarBefore = fs.readFileSync(files.nectarDestination, 'utf8');
+  fs.appendFileSync(files.core, 'Shared-core change\n');
+  assert.deepEqual(generateCodeAuditSurfaces({ paths: files, check: true }).mismatches, ['code-audit']);
+  assert.equal(fs.readFileSync(files.nectarDestination, 'utf8'), nectarBefore);
   fs.writeFileSync(files.standaloneDestination, 'drift\n');
   const result = generateCodeAuditSurfaces({ paths: files, check: true });
 

@@ -9,7 +9,7 @@ import { renderAuditSurface } from './generate-code-audit-surfaces.mjs';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (relative) => fs.readFileSync(path.join(repoRoot, relative), 'utf8');
 
-test('Code Audit and Nectar Audit are exact surfaces of one canonical risk methodology', () => {
+test('generated audit surfaces match their separately maintained methodologies', () => {
   const core = read('plugins/code-audit/methodology/audit-core.md');
   const standalonePreamble = read('tools/templates/code-audit-standalone-preamble.md');
   const nectarPreamble = read('tools/templates/nectar-audit-preamble.md');
@@ -29,14 +29,9 @@ test('Code Audit and Nectar Audit are exact surfaces of one canonical risk metho
   }));
   assert.equal(nectar, renderAuditSurface({
     preamble: nectarPreamble,
-    core,
+    core: '',
     suffix: nectarSuffix,
-    replacements: {
-      ROLE_PREFIX: 'nectar',
-      DEFAULT_REPORT: 'docs/work/audit-YYYY-MM-DD.md',
-      LENS_ROLE_PATH: '../../agents/lens.md',
-      VALIDATOR_ROLE_PATH: '../../agents/validator.md',
-    },
+    replacements: {},
   }));
 
 });

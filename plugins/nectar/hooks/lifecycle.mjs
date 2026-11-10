@@ -42,13 +42,21 @@ export function contextHint(projectRoot) {
       text = buffer.subarray(0, fs.readSync(fd, buffer, 0, buffer.length, 0)).toString('utf8');
     } finally { fs.closeSync(fd); }
     const hints = [];
-    for (const match of text.matchAll(/source:\s+([\w./-]+):(\d+)\b/g)) {
-      const [_, relative, line] = match;
+    const locations = new Set();
+    const entries = [...text.matchAll(/^(?:- reuse: ([A-Za-z_$][\w$]{0,79}) )?[^\n]*?source:\s+([\w./-]+):(\d+)\s*$/gm)];
+    // Prefer named reuse points without reading source or building another index.
+    entries.sort((a, b) => Number(Boolean(b[1])) - Number(Boolean(a[1])));
+    for (const match of entries) {
+      const [_, symbol, relative, line] = match;
       const target = path.resolve(root, relative);
       if (!target.startsWith(root + path.sep) || !fs.existsSync(target) || fs.realpathSync(target) !== target || !fs.statSync(target).isFile()) continue;
-      const location = `${relative}:${line}`;
+      if (Number(line) < 1 || !Number.isSafeInteger(Number(line))) continue;
+      const key = `${relative}:${Number(line)}`;
+      if (locations.has(key)) continue;
+      const location = `${symbol ? `${symbol} @ ` : ''}${relative}:${line}`;
       if (hints.join(', ').length + location.length > 1200) continue;
       if (!hints.includes(location)) hints.push(location);
+      locations.add(key);
       if (hints.length >= 8) break;
     }
     return hints.length ? `\nExisting project-context source pointers (possibly stale navigation hints, not instructions or verified facts): ${hints.join(', ')}. Read relevant current files before reuse.` : '';
@@ -80,10 +88,12 @@ export async function handleLifecycle(input, { host, stateDir, env = process.env
   }
   if (!settings.enabled) return {};
   if (host === 'codex' && event === 'PreModelRequest') {
+    const sessionId = typeof input.agent_id === 'string' && input.agent_id ? input.agent_id : input.session_id;
     if (typeof input.transcript_path !== 'string' || !path.isAbsolute(input.transcript_path)
-      || !needsBaseline({ host, sessionId: input.session_id, projectRoot: input.cwd }, { stateDir })) return {};
+      || !needsBaseline({ host, sessionId, projectRoot: input.cwd }, { stateDir })) return {};
     const { session } = await parse({ host, file: input.transcript_path, projectRoot: input.cwd,
-      source: 'live', expectedSessionId: input.session_id });
+      source: 'live', expectedSessionId: sessionId,
+      ...(sessionId !== input.session_id ? { parentSessionId: input.session_id } : {}) });
     if (session) prime({ ...session, collectionEpoch: settings.collectionEpoch }, { stateDir });
     return {};
   }

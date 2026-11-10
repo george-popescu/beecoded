@@ -1,98 +1,111 @@
 ---
 name: nectar-audit
 description: Audit whole-repository or whole-codebase health when that broad scope is requested. For a bounded detailed inspection of selected code or documents, use nectar-burciu-inspection instead.
+license: MIT
 ---
 
 # Audit
 
-Produce a point-in-time health report. Use the canonical audit methodology below;
-the report is this workflow's only write.
+<!-- Adapted from ponytail-audit 5.3.3, Copyright (c) 2026 DietrichGebert.
+MIT notice: [LICENSE](../../internal-skills/nectar-audit/LICENSE). Nectar adaptations retain report safety and summary compatibility. -->
 
-Use relevant current source and any useful project context. If context is stale or
-unavailable, inspect the needed code directly. Context refresh is not a prerequisite.
+Audit the repo like the senior developer who just inherited it and will be paged
+when it breaks. Order of importance: correct, safe, holds under load, tested,
+fast, lean. Every extra line must be read, tested and fixed later. Report the
+useful findings in full, without repeating them in several sections.
 
-For test-health findings, use [Test Value](../../references/test-value.md). A concise
-protected behavior, existing owner and recommended KEEP/REMOVE/CONSOLIDATE/MOVE/REWRITE
-disposition suffice. Recommendations do not authorize edits. A request to fix an
-accepted finding follows the user's authority and the ordinary delivery workflow.
+## 1. Map first
 
-Judge scale and performance against evidenced data size, concurrency and deployment
-shape; state consequential assumptions. For simplification, identify a concrete
-maintenance cost and the smallest viable alternative, including the exact reusable
-helper or component when one exists. Inspect configuration, registration and dynamic
-consumers before declaring code unused. An abstraction or dependency is not a defect
-merely because it has one consumer; preserve required contracts and safeguards.
+- Audit what the user names: a folder, a package, or the whole repo.
+  Nothing named: the whole repo.
+- Read the README, deploy/build configuration, dependencies, entry points
+  (routes, handlers, jobs, CLI commands) and tests.
+- Find the expected load: one operator or many users and processes at once.
+  Judge scale against that and state consequential assumptions.
+- Trace the main flows end to end: input, stored state and output. Read paths
+  involving user input, money, auth, data writes, jobs and shared state fully.
+- Big repo: go deep where a mistake costs most, not file by file. Say what
+  you did not inspect. Reuse relevant context; do not require a context refresh.
 
-Number actionable findings consistently and explain what fails or costs effort,
-why it matters and the proportional correction in the user's language. Respect
-justified limitations, but not ones that violate current requirements or safety.
-Do not turn removed-line counts or a fixed finding limit into audit objectives.
+## 2. Look for
 
-## Scope and inspection
+1. **Bug:** wrong result, crash, missed edge case (empty, zero, last item,
+   rounding, time zones), callers that disagree with a return contract, or
+   the same rule applied differently in two places.
+2. **Risk:** security holes (injection, weak randomness, exposed secrets,
+   missing input or permission checks), data loss (swallowed errors, writes
+   in the wrong order, missing atomicity).
+3. **Scale:** fine for one user, wrong for many: check-then-write races, work
+   repeated by every process, growing memory, a query per item, quadratic
+   work on large inputs, or per-process state that must be shared.
+4. **Missing test:** risky logic (branches, parsers, money, security, data
+   writes) without a test that fails when it breaks. One useful test, not
+   a coverage target. Reuse existing evidence; no tests for labels or prose.
+5. **Speed:** big slowdowns are problems. Small hot-path wins are suggestions;
+   some software counts every millisecond. Use the actual workload.
+6. **Lean:** code that should not exist or should be smaller.
+   - delete: dead code, unused options, flags, configuration, speculative features;
+   - reuse: helpers doing the same thing (name the existing replacement);
+   - stdlib/native: the platform already does the job of a dependency or wrapper;
+   - yagni: an interface, factory or forwarding wrapper with no useful responsibility;
+   - merge: near-copies that must change together;
+   - split: one function or class doing unrelated jobs. Split by responsibility,
+     not by line count or into helpers that merely shorten a function.
 
-Resolve the requested repository and its native instructions. Survey entry points
-and relevant configuration once, then prioritize exposed behavior and material
-risk. Consider security, error handling, persistence, API contracts, performance,
-UI state, architecture, dependencies, test health and cross-layer wiring where
-applicable. State inspected scope and important coverage gaps; a bounded sample
-does not establish whole-codebase safety.
+## 3. Check before reporting
 
-Use read-only inspection. Diagnostics that create artifacts belong in a disposable
-copy or an explicitly authorized diagnostic environment; otherwise record the
-limitation. The audited repository's report remains the only permitted write.
-Do not install dependencies or alter Git, source, configuration or workflow state.
+- Every defect needs a concrete case: this input or situation leads to this
+  wrong result. Without one, keep uncertainty separate from confirmed findings.
+- Trace real callers and guards. Before calling code unused, search the whole
+  tree, including tests, fixtures, configuration and dynamic/string references.
+- A documented shortcut with a justified limit is a decision, not a defect,
+  unless actual load, requirements or safety already invalidate it. A single
+  implementation is not itself evidence that an approved boundary is waste.
+- Propose the smallest fix that works and preserves required contracts. Prefer
+  deleting unnecessary code; do not add layers, frameworks or configuration
+  the problem does not need. Confirm advisory applicability before reporting it.
+- No style preferences disguised as defects, vague worries or finding quotas.
+  Merge shared causes; do not repeat a full review merely to find more issues.
 
-Choose depth and delegation from risk, ambiguity and useful independent work.
-File counts and finding counts do not mandate agents. When delegation helps, use
-`nectar:lens` or [lens instructions](../../agents/lens.md) with a bounded
-concern and relevant evidence. Overlapping concerns share evidence rather than
-repeat the repository survey. Current source, not a generated index, supports findings.
+Inspect read-only. Do not execute application code without authority, install
+dependencies, change Git or fix source. Diagnostics that write need a disposable
+copy or an explicitly authorized environment. A request to audit is not a request
+to repair, publish or deploy.
 
-## Findings
+## 4. Output
 
-Distinguish current defects from useful engineering observations:
-- CODE_DEFECT: reachable incorrect, unsafe, unavailable or materially inefficient behavior.
-- TEST_OR_COVERAGE_GAP: meaningful behavior lacks adequate evidence.
-- TEST_DEFECT: misleading, stale, flaky or wrong-layer coverage.
-- DOCUMENTATION_GAP: documentation disagrees with behavior.
-- MAINTAINABILITY: demonstrated complexity without a current runtime defect.
-- STYLISTIC: a preference.
-- HARDENING_IDEA: extra protection without a demonstrated current failure.
+Use short sentences and everyday words in the user's language. Explain an
+unfamiliar technical term when it matters.
 
-For each useful finding, give severity, class, file/line, actual evidence, trigger
-and bounded impact, and a proportional next action. Add exposure, exploitability,
-uncertainty or alternatives when they affect the decision. Avoid empty risk fields
-and speculative findings. Zero findings is valid.
+Start with **What this repo does:** two or three sentences and the assumed load.
+Then group findings, most important first; skip empty groups:
 
-Severity reflects credible impact and exposure: CRITICAL is catastrophic loss,
-compromise or primary-path outage; HIGH is severe exposed harm; MEDIUM is bounded
-actionable runtime risk; LOW is minor harm or a non-code concern. Confidence is
-evidence strength, not likelihood. Only confirmed MEDIUM-or-higher CODE_DEFECT
-findings are BLOCKING; other observations are NON_BLOCKING. Required acceptance
-coverage can still remain incomplete independently of that defect count.
+- **Must fix:** confirmed bugs, security/data loss or failure at expected load.
+- **Should fix:** meaningful coverage gaps, duplication, mixed responsibilities
+  or other demonstrated maintenance cost.
+- **Nice to have:** optional small speed-ups or simpler forms.
 
-Validate actionable candidates against real callers, guards, framework guarantees
-and simultaneously possible preconditions. Merge shared root causes. Reject or
-reclassify claims the evidence does not support; do not manufacture refutations or
-repeat reviews to hit a quota. A dependency advisory needs current installed or
-lockfile version evidence and an authoritative advisory when network is available.
+Number findings across all groups. Each finding has a file/line and four short
+parts, one or two sentences each: **What this is**, **Problem**, **Fix** and
+**If we skip it**. State uncertainty where it affects the claim or remedy.
+Do not add separate chapters restating findings, rejected candidates or every
+healthy subsystem.
 
-Use an independent `nectar:validator` or [validator instructions](../../agents/validator.md)
-when uncertainty or impact warrants another perspective. A validator reports
-CONFIRMED or REFUTED with corrected class/severity and what it checked, without
-edits. Preserve unresolved hypotheses as limitations rather than confirmed flaws.
+End with **Verdict:** what to fix first, and **Not checked:** material coverage
+and execution limits. If nothing is wrong, give the repo summary, **Healthy.
+Nothing to fix within the inspected scope.**, and the limits; no empty findings
+or long correctness essay.
 
-## Report
+Write the report to the requested path, otherwise `docs/work/audit-YYYY-MM-DD.md`.
+It is the only project write. Check the destination and its ancestors for symlinks;
+write only within the repository to a normal file, atomically when supported.
+If safe writing cannot be established, report the blocker instead of writing.
 
-Write to the requested path, otherwise `docs/work/audit-YYYY-MM-DD.md`. Inspect the destination
-and ancestors without following symlinks; keep writes within the repository and
-refuse unsafe paths. Replace only a verified normal report file, using an atomic
-write when supported. Stop and report the path if safe writing cannot be established.
-The report is the only audited-project write.
-
-Record scope and material limitations, findings ordered by risk, and useful next
-actions. Distinguish findings from coverage gaps and optional improvements. End
-with the stable summary needed by callers:
+For Nectar consumers, finish the report with this compact summary outside code
+fences. Count defects by credible severity, not count of hypothetical outcomes.
+Only confirmed MEDIUM-or-higher runtime code defects count as Blocking; other
+observations are non-blocking. A source-only audit records absent execution evidence
+under Not checked, not as a new acceptance gate.
 
 ```text
 Confirmed code defects: Critical N, High N, Medium N, Low N
@@ -103,9 +116,7 @@ Stylistic: N
 Refuted: N
 ```
 
-A clean audit means zero blocking defects in inspected scope, not complete coverage
-or zero observations. Hand findings to an authorized repair workflow. The audit
-itself never fixes, commits, pushes, publishes or deploys.
+One-shot audit. No automatic repairs or workflow closure.
 
 ## Optional indexed context
 

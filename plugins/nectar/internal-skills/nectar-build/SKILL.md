@@ -7,8 +7,9 @@ description: Execute an already approved multi-step or cross-component implement
 
 Use the [workflow contract](../../references/workflow.md). Implement the outcome
 and acceptance criteria with current source and repository conventions. Resume
-from actual progress; update the [persisted plan](../../references/plan-format.md)
-when useful task grouping, files or verification commands change.
+from actual progress. Update an existing persisted plan when dependencies or
+verification change; load the [plan format](../../references/plan-format.md) only
+when creating or changing its structure.
 
 When a contract changes, trace its affected consumers and complete the necessary
 wiring. Fix a shared cause at its owner rather than patching one caller. If source
@@ -19,10 +20,10 @@ Group related work and respect dependencies and write ownership. For delegated
 implementation, use the [implementer](../../agents/implementer.md) role with a
 bounded outcome and relevant context. A task does not require its own agent.
 
-Select verification from changed behavior and risk. [Test Value](../../references/test-value.md)
-guides coverage; [host capabilities](../../references/host-capabilities.md) helps
-reuse native runtime and review evidence. Neither a handoff nor a completed wave
-requires another run. Mark tasks implemented when present and keep overall
+Select verification from changed behavior and risk. Read [Test Value](../../references/test-value.md)
+when coverage choices are uncertain, or [host capabilities](../../references/host-capabilities.md)
+when runtime evidence or delegation support is unclear. Neither a handoff nor a
+completed wave requires another run. Mark tasks implemented when present and keep overall
 verification pending until the integrated outcome has sufficient evidence.
 
 Fix failures caused by this work and rerun affected checks. Preserve unaffected

@@ -52,6 +52,9 @@ If evidence is ambiguous, omit the claim.
 - Commands
 - Architecture and entry points
 - Modules and relationships
+- Reusable helpers/components: `- reuse: SymbolName source: relative/path:line`.
+  Use a current public identifier, not prose, and select likely reuse points rather
+  than listing every export. Keep these in CONTEXT.md; do not create another index.
 - Stable definitions
 - Useful documentation links
 

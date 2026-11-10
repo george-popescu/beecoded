@@ -128,14 +128,9 @@ function surfaceDefinitions(paths) {
       destination: paths.nectarDestination,
       content: renderAuditSurface({
         preamble: normalFile(paths.nectarPreamble, 'Nectar audit preamble'),
-        core,
+        core: '',
         suffix: normalFile(paths.nectarSuffix, 'Nectar Atlas suffix'),
-        replacements: {
-          ROLE_PREFIX: 'nectar',
-          DEFAULT_REPORT: 'docs/work/audit-YYYY-MM-DD.md',
-          LENS_ROLE_PATH: '../../agents/lens.md',
-          VALIDATOR_ROLE_PATH: '../../agents/validator.md',
-        },
+        replacements: {},
       }),
     },
   ];

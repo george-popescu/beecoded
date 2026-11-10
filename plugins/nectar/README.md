@@ -195,6 +195,10 @@ size and record counts. It does not scan all history or enable live collection.
 The supported record families are Claude transcript usage messages and Codex
 session/turn/token events; unknown formats fail or remain unavailable. Transcript
 schemas can change and host writes may lag a hook.
+Codex thread-tagged cumulative usage establishes session-only totals, so Board can
+add parent and child consumption once. Declared inherited history is excluded from
+the child's usage, model and turn counts. Unrelated identities are rejected; older
+or conflicting counters keep unknown scope and conservative overlap handling.
 
 ```bash
 nectar telemetry import --host codex --file /absolute/session.jsonl --project /path/to/project
@@ -397,6 +401,12 @@ Context and Atlas are optional navigation aids. Use current source when they are
 stale, missing or unnecessary. Context refresh uses staged, validated promotion and
 preserves the previous snapshot on failure. Indexing must be enabled explicitly.
 Native project instructions remain authoritative.
+
+Refresh may include reusable public helpers/components in `CONTEXT.md` as
+`- reuse: SymbolName source: relative/path:line`. Opt-in startup hooks prioritize
+these names and safe source locations within the existing bounded hint. Old
+source-only context still works; no second index or startup source scan is needed.
+Names are navigation hints: verify the current implementation before reusing it.
 
 After Close, structural or cited-source changes require refresh. Ordinary source
 changes instead get a bounded assessment of the already-known diff: refresh when

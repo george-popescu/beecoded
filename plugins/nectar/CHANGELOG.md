@@ -1,5 +1,28 @@
 # Changelog
 
+## 3.8.0 — 2026-11-11
+
+- **Focused Audit:** adopt Ponytail's concrete-case, end-to-end inspection method
+  and compact ranked findings. Keep read-only boundaries, safe report output and
+  the completion summary. Maintain Nectar Audit separately from Code Audit and
+  preserve upstream MIT attribution.
+- **Slimmer Review:** load formal completion rules only for persisted Nectar
+  topics and test-design guidance only when needed. Preserve connected-flow and
+  remedy checks; distinguish proven postcondition failures from unknown adapter
+  details. Accept explicitly permitted no-op retries and keep source-only verdicts
+  free of unrequested future-test gates.
+- **Lighter Build/Honey:** share a reuse-first implementation policy, load planning
+  and host references conditionally, and avoid redundant skill handoffs. Preserve
+  required final verification without mandatory stages for small fixes.
+- **Named reuse hints:** surface existing helpers and components from project
+  context through opt-in startup hooks. Keep hints bounded and deduplicated, reject
+  unsafe paths, and avoid a new index or startup source scan.
+- **Correct Codex child accounting:** use the subagent's identity for baselines
+  and exclude declared ancestor history from its usage, model and turn counts.
+  Native thread-scoped counters let Board sum parent/child consumption once across
+  live collection and reimports. Preserve pending local turns, reject unrelated
+  identities, and retain conservative handling for older or ambiguous counters.
+
 ## 3.7.0 — 2026-11-09
 
 - Refine native automatic skill selection: detailed reviews use Burciu, small

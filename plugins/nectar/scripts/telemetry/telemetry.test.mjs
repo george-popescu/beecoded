@@ -9,6 +9,7 @@ import { pathToFileURL } from 'node:url';
 import { readTelemetry, readTelemetrySettings, recordNativeSnapshot, configureTelemetry, recordSession, recordObservation, importTelemetry, parseTranscript,
   exportTelemetry, pruneTelemetry, sendTelemetry, telemetryDefaults } from './index.mjs';
 import { parseTelemetryArguments, runTelemetry } from '../run-telemetry.mjs';
+import { summarizeSessions } from '../board/metrics.mjs';
 
 function fixture(t) {
   const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-telemetry-')));
@@ -247,4 +248,92 @@ test('Codex child keeps native ID and rejects contradictory parent provenance', 
   const result = await parseTranscript({ ...options, file: transcript(f.dir, rows) });
   assert.equal(result.session.sessionId, 'full-session-id-1'); assert.equal(result.session.parentSessionId, 'parent1');
   await assert.rejects(parseTranscript({ ...options, parentSessionId: 'wrong', file: transcript(f.dir, rows, 'wrong.jsonl') }), /parent does not match/);
+});
+
+function nativeChildRows(root) {
+  const at = (type, payload, seconds = 2) => ({ timestamp: `2026-11-06T10:00:0${seconds}Z`, type, payload });
+  const usage = { input_tokens: 20, cached_input_tokens: 8, cache_write_input_tokens: 0, output_tokens: 4, total_tokens: 24 };
+  return [
+    at('session_meta', { id: 'child', cwd: root, forked_from_id: 'parent',
+      source: { subagent: { thread_spawn: { parent_thread_id: 'parent' } } } }),
+    at('session_meta', { id: 'parent', cwd: root }, 0),
+    at('turn_context', { turn_id: 'parent-turn', model: 'other-model' }, 0),
+    at('event_msg', { type: 'task_started', turn_id: 'parent-turn' }, 0),
+    at('token_usage_record', { thread_id: 'parent', turn_id: 'parent-turn', thread_token_usage: { ...usage, input_tokens: 100000, total_tokens: 100004 } }, 1),
+    at('event_msg', { type: 'token_count', info: { total_token_usage: { ...usage, input_tokens: 100000, total_tokens: 100004 } } }, 1),
+    at('event_msg', { type: 'task_started', turn_id: 'child-turn' }, 3),
+    at('turn_context', { turn_id: 'child-turn', model: 'example-model' }, 3),
+    at('token_usage_record', { thread_id: 'child', session_id: 'parent', turn_id: 'child-turn', thread_token_usage: usage }, 4),
+    at('event_msg', { type: 'token_count', info: { total_token_usage: usage } }, 4),
+    at('event_msg', { type: 'task_complete', turn_id: 'child-turn' }, 5),
+  ];
+}
+
+test('native child import excludes inherited usage/models/turns and keeps verified thread scope', async t => {
+  const f = fixture(t), rows = nativeChildRows(f.projectRoot);
+  const { session: child } = await parseTranscript({ ...f, host: 'codex', file: transcript(f.dir, rows),
+    expectedSessionId: 'child', parentSessionId: 'parent' });
+  assert.deepEqual(child.usage, { input: 12, cacheRead: 8, cacheWrite: 0, output: 4, total: 24 });
+  assert.equal(child.parentSessionId, 'parent'); assert.equal(child.sessionId, 'child');
+  assert.deepEqual(child.models, ['example-model']); assert.equal(child.turns, 1);
+  assert.equal(child.activeMs, 2000); assert.equal(child.startedAt, '2026-11-06T10:00:02.000Z');
+  assert.equal(child.usageScope, 'session-only');
+  const pending = await parseTranscript({ ...f, host: 'codex', file: transcript(f.dir, rows.slice(0, 8), 'pending.jsonl') });
+  assert.equal(pending.session.usage.total, null); assert.deepEqual(pending.session.models, []);
+});
+
+test('native child parser rejects unrelated identities and conflicting ancestry or usage', async t => {
+  const f = fixture(t), original = nativeChildRows(f.projectRoot);
+  const check = async (rows, pattern) => assert.rejects(parseTranscript({ ...f, host: 'codex', file: transcript(f.dir, rows) }), pattern);
+  let rows = structuredClone(original); rows[1].payload.id = 'stranger'; await check(rows, /multiple sessions/);
+  rows = structuredClone(original); rows.push(rows[1]); await check(rows, /multiple sessions/);
+  rows = structuredClone(original); rows[0].payload.forked_from_id = 'other'; await check(rows, /Contradictory/);
+  rows = structuredClone(original); rows[8].payload.thread_id = 'stranger'; await check(rows, /thread does not match/);
+  rows = structuredClone(original); rows[8].payload.thread_token_usage.cached_input_tokens = 100; await check(rows, /Invalid Codex/);
+  rows = structuredClone(original); rows[1].payload.forked_from_id = 'child'; await check(rows, /Cyclic/);
+  await assert.rejects(parseTranscript({ ...f, host: 'codex', file: transcript(f.dir, original), expectedSessionId: 'child', parentSessionId: 'wrong' }), /parent does not match/);
+  rows = structuredClone(original); rows[9].payload.info.total_token_usage = { ...rows[9].payload.info.total_token_usage, input_tokens: 30, total_tokens: 34 };
+  const conflict = await parseTranscript({ ...f, host: 'codex', file: transcript(f.dir, rows) });
+  assert.equal(conflict.session.usage.total, 24); assert.equal(conflict.session.usageScope, 'unknown'); assert.equal(conflict.session.partial, true);
+});
+
+test('nested native forks accept only the declared ancestor chain', async t => {
+  const f = fixture(t), rows = nativeChildRows(f.projectRoot);
+  rows[1].payload.forked_from_id = 'grandparent';
+  rows.splice(2, 0, { timestamp: rows[1].timestamp, type: 'session_meta', payload: { id: 'grandparent', cwd: f.projectRoot } });
+  const result = await parseTranscript({ ...f, host: 'codex', file: transcript(f.dir, rows) });
+  assert.equal(result.session.sessionId, 'child'); assert.equal(result.session.parentSessionId, 'parent');
+  assert.equal(result.session.usage.total, 24); assert.equal(result.session.turns, 1);
+  rows[2].payload.id = 'unrelated';
+  await assert.rejects(parseTranscript({ ...f, host: 'codex', file: transcript(f.dir, rows) }), /multiple sessions/);
+});
+
+test('native reconciliation retains local turns without billed usage', async t => {
+  const f = fixture(t);
+  for (const child of [false, true]) {
+    const rows = nativeChildRows(f.projectRoot);
+    if (!child) { rows.splice(1, 5); delete rows[0].payload.source; delete rows[0].payload.forked_from_id; }
+    rows.push({ timestamp: '2026-11-06T10:00:06Z', type: 'event_msg', payload: { type: 'task_started', turn_id: 'pending' } },
+      { timestamp: '2026-11-06T10:00:06Z', type: 'turn_context', payload: { turn_id: 'pending', model: 'example-model' } });
+    const result = await parseTranscript({ ...f, host: 'codex', file: transcript(f.dir, rows) });
+    assert.equal(result.session.turns, 2); assert.equal(result.session.activeMs, null);
+    assert.equal(result.session.usage.total, 24); assert.equal(result.session.usageScope, 'session-only');
+  }
+});
+
+test('verified parent and child totals survive reimports and sum once in Board; legacy scope stays conservative', async t => {
+  const f = fixture(t), childRows = nativeChildRows(f.projectRoot), parentRows = codexRows(f.projectRoot);
+  parentRows[0].payload.id = 'parent';
+  parentRows.splice(5, 0, { timestamp: '2026-11-06T10:00:03Z', type: 'token_usage_record',
+    payload: { thread_id: 'parent', turn_id: 'turn1', thread_token_usage: parentRows[4].payload.info.total_token_usage } });
+  const parent = transcript(f.dir, parentRows, 'parent.jsonl'), child = transcript(f.dir, childRows, 'child.jsonl');
+  const rates = path.join(f.dir, 'rates.json'); fs.writeFileSync(rates, JSON.stringify({ schemaVersion: 1, currency: 'USD', rateDate: '2026-11-06', models: { 'example-model': { input: 2, output: 10, cacheRead: 0.5, cacheWrite: 0 } } }));
+  for (let i = 0; i < 2; i++) {
+    for (const file of [parent, child]) await importTelemetry({ ...f, host: 'codex', file, pricingFile: rates });
+    const stored = readTelemetry(f), total = summarizeSessions(stored.sessions);
+    assert.equal(stored.sessions.length, 2); assert.equal(total.childRowsExcluded, 0);
+    assert.equal(total.tokens.value, 194); assert.ok(Math.abs(total.cost.value - 0.000588) < 1e-12);
+  }
+  const legacy = await parseTranscript({ ...f, host: 'codex', file: transcript(f.dir, codexRows(f.projectRoot), 'legacy.jsonl') });
+  assert.equal(legacy.session.usageScope, 'unknown');
 });

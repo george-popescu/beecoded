@@ -10,6 +10,13 @@ const value = n => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0 ? 
 const date = text => typeof text === 'string' && Number.isFinite(Date.parse(text)) ? new Date(text).toISOString() : null;
 const emptyUsage = () => ({ input: null, output: null, cacheRead: null, cacheWrite: null, total: null });
 
+function codexUsage(u) {
+  const input = value(u.input_tokens), cacheRead = value(u.cached_input_tokens), output = value(u.output_tokens);
+  return { input: input !== null && cacheRead !== null && cacheRead <= input ? input - cacheRead : null,
+    cacheRead, output, cacheWrite: value(u.cache_write_input_tokens ?? u.cache_creation_input_tokens),
+    total: value(u.total_tokens) ?? (input !== null && output !== null ? input + output : null) };
+}
+
 // Never discover histories or follow linked transcript files on behalf of an import/hook.
 function openSelectedFile(file) {
   if (typeof file !== 'string' || !file) throw new Error('An explicit transcript file is required');
@@ -56,6 +63,8 @@ export async function parseTranscript({ host, file, projectRoot, source = 'impor
   const models = new Set(), claudeMessages = new Map(), turnIds = new Set(), turnStarts = new Map(), completedTurns = new Set();
   let sawTurnEvent = false, sawProject = false, malformed = 0, skippedUsage = 0, count = 0;
   let sawAgentIdentity = false, sawParentIdentity = false;
+  let inheritedContext = false, nextAncestor = null, nativeUsage = null, nativeUsageAt = null;
+  const ancestors = new Set(), nativeTurns = new Set(), turnModels = new Map(), turnEnds = new Map();
   const assignSession = id => {
     if (!id) return;
     if (host === 'claude' && hookParentSessionId) {
@@ -81,16 +90,45 @@ export async function parseTranscript({ host, file, projectRoot, source = 'impor
       try { r = JSON.parse(line); } catch { malformed++; continue; }
       if (!r || typeof r !== 'object') continue;
       const at = date(r.timestamp);
-      if (at) { startedAt = startedAt === null || at < startedAt ? at : startedAt; updatedAt = updatedAt === null || at > updatedAt ? at : updatedAt; }
       if (host === 'codex') {
         const p = r.payload ?? {};
         if (r.type === 'session_meta') {
-          assignSession(p.id); checkProject(p.cwd);
           const linkedParent = p.source?.subagent?.thread_spawn?.parent_thread_id;
-          if (hookParentSessionId && linkedParent && linkedParent !== hookParentSessionId) throw new Error('Child transcript parent does not match the hook parent');
-          if (linkedParent) { parentSessionId = linkedParent; sawParentIdentity = true; }
+          const ancestor = linkedParent ?? p.forked_from_id ?? null;
+          if (linkedParent && p.forked_from_id && linkedParent !== p.forked_from_id) throw new Error('Contradictory Codex parent provenance');
+          if (sessionId && p.id !== sessionId) {
+            // Native forks prepend their own identity to a declared ancestor's history.
+            if (nativeUsage || p.id !== nextAncestor || ancestors.has(p.id)) throw new Error('Selected transcript contains multiple sessions');
+            ancestors.add(p.id);
+            if (ancestor === sessionId || ancestors.has(ancestor)) throw new Error('Cyclic Codex parent provenance');
+            nextAncestor = ancestor; inheritedContext = true;
+            continue;
+          }
+          const firstIdentity = sessionId === null;
+          assignSession(p.id); checkProject(p.cwd);
+          if (hookParentSessionId && ancestor && ancestor !== hookParentSessionId) throw new Error('Child transcript parent does not match the hook parent');
+          if (!firstIdentity && ancestor !== parentSessionId) throw new Error('Contradictory Codex parent provenance');
+          if (firstIdentity) nextAncestor = ancestor;
+          if (ancestor) { parentSessionId = ancestor; sawParentIdentity = true; }
+          if (parentSessionId === sessionId) throw new Error('Cyclic Codex parent provenance');
           if (hookParentSessionId && p.id === expectedSessionId) sawAgentIdentity = true;
         }
+        if (r.type === 'turn_context' && typeof p.turn_id === 'string') turnModels.set(p.turn_id, p.model);
+        if (r.type === 'event_msg' && typeof p.turn_id === 'string' && at) {
+          if (['task_started', 'turn_started'].includes(p.type) && !turnStarts.has(p.turn_id)) turnStarts.set(p.turn_id, at);
+          if (['task_complete', 'turn_complete'].includes(p.type)) turnEnds.set(p.turn_id, at);
+        }
+        if (r.type === 'token_usage_record') {
+          if (inheritedContext && ancestors.has(p.thread_id)) continue;
+          if (!sessionId || p.thread_id !== sessionId) throw new Error('Token usage thread does not match transcript identity');
+          if (!p.thread_token_usage || typeof p.turn_id !== 'string') { skippedUsage++; continue; }
+          nativeUsage = codexUsage(p.thread_token_usage);
+          if (['input', 'cacheRead', 'output', 'total'].some(k => nativeUsage[k] === null)
+            || nativeUsage.total !== nativeUsage.input + nativeUsage.cacheRead + nativeUsage.output) throw new Error('Invalid Codex thread usage');
+          nativeUsageAt = at; nativeTurns.add(p.turn_id); inheritedContext = false;
+        }
+        if (inheritedContext) continue;
+        if (at) { startedAt = startedAt === null || at < startedAt ? at : startedAt; updatedAt = updatedAt === null || at > updatedAt ? at : updatedAt; }
         if (r.type === 'turn_context') {
           if (typeof p.model === 'string') { model = p.model; models.add(model); }
           if (typeof p.turn_id === 'string') turnIds.add(p.turn_id);
@@ -106,14 +144,11 @@ export async function parseTranscript({ host, file, projectRoot, source = 'impor
         }
         if (p.type === 'token_count' && p.info?.total_token_usage) {
           // This is a cumulative snapshot. cached_input_tokens is part of input_tokens.
-          const u = p.info.total_token_usage;
-          const rawInput = value(u.input_tokens), cacheRead = value(u.cached_input_tokens), output = value(u.output_tokens);
-          usage = { input: rawInput !== null && cacheRead !== null && cacheRead <= rawInput ? rawInput - cacheRead : null,
-            cacheRead, output, cacheWrite: value(u.cache_write_input_tokens ?? u.cache_creation_input_tokens),
-            total: value(u.total_tokens) ?? (rawInput !== null && output !== null ? rawInput + output : null) };
+          usage = codexUsage(p.info.total_token_usage);
           latestUsageAt = at;
         }
       } else {
+        if (at) { startedAt = startedAt === null || at < startedAt ? at : startedAt; updatedAt = updatedAt === null || at > updatedAt ? at : updatedAt; }
         assignSession(r.sessionId ?? r.session_id); checkProject(r.cwd);
         if (hookParentSessionId) {
           const agentId = r.agentId ?? r.agent_id;
@@ -150,6 +185,24 @@ export async function parseTranscript({ host, file, projectRoot, source = 'impor
   } finally { fs.closeSync(fd); }
   if (!sessionId || !startedAt || !updatedAt) throw new Error('Transcript lacks a supported session identity or timestamps');
   if (!sawProject) throw new Error('Transcript lacks project provenance; it cannot be attributed to the selected project');
+  let scopedUsage = false;
+  if (nativeUsage) {
+    const conflictingTail = latestUsageAt && nativeUsageAt && latestUsageAt >= nativeUsageAt
+      && Object.keys(usage).some(k => usage[k] !== nativeUsage[k]);
+    scopedUsage = !!nativeUsageAt && !conflictingTail && !malformed && !skippedUsage;
+    if (conflictingTail) { skippedUsage++; diagnostics.push('Unscoped usage disagrees with thread counters; only known thread consumption is retained.'); }
+    usage = nativeUsage; latestUsageAt = nativeUsageAt;
+    const localTurns = new Set([...turnIds, ...nativeTurns]);
+    models.clear(); turnIds.clear(); completedTurns.clear(); activeMs = null;
+    for (const id of localTurns) {
+      turnIds.add(id);
+      const name = turnModels.get(id);
+      if (typeof name === 'string') models.add(name);
+      const start = turnStarts.get(id), end = turnEnds.get(id);
+      if (start && end && end >= start) { activeMs = (activeMs ?? 0) + Date.parse(end) - Date.parse(start); completedTurns.add(id); }
+    }
+    model = [...models].at(-1) ?? null; sawTurnEvent = true;
+  }
   if (host === 'claude' && claudeMessages.size) {
     const all = [...claudeMessages.values()];
     usage = Object.fromEntries(['input', 'output', 'cacheRead', 'cacheWrite'].map(key =>
@@ -171,7 +224,7 @@ export async function parseTranscript({ host, file, projectRoot, source = 'impor
   if (usage.total === null) diagnostics.push('Total tokens are unavailable; no zero was substituted.');
   if (cost.usd === null) diagnostics.push('Cost is unavailable; no model prices were guessed.');
   diagnostics.push('Only the selected file was read; child sessions were not imported or added to parent totals.');
-  const diagnosticCodes = ['selected-file-only', 'usage-scope-unknown'];
+  const diagnosticCodes = ['selected-file-only', scopedUsage ? 'codex-thread-scoped-usage' : 'usage-scope-unknown'];
   const childAttributedByHook = !!hookParentSessionId && (!sawAgentIdentity || !sawParentIdentity);
   if (childAttributedByHook) {
     diagnosticCodes.push('child-attributed-by-hook');
@@ -184,7 +237,7 @@ export async function parseTranscript({ host, file, projectRoot, source = 'impor
   if (activeMs === null) diagnosticCodes.push('active-time-unavailable');
   const session = normalizeSession({ ...identity, host, sessionId, startedAt, updatedAt, model, models: [...models], turns, usage, cost,
     activeMs, wallMs: Date.parse(updatedAt) - Date.parse(startedAt), parentSessionId, topic: null, source, evidence: [],
-    usageScope: 'unknown', durationKind: activeMs === null ? 'unavailable' : 'turn-elapsed', partial: malformed > 0 || skippedUsage > 0 || childAttributedByHook,
+    usageScope: scopedUsage ? 'session-only' : 'unknown', durationKind: activeMs === null ? 'unavailable' : 'turn-elapsed', partial: malformed > 0 || skippedUsage > 0 || childAttributedByHook,
     diagnosticCodes, metricSource: 'transcript', measurementScope: 'selected-file' });
   return { session, diagnostics };
 }

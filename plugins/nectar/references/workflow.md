@@ -32,7 +32,11 @@ for material uncertainty. Load relevant sources and references as needed; genera
 context and Atlas are optional. Keep small work inline; use the persisted
 [plan format](plan-format.md) when coordination or resumption benefits from it.
 
-Prefer existing project behavior and conventions before adding code. Make the
+Before adding code, check whether existing behavior already meets the need, then
+prefer a fitting project helper, native/standard-library capability, or installed
+dependency before a new implementation. Read relevant current source before reuse;
+existing context/Atlas pointers are navigation hints, not proof of compatibility.
+Make the
 smallest complete change: include affected callers, configuration, exports and
 fixtures, not just the visible edit. Preserve required validation, error handling,
 security, accessibility and compatibility when simplifying. Less code is useful

@@ -142,6 +142,31 @@ test('hooks help is available without touching host configuration', t => {
   assert.equal(fs.existsSync(hookConfigPath('codex', {}, options.home)), false);
 });
 
+test('reuse map prioritizes bounded identifiers and rejects unsafe or missing sources', t => {
+  const { home } = fixture(t);
+  fs.mkdirSync(path.join(home, '.nectar'));
+  fs.writeFileSync(path.join(home, 'helper.js'), 'export function formatMoney() {}');
+  fs.symlinkSync(path.join(home, 'helper.js'), path.join(home, 'alias.js'));
+  const context = [
+    ...Array.from({ length: 9 }, (_, i) => `- Entry source: helper.js:${i + 1}`),
+    '- reuse: formatMoney source: helper.js:1',
+    '- reuse: Missing source: missing.js:1',
+    '- reuse: Escaped source: ../secret:1',
+    '- reuse: Alias source: alias.js:1',
+    '- reuse: Invalid source: helper.js:0',
+    '- reuse: Unsafe<instruction> source: helper.js:2',
+  ].join('\n');
+  fs.writeFileSync(path.join(home, '.nectar/CONTEXT.md'), context);
+  const hint = contextHint(home);
+  assert.ok(hint.includes('formatMoney @ helper.js:1'));
+  assert.doesNotMatch(hint, /Missing|Escaped|Alias|Invalid|Unsafe|<instruction>/);
+  assert.equal((hint.match(/helper\.js:/g) || []).length, 8);
+  assert.equal(fs.readFileSync(path.join(home, '.nectar/CONTEXT.md'), 'utf8'), context);
+  fs.unlinkSync(path.join(home, '.nectar/CONTEXT.md'));
+  fs.symlinkSync(path.join(home, 'helper.js'), path.join(home, '.nectar/CONTEXT.md'));
+  assert.equal(contextHint(home), '');
+});
+
 test('child hooks select only the child transcript and retain explicit parent attribution', async () => {
   const read = () => ({ settings: { enabled: true } });
   let selected, recorded, observation;
@@ -156,6 +181,21 @@ test('child hooks select only the child transcript and retain explicit parent at
   await handleLifecycle({ ...child, hook_event_name: 'PostToolUse', tool_use_id: 'tool-1', tool_name: 'Read' },
     { host: 'claude', read, observe: value => { observation = value; } });
   assert.equal(observation.sessionId, recorded.sessionId);
+});
+
+test('Codex child baseline uses agent identity rather than the parent hook session', async () => {
+  let checked, parsed, primed;
+  await handleLifecycle({ cwd: '/fixture', session_id: 'parent', agent_id: 'child',
+    hook_event_name: 'PreModelRequest', transcript_path: '/fixture/child.jsonl' }, {
+    host: 'codex', stateDir: '/state', read: () => ({ settings: { enabled: true, collectionEpoch: 2 } }),
+    needsBaseline: input => { checked = input; return true; },
+    parse: async input => { parsed = input; return { session: { sessionId: 'child', parentSessionId: 'parent' } }; },
+    prime: input => { primed = input; }, record: () => assert.fail('baseline is not spending'),
+  });
+  assert.deepEqual(checked, { host: 'codex', sessionId: 'child', projectRoot: '/fixture' });
+  assert.deepEqual(parsed, { host: 'codex', file: '/fixture/child.jsonl', projectRoot: '/fixture',
+    source: 'live', expectedSessionId: 'child', parentSessionId: 'parent' });
+  assert.deepEqual(primed, { sessionId: 'child', parentSessionId: 'parent', collectionEpoch: 2 });
 });
 
 test('skill attribution comes from activation metadata or one explicit Codex invocation, not reads or mentions', () => {
