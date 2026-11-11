@@ -17,8 +17,7 @@ Inspection and focused Test Review. Build implements an authorized outcome; Hone
 coordinates delivery. Capture saves an idea, while `nectar debt [path] [--json]`
 inspects recorded limitations. None authorizes a publish merely by being selected.
 
-`nectar board [path]` displays a snapshot of recorded project state. For optional
-usage collection, inspect `nectar telemetry --help` and explain the supported
+For optional usage collection, inspect `nectar telemetry --help` and explain the supported
 sources before enabling anything or importing history. Unknown usage is not zero;
 API-priced estimates are not bills, and activity is not proof of quality or delivery.
 Do not install hooks, enable collection or disclose session data from a help request.

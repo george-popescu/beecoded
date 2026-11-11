@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.0.0 — 2026-11-11
+
+- **Breaking:** remove Coamb, the local HTML dashboard and `nectar board`, including its assets,
+  Claude shortcut and design documents. Keep telemetry CLI/export, subagent
+  accounting, lifecycle hooks and workflow skills. Existing data and generated
+  reports are not deleted.
+- Use `nectar doctor [path] --json` for recorded work state and
+  `nectar telemetry status --project <path> --json` for recorded usage.
+
 ## 3.8.0 — 2026-11-11
 
 - **Focused Audit:** adopt Ponytail's concrete-case, end-to-end inspection method

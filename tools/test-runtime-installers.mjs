@@ -484,11 +484,13 @@ try {
   )));
   assert.doesNotMatch(installedBuild, /\.\.\/\.\.\/agents\/implementer\.md/);
   const installedNectar = path.join(nectarRoot, 'plugins', 'nectar', 'bin', 'install.mjs');
-  for (const args of [['guide', '--json'], ['board', nectar.root, '--json'], ['telemetry', 'status', '--json']]) {
+  for (const args of [['guide', '--json'], ['telemetry', 'status', '--json']]) {
     const result = runInstallerPath(installedNectar, nectar, args);
     assert.equal(result.status, 0, `Installed Nectar ${args[0]}: ${result.stderr}`);
     assert.doesNotThrow(() => JSON.parse(result.stdout));
   }
+  assert.equal(runInstallerPath(installedNectar, nectar, ['board', nectar.root, '--json']).status, 2);
+  assert.equal(fs.existsSync(path.join(nectarRoot, 'plugins', 'nectar', 'scripts', 'run-board.mjs')), false);
   const settingsPath = path.join(nectar.env.CLAUDE_CONFIG_DIR, 'settings.json');
   writeJson(settingsPath, { hooks: { SessionStart: [{ hooks: [{ type: 'command', command: 'echo unrelated-hook' }] }] } });
   run('nectar', nectar, ['hooks', 'install', '--host', 'claude']);

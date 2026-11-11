@@ -7,9 +7,8 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import { readTelemetry, readTelemetrySettings, recordNativeSnapshot, configureTelemetry, recordSession, recordObservation, importTelemetry, parseTranscript,
-  exportTelemetry, pruneTelemetry, sendTelemetry, telemetryDefaults } from './index.mjs';
+  exportTelemetry, pruneTelemetry, sendTelemetry, telemetryDefaults, summarizeAttribution } from './index.mjs';
 import { parseTelemetryArguments, runTelemetry } from '../run-telemetry.mjs';
-import { summarizeSessions } from '../board/metrics.mjs';
 
 function fixture(t) {
   const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'nectar-telemetry-')));
@@ -321,7 +320,7 @@ test('native reconciliation retains local turns without billed usage', async t =
   }
 });
 
-test('verified parent and child totals survive reimports and sum once in Board; legacy scope stays conservative', async t => {
+test('verified parent and child totals survive reimports and sum once in telemetry; legacy scope stays conservative', async t => {
   const f = fixture(t), childRows = nativeChildRows(f.projectRoot), parentRows = codexRows(f.projectRoot);
   parentRows[0].payload.id = 'parent';
   parentRows.splice(5, 0, { timestamp: '2026-11-06T10:00:03Z', type: 'token_usage_record',
@@ -330,9 +329,9 @@ test('verified parent and child totals survive reimports and sum once in Board; 
   const rates = path.join(f.dir, 'rates.json'); fs.writeFileSync(rates, JSON.stringify({ schemaVersion: 1, currency: 'USD', rateDate: '2026-11-06', models: { 'example-model': { input: 2, output: 10, cacheRead: 0.5, cacheWrite: 0 } } }));
   for (let i = 0; i < 2; i++) {
     for (const file of [parent, child]) await importTelemetry({ ...f, host: 'codex', file, pricingFile: rates });
-    const stored = readTelemetry(f), total = summarizeSessions(stored.sessions);
-    assert.equal(stored.sessions.length, 2); assert.equal(total.childRowsExcluded, 0);
-    assert.equal(total.tokens.value, 194); assert.ok(Math.abs(total.cost.value - 0.000588) < 1e-12);
+    const stored = readTelemetry(f), [total] = summarizeAttribution(stored.segments, { group: 'skill' });
+    assert.equal(stored.sessions.length, 2); assert.equal(total.excludedChildren, 0);
+    assert.equal(total.usage.total, 194); assert.ok(Math.abs(total.cost.usd - 0.000588) < 1e-12);
   }
   const legacy = await parseTranscript({ ...f, host: 'codex', file: transcript(f.dir, codexRows(f.projectRoot), 'legacy.jsonl') });
   assert.equal(legacy.session.usageScope, 'unknown');

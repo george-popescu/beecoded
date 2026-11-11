@@ -6,8 +6,8 @@ investigation to the model.
 
 Nectar includes focused security review, detailed cross-artifact inspection and
 optional local observability. Verification depth follows the work's impact, with
-compatibility for existing slim and older plans. Version 3.7 adds Coamb, optional
-telemetry and selective native skill discovery without mandatory workflow stages.
+compatibility for existing slim and older plans, optional telemetry and selective
+native skill discovery without mandatory workflow stages.
 
 | Host | Example |
 |---|---|
@@ -48,7 +48,7 @@ Beecoded-owned entries, and an unowned same-named skill is never overwritten.
 To remove the user-scoped installation, run
 `npx @beecoded/nectar@latest uninstall`.
 
-Nectar 3 requires Node `^22.18.0 || >=24.11.0`. This lets Atlas use Node's
+Nectar requires Node `^22.18.0 || >=24.11.0`. This lets Atlas use Node's
 built-in SQLite support while keeping the package free of native build steps.
 
 The installer prints the exact package version and source path before changing
@@ -85,44 +85,34 @@ nectar --allow-downgrade
 
 `nectar guide` derives this capability catalog from the installed skill sources.
 
-## Coamb: local Board and usage
+## Recorded state and usage
 
 ```bash
-nectar board /path/to/project --open
-nectar board --project /path/to/one --project /path/to/two --open
-nectar board /path/to/project --json
+nectar doctor /path/to/project --json
+nectar telemetry status --project /path/to/project --json
 nectar debt /path/to/project --json
 nectar guide --json
 nectar impact --file /path/to/benchmark-results.json
 ```
 
-Coamb (`nectar board`) generates a self-contained local HTML snapshot with project selection,
-delivery/usage views, filters, charts and JSON/CSV export. It reads only selected
-projects and recorded telemetry. It runs no tests, starts no server, creates no
-plan and never infers completion from activity. `--output PATH` writes a new file;
-existing files are not overwritten. Without it, HTML lives in a new temporary
-directory. The page shows its generation time; regenerate to refresh. Evidence
-links open local documents when the browser allows local file links.
-
 Implementation, final verification and review remain separate. Doctor interprets
 recorded documents, not the truth of every evidence claim. A green recorded state
 does not establish a fresh test, production release or full audit. Small inline
-changes need not create documents just to appear on the Board.
+changes need not create work documents.
 
 Usage is attributed to host/session/canonical project identity, never just a folder
 name. Missing metrics stay unavailable; imported or partial data retains its origin.
-Linked children are excluded when their totals overlap or may overlap a parent;
+Attribution summaries exclude linked children when their totals overlap or may overlap a parent;
 explicit session-only scopes can be added. Unknown overlap and process-limited
-measurements keep totals marked partial. Model filters select matching sessions, not an invented per-model
-allocation inside mixed-model sessions. Turn elapsed time may include waits and is
-not human time saved. Session totals grouped by start date are not daily spend.
+measurements keep totals marked partial. Turn elapsed time may include waits and is
+not human time saved.
 
 ### Work and skill attribution
 
-Coamb links saved work to its sessions and shows costs/tokens by work or skill.
+Telemetry links saved work to its sessions and summarizes costs/tokens by work or skill.
 Git metadata records the observed branch, revision and worktree; shared repository
-identity does not merge distinct worktree sessions. The Usage view separates full
-session totals from attributable measurement intervals.
+identity does not merge distinct worktree sessions. Session totals and attributable
+measurement intervals remain separate.
 For imported history, Git metadata describes the checkout at collection time,
 not an independently reconstructed historical branch.
 
@@ -153,8 +143,7 @@ totals twice. Unknown parent/subagent overlap stays partial; no skill leaderboar
 claims quality or speed from unmatched tasks. Old recorded sessions are not
 retroactively attributed automatically.
 
-JSON exports include sanitized intervals; Coamb also offers a filtered interval
-CSV. Private local work names and paths are omitted from public telemetry exports
+JSON exports include sanitized intervals. Private local work names and paths are omitted from public telemetry exports
 unless explicitly requested with `--include-names`.
 
 ### Collection and privacy
@@ -163,9 +152,8 @@ Collection and contextual hooks are **off by default**. Storage is local SQLite
 under `~/.nectar` (`NECTAR_STATE_DIR` or `--state-dir` overrides it), outside product
 repositories. No raw prompts, answers, source code, command text or tool output
 are retained. Session/project identifiers and paths are local metadata; telemetry exports
-and webhooks omit paths and hash session identifiers by default. HTML is a private
-local artifact containing selected project paths for evidence navigation, as is
-`board --json`. Treat both as private; only telemetry exports apply the path/ID privacy defaults.
+and webhooks omit paths and hash session identifiers by default. Local status output
+may contain private project metadata; use telemetry exports for privacy-filtered sharing.
 
 ```bash
 nectar telemetry status --json
@@ -195,8 +183,8 @@ size and record counts. It does not scan all history or enable live collection.
 The supported record families are Claude transcript usage messages and Codex
 session/turn/token events; unknown formats fail or remain unavailable. Transcript
 schemas can change and host writes may lag a hook.
-Codex thread-tagged cumulative usage establishes session-only totals, so Board can
-add parent and child consumption once. Declared inherited history is excluded from
+Codex thread-tagged cumulative usage establishes session-only totals, so telemetry
+summaries can add parent and child consumption once. Declared inherited history is excluded from
 the child's usage, model and turn counts. Unrelated identities are rejected; older
 or conflicting counters keep unknown scope and conservative overlap handling.
 
@@ -261,7 +249,7 @@ index build. Opt-in global handlers are removed by Nectar uninstall; historical
 telemetry is retained until explicitly pruned.
 
 Claude's documented native module provides a compact optional strip and explicit
-Review/Audit controls; Codex uses the portable CLI/HTML surface, not an invented
+Review/Audit controls; Codex uses the portable CLI, not an invented
 equivalent UI slot. Native collection records metadata only and labels process
 scope. Unsupported fields remain unavailable. Module contract checks and fixture
 tests are not evidence that every installed host version paints the strip or

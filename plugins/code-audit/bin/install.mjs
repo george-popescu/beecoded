@@ -31,7 +31,6 @@ Usage:
   ${product} [install] [--claude | --codex | --all]
   ${product} uninstall [--claude | --codex | --all]
 ${product === 'nectar' ? `  ${product} doctor [path] [--json]
-  ${product} board [path] [--project <path>] [--output <file>] [--open]
   ${product} guide [--json]
   ${product} debt [path] [--json]
   ${product} impact [--file <benchmark.json>]
@@ -277,7 +276,7 @@ export function resolveProductCommand({ product: targetProduct, argv }) {
   if (targetProduct !== 'nectar') return null;
   const [command, ...args] = argv;
   if (command === 'doctor') return { script: 'scripts/run-doctor.mjs', args };
-  if (['board', 'guide', 'debt', 'impact', 'telemetry', 'hooks'].includes(command)) {
+  if (['guide', 'debt', 'impact', 'telemetry', 'hooks'].includes(command)) {
     return { script: `scripts/run-${command}.mjs`, args };
   }
   if (command === 'eval' || command === 'evals') {

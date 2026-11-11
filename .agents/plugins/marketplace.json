@@ -23,7 +23,7 @@
       "source": {
         "source": "npm",
         "package": "@beecoded/nectar",
-        "version": "3.8.0",
+        "version": "4.0.0",
         "registry": "https://registry.npmjs.org"
       },
       "policy": {

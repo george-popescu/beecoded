@@ -71,7 +71,7 @@ required evidence is missing or failed.
 
 Compare the integrated result with the requested outcome and agreed exclusions.
 A missing acceptance requirement is not made optional by a zero code-defect count.
-Boards, activity hooks and telemetry describe recorded observations; they do not
+Activity hooks and telemetry describe recorded observations; they do not
 grant authority, prove current verification or decide that work is done.
 
 Review proportionately; for small low-risk work this can be the implementer's diff

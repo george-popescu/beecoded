@@ -28,7 +28,6 @@ export function inspectGuide(root = packageRoot) {
     ].map(route => ({ ...route, skills: route.skills.filter(name => skills.some(skill => skill.name === name)) })),
     commands: [
       { command: 'nectar doctor [path] --json', effect: 'Read recorded delivery state and diagnostics.' },
-      { command: 'nectar board [path]', effect: 'Generate a local snapshot, not live verification.' },
       { command: 'nectar debt [path] --json', effect: 'Read comment candidates and existing backlog.' },
       { command: 'nectar telemetry --help', effect: 'Inspect optional collection controls; enabling or importing requires explicit authority.' },
       { command: 'nectar hooks --help', effect: 'Explain optional context, native hooks and separate collection controls; do not activate them from a help request.' },

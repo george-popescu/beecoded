@@ -111,7 +111,6 @@ export const register: Register = on => {
       const { Box, Text, Button } = $.ui.resolve(e)
       const review = () => $.command.run({ command: 'nectar-review' })
       const audit = () => $.command.run({ command: 'nectar-audit' })
-      const copyBoard = () => $.ui.copy({ text: 'nectar board', surface: e.surface })
       return <Box flexDirection="column">
         <Box flexDirection="row" gap={1}>
           <Text>Nectar · {current.settings.enabled ? 'recorded' : 'collection off'}</Text>
@@ -120,7 +119,6 @@ export const register: Register = on => {
           {typeof tokens === 'number' && <Text>{tokens.toLocaleString()} tokens observed</Text>}
           <Button plain label="Review" onPress={review} />
           <Button plain label="Audit" onPress={audit} />
-          <Button plain label="Copy Board command" onPress={copyBoard} />
         </Box>
         {below}
       </Box>

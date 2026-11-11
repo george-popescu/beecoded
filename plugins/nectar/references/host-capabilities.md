@@ -29,7 +29,7 @@ actual result. Do not disable required checks to save time.
 Report uncovered requirements honestly. Avoid new hooks, duplicate reviews, tool
 installation and fresh context indexes without a task-specific need.
 
-Optional Nectar hooks, Board and telemetry are observational. Check support in the
+Optional Nectar hooks and telemetry are observational. Check support in the
 current host before using them; do not assume a Claude UI hook exists in Codex.
 Enable collection or import historical sessions only under explicit user authority.
 Use only the selected sources and distinguish unavailable data from measured zero.
